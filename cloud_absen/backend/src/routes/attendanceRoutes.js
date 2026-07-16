@@ -1,0 +1,26 @@
+const express = require('express');
+const router = express.Router();
+const {
+  checkIn,
+  checkOut,
+  getTodayStatus,
+  getMyHistory,
+  getTodayAll,
+  getUserHistory,
+  updateStatus,
+} = require('../controllers/attendanceController');
+const { authenticate, authorize } = require('../middleware/auth');
+const upload = require('../middleware/upload');
+
+// Endpoint untuk pengguna biasa (staff)
+router.post('/check-in', authenticate, upload.single('photo'), checkIn);
+router.post('/check-out', authenticate, upload.single('photo'), checkOut);
+router.get('/today', authenticate, getTodayStatus);
+router.get('/history', authenticate, getMyHistory);
+
+// Endpoint khusus admin
+router.get('/today-all', authenticate, authorize('admin'), getTodayAll);
+router.get('/user/:userId', authenticate, authorize('admin'), getUserHistory);
+router.put('/:id/status', authenticate, authorize('admin'), updateStatus);
+
+module.exports = router;

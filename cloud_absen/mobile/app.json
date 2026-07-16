@@ -1,0 +1,21 @@
+{
+  "expo": {
+    "name": "Cloud Absen",
+    "slug": "cloud-absen",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "android": {
+      "package": "com.cloudabsen.app",
+      "permissions": ["CAMERA", "ACCESS_FINE_LOCATION"]
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Aplikasi memerlukan akses kamera untuk mengambil foto absensi."
+        }
+      ]
+    ]
+  }
+}
