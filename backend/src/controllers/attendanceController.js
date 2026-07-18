@@ -1,13 +1,14 @@
 const { query } = require('../config/db');
 const { uploadPhotoToStorage } = require('../utils/uploadPhoto');
+const { todayLocal } = require('../utils/date');
 
-const JAM_MASUK_BATAS = '08:00:00'; // lewat dari jam ini dianggap terlambat
+const JAM_MASUK_BATAS = '08:00:00'; // lewat dari jam ini dianggap terlambat (zona waktu server, set env TZ)
 
 // POST /api/attendance/check-in -- pengguna absen masuk dengan foto
 async function checkIn(req, res, next) {
   try {
     const userId = req.user.id;
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayLocal();
     const { latitude, longitude } = req.body;
 
     if (!req.file) {
@@ -46,7 +47,7 @@ async function checkIn(req, res, next) {
 async function checkOut(req, res, next) {
   try {
     const userId = req.user.id;
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayLocal();
 
     if (!req.file) {
       return res.status(400).json({ message: 'Foto wajib diambil untuk absen pulang.' });
@@ -83,7 +84,7 @@ async function checkOut(req, res, next) {
 // GET /api/attendance/today -- status absensi hari ini (untuk user)
 async function getTodayStatus(req, res, next) {
   try {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayLocal();
     const result = await query(
       'SELECT * FROM attendance WHERE user_id = $1 AND date = $2',
       [req.user.id, today]
@@ -142,7 +143,7 @@ async function getMyHistory(req, res, next) {
 // GET /api/attendance/today-all -- admin lihat semua absensi hari ini (real-time board)
 async function getTodayAll(req, res, next) {
   try {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayLocal();
     const result = await query(
       `SELECT a.id, a.check_in_time, a.check_out_time, a.status,
               u.id AS user_id, u.name, u.avatar_url,

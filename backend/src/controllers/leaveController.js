@@ -9,6 +9,11 @@ async function createLeave(req, res, next) {
     if (!start_date || !end_date || !reason || !reason.trim()) {
       return res.status(400).json({ message: 'Tanggal mulai, tanggal selesai, dan alasan wajib diisi.' });
     }
+    // Validasi format supaya string tanggal rusak tidak lolos sampai ke query database
+    const formatTanggalValid = /^\d{4}-\d{2}-\d{2}$/;
+    if (!formatTanggalValid.test(start_date) || !formatTanggalValid.test(end_date)) {
+      return res.status(400).json({ message: 'Format tanggal harus YYYY-MM-DD.' });
+    }
     if (new Date(end_date) < new Date(start_date)) {
       return res.status(400).json({ message: 'Tanggal selesai tidak boleh sebelum tanggal mulai.' });
     }

@@ -3,8 +3,25 @@
 function errorHandler(err, req, res, next) {
   console.error(err.stack);
 
-  const status = err.statusCode || 500;
-  const message = err.message || 'Terjadi kesalahan pada server.';
+  let status = err.statusCode || 500;
+  let message = err.message || 'Terjadi kesalahan pada server.';
+
+  // Pelanggaran unique constraint PostgreSQL (mis. email sudah terdaftar)
+  if (err.code === '23505') {
+    status = 409;
+    message = 'Data sudah terdaftar (duplikat).';
+  }
+
+  // Error dari multer saat upload file
+  if (err.name === 'MulterError') {
+    status = 400;
+    message = err.code === 'LIMIT_FILE_SIZE' ? 'Ukuran foto maksimal 5MB.' : 'Upload file gagal.';
+  }
+
+  // Di production, jangan bocorkan detail error internal (query, stack, path)
+  if (status === 500 && process.env.NODE_ENV === 'production') {
+    message = 'Terjadi kesalahan pada server.';
+  }
 
   res.status(status).json({ message });
 }

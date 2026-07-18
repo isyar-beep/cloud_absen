@@ -8,7 +8,9 @@ function fileFilter(req, file, cb) {
   if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error('Format file tidak didukung. Gunakan JPEG, PNG, atau WEBP.'));
+    const err = new Error('Format file tidak didukung. Gunakan JPEG, PNG, atau WEBP.');
+    err.statusCode = 400;
+    cb(err);
   }
 }
 

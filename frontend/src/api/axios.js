@@ -13,14 +13,19 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Jika token kedaluwarsa (401), otomatis logout & redirect ke login
+// Jika token kedaluwarsa (401), otomatis logout & redirect ke login.
+// Pengecualian: 401 dari endpoint login itu sendiri (password salah) --
+// biarkan halaman login menampilkan pesan errornya, jangan reload halaman.
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const dariLogin = error.config?.url?.includes('/auth/login');
+    if (error.response?.status === 401 && !dariLogin) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      window.location.href = '/login';
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }

@@ -52,11 +52,16 @@ Isi `.env` dengan nilai production. Yang WAJIB diganti:
 | Variabel | Nilai production |
 |---|---|
 | `NODE_ENV` | `production` |
+| `TZ` | zona waktu kantor: `Asia/Jakarta` (WIB), `Asia/Makassar` (WITA), `Asia/Jayapura` (WIT) |
 | `CORS_ORIGIN` | domain frontend Anda, misal `https://absen.perusahaan.com` |
 | `DB_PASSWORD` | password kuat yang baru (JANGAN `postgres`) |
 | `JWT_SECRET` | string acak panjang, generate: `openssl rand -hex 32` |
 | `FIREBASE_*` | kredensial service account Firebase (lihat README bagian Firebase) |
 | `SMTP_*` | (opsional) kredensial SMTP jika fitur email dipakai |
+
+Catatan keamanan: port database (5432) dan API (5000) di docker-compose
+sudah terikat ke `127.0.0.1` — tidak bisa diakses langsung dari internet.
+Satu-satunya pintu masuk publik adalah Nginx (port 80/443).
 
 Jalankan:
 

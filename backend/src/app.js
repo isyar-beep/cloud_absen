@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
@@ -14,6 +15,15 @@ const notificationRoutes = require('./routes/notificationRoutes');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
+
+// Di belakang Nginx reverse proxy, IP asli client ada di header X-Forwarded-For.
+// Tanpa ini, rate limiter menghitung semua user sebagai satu IP (IP milik Nginx).
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
+
+// Header keamanan standar (X-Content-Type-Options, HSTS, dll.)
+app.use(helmet());
 
 // Keamanan dasar: batasi jumlah request untuk mencegah brute-force / spam
 const limiter = rateLimit({

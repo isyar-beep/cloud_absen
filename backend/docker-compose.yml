@@ -8,8 +8,11 @@ services:
       POSTGRES_DB: ${DB_NAME:-cloud_absen}
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      # Zona waktu harus sama dengan API supaya jam absensi konsisten
+      TZ: ${TZ:-Asia/Jakarta}
     ports:
-      - '5432:5432'
+      # Terikat ke localhost saja -- database TIDAK boleh diakses dari internet
+      - '127.0.0.1:5432:5432'
     volumes:
       - pgdata:/var/lib/postgresql/data
       # Skrip init dijalankan berurutan sesuai abjad saat volume masih kosong.
@@ -34,8 +37,15 @@ services:
       - .env
     environment:
       DB_HOST: postgres
+      TZ: ${TZ:-Asia/Jakarta}
     ports:
-      - '5000:5000'
+      # Terikat ke localhost saja -- akses publik lewat Nginx reverse proxy
+      - '127.0.0.1:5000:5000'
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:5000/health']
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
 volumes:
   pgdata:

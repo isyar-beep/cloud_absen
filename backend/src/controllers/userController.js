@@ -54,6 +54,12 @@ async function createUser(req, res, next) {
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'Nama, email, dan password wajib diisi.' });
     }
+    if (password.length < 6) {
+      return res.status(400).json({ message: 'Password minimal 6 karakter.' });
+    }
+    if (role && !['admin', 'staff'].includes(role)) {
+      return res.status(400).json({ message: "Role harus 'admin' atau 'staff'." });
+    }
 
     const existing = await query('SELECT id FROM users WHERE email = $1', [email]);
     if (existing.rows.length > 0) {
@@ -79,6 +85,10 @@ async function createUser(req, res, next) {
 async function updateUser(req, res, next) {
   try {
     const { name, email, role, department_id, is_active } = req.body;
+
+    if (role && !['admin', 'staff'].includes(role)) {
+      return res.status(400).json({ message: "Role harus 'admin' atau 'staff'." });
+    }
 
     const result = await query(
       `UPDATE users

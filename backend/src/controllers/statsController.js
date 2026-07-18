@@ -1,4 +1,5 @@
 const { query } = require('../config/db');
+const { todayLocal } = require('../utils/date');
 
 // GET /api/stats/me -- statistik personal pengguna (bulan berjalan)
 async function getMyStats(req, res, next) {
@@ -61,7 +62,7 @@ async function getMyTrend(req, res, next) {
 // GET /api/stats/overview -- KPI perusahaan untuk admin
 async function getOverview(req, res, next) {
   try {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayLocal();
 
     const totalPegawai = await query(
       `SELECT COUNT(*) FROM users WHERE role != 'admin' AND is_active = TRUE`
