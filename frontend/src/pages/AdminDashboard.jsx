@@ -1,11 +1,33 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
 import api from '../api/axios';
-import { useAuthStore } from '../store/authStore';
+import AdminHeader from '../components/AdminHeader';
+import StatusBadge from '../components/StatusBadge';
+import {
+  UsersIcon, CheckBadgeIcon, ClockIcon, AlertIcon, DownloadIcon, MailIcon,
+} from '../components/Icons';
+
+// Avatar inisial nama dengan warna deterministik (nama sama = warna sama)
+function InitialAvatar({ name }) {
+  const colors = [
+    'bg-primary-100 text-primary-700', 'bg-violet-100 text-violet-700',
+    'bg-emerald-100 text-emerald-700', 'bg-amber-100 text-amber-700',
+    'bg-rose-100 text-rose-700', 'bg-sky-100 text-sky-700',
+  ];
+  const idx = (name || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0) % colors.length;
+  const initials = (name || '?')
+    .split(' ')
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase();
+  return (
+    <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${colors[idx]}`}>
+      {initials}
+    </div>
+  );
+}
 
 export default function AdminDashboard() {
-  const { user, logout } = useAuthStore();
-  const navigate = useNavigate();
   const [overview, setOverview] = useState(null);
   const [todayAll, setTodayAll] = useState([]);
   const [ranking, setRanking] = useState({ top_performers: [], at_risk: [] });
@@ -37,11 +59,6 @@ export default function AdminDashboard() {
     } catch (err) {
       console.error(err);
     }
-  }
-
-  function handleLogout() {
-    logout();
-    navigate('/login');
   }
 
   // Download laporan lewat axios supaya header Authorization ikut terkirim,
@@ -86,69 +103,59 @@ export default function AdminDashboard() {
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
   ];
 
-  const statusLabel = {
-    hadir: { text: 'Hadir', class: 'bg-green-50 text-green-700' },
-    terlambat: { text: 'Terlambat', class: 'bg-amber-50 text-amber-700' },
-    izin: { text: 'Izin', class: 'bg-blue-50 text-blue-700' },
-    alpha: { text: 'Alpha', class: 'bg-red-50 text-red-700' },
-  };
+  const kpiCards = overview
+    ? [
+        { label: 'Total Pegawai', value: overview.total_pegawai, icon: UsersIcon, chip: 'bg-primary-50 text-primary-600' },
+        { label: 'Hadir Hari Ini', value: overview.hadir_hari_ini, icon: CheckBadgeIcon, chip: 'bg-emerald-50 text-emerald-600' },
+        { label: 'Terlambat', value: overview.terlambat_hari_ini, icon: ClockIcon, chip: 'bg-amber-50 text-amber-600' },
+        { label: 'Alpha', value: overview.alpha_hari_ini, icon: AlertIcon, chip: 'bg-red-50 text-red-600' },
+      ]
+    : [];
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-4 py-4">
-        <div className="max-w-5xl mx-auto flex justify-between items-center">
-          <div>
-            <p className="text-sm text-gray-500">Admin Panel</p>
-            <p className="font-semibold text-gray-900">{user?.name}</p>
-          </div>
-          <div className="flex gap-4 items-center">
-            <Link to="/admin/history" className="text-sm text-primary-600 font-medium">
-              Riwayat
-            </Link>
-            <Link to="/admin/leaves" className="text-sm text-primary-600 font-medium">
-              Pengajuan Izin
-            </Link>
-            <Link to="/admin/users" className="text-sm text-primary-600 font-medium">
-              Kelola Pengguna
-            </Link>
-            <button onClick={handleLogout} className="text-sm text-gray-500">
-              Keluar
-            </button>
-          </div>
-        </div>
-      </div>
+      <AdminHeader />
 
-      <div className="max-w-5xl mx-auto px-4 py-6">
+      <div className="max-w-6xl mx-auto px-4 py-7">
+        <div className="mb-6">
+          <h1 className="text-xl font-bold text-gray-900 tracking-tight">Dashboard</h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            {new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+          </p>
+        </div>
+
         {/* KPI Overview */}
         {overview && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-            <div className="bg-white rounded-xl border border-gray-200 p-4">
-              <p className="text-xs text-gray-500 mb-1">Total Pegawai</p>
-              <p className="text-xl font-semibold text-gray-900">{overview.total_pegawai}</p>
-            </div>
-            <div className="bg-white rounded-xl border border-gray-200 p-4">
-              <p className="text-xs text-gray-500 mb-1">Hadir Hari Ini</p>
-              <p className="text-xl font-semibold text-green-600">{overview.hadir_hari_ini}</p>
-            </div>
-            <div className="bg-white rounded-xl border border-gray-200 p-4">
-              <p className="text-xs text-gray-500 mb-1">Terlambat</p>
-              <p className="text-xl font-semibold text-amber-600">{overview.terlambat_hari_ini}</p>
-            </div>
-            <div className="bg-white rounded-xl border border-gray-200 p-4">
-              <p className="text-xs text-gray-500 mb-1">Alpha</p>
-              <p className="text-xl font-semibold text-red-600">{overview.alpha_hari_ini}</p>
-            </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            {kpiCards.map((card) => (
+              <div key={card.label} className="bg-white rounded-2xl border border-gray-100 shadow-soft p-5 flex items-center gap-4">
+                <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${card.chip}`}>
+                  <card.icon className="w-6 h-6" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs text-gray-500 truncate">{card.label}</p>
+                  <p className="text-2xl font-bold text-gray-900 leading-tight">{card.value}</p>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
         {/* Export laporan */}
-        <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6 flex flex-wrap items-center gap-3">
-          <p className="text-sm font-medium text-gray-900 mr-auto">Export Laporan Bulanan</p>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-soft p-5 mb-6 flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-3 mr-auto">
+            <div className="w-10 h-10 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center">
+              <DownloadIcon className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-900">Export Laporan Bulanan</p>
+              <p className="text-xs text-gray-500">Rekap & detail absensi seluruh pegawai</p>
+            </div>
+          </div>
           <select
             value={reportPeriod.month}
             onChange={(e) => setReportPeriod({ ...reportPeriod, month: Number(e.target.value) })}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+            className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40"
           >
             {namaBulan.map((nama, i) => (
               <option key={nama} value={i + 1}>{nama}</option>
@@ -157,7 +164,7 @@ export default function AdminDashboard() {
           <select
             value={reportPeriod.year}
             onChange={(e) => setReportPeriod({ ...reportPeriod, year: Number(e.target.value) })}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+            className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40"
           >
             {[0, 1, 2].map((offset) => {
               const tahun = new Date().getFullYear() - offset;
@@ -167,78 +174,113 @@ export default function AdminDashboard() {
           <button
             onClick={() => downloadReport('excel')}
             disabled={!!downloading}
-            className="text-sm bg-primary-600 text-white px-4 py-2 rounded-lg font-medium disabled:opacity-50"
+            className="text-sm bg-gradient-to-r from-primary-600 to-primary-700 text-white px-4 py-2 rounded-xl font-semibold shadow-glow transition hover:from-primary-500 hover:to-primary-600 disabled:opacity-50"
           >
             {downloading === 'excel' ? 'Mengunduh...' : 'Excel'}
           </button>
           <button
             onClick={() => downloadReport('pdf')}
             disabled={!!downloading}
-            className="text-sm bg-gray-900 text-white px-4 py-2 rounded-lg font-medium disabled:opacity-50"
+            className="text-sm bg-gray-900 text-white px-4 py-2 rounded-xl font-semibold transition hover:bg-gray-800 disabled:opacity-50"
           >
             {downloading === 'pdf' ? 'Mengunduh...' : 'PDF'}
           </button>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid lg:grid-cols-2 gap-6">
           {/* Real-time board */}
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <p className="text-sm font-medium text-gray-900 px-4 pt-4 pb-2">
-              Status Absensi Hari Ini (real-time)
-            </p>
-            <div className="max-h-96 overflow-y-auto">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-soft overflow-hidden">
+            <div className="flex items-center justify-between px-5 pt-4 pb-2">
+              <p className="text-sm font-semibold text-gray-900">Status Absensi Hari Ini</p>
+              <span className="flex items-center gap-1.5 text-xs text-emerald-600 font-medium">
+                <span className="relative flex w-2 h-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full w-2 h-2 bg-emerald-500" />
+                </span>
+                Live
+              </span>
+            </div>
+            <div className="max-h-[26rem] overflow-y-auto">
               {todayAll.map((item) => (
-                <div key={item.user_id} className="flex justify-between items-center px-4 py-3 border-t border-gray-100">
-                  <div>
-                    <p className="text-sm text-gray-900">{item.name}</p>
-                    <p className="text-xs text-gray-500">{item.department || '-'}</p>
+                <div key={item.user_id} className="flex items-center gap-3 px-5 py-3 border-t border-gray-50 hover:bg-gray-50/60 transition">
+                  <InitialAvatar name={item.name} />
+                  <div className="min-w-0 mr-auto">
+                    <p className="text-sm font-medium text-gray-900 truncate">{item.name}</p>
+                    <p className="text-xs text-gray-400 truncate">{item.department || '—'}</p>
                   </div>
                   {item.status ? (
-                    <span className={`text-xs px-2 py-1 rounded-full ${statusLabel[item.status]?.class}`}>
-                      {statusLabel[item.status]?.text}
-                    </span>
+                    <StatusBadge status={item.status} />
                   ) : (
-                    <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-500">
+                    <span className="text-xs px-2.5 py-1 rounded-full bg-gray-100 text-gray-500 font-medium">
                       Belum absen
                     </span>
                   )}
                 </div>
               ))}
+              {todayAll.length === 0 && (
+                <p className="text-sm text-gray-400 px-5 py-8 text-center">Belum ada pegawai.</p>
+              )}
             </div>
           </div>
 
           {/* Ranking */}
           <div className="space-y-6">
-            <div className="bg-white rounded-xl border border-gray-200 p-4">
-              <p className="text-sm font-medium text-gray-900 mb-3">Top Performers</p>
-              {ranking.top_performers.map((r, i) => (
-                <div key={r.id} className="flex justify-between items-center py-1.5 text-sm">
-                  <span className="text-gray-700">{i + 1}. {r.name}</span>
-                  <span className="text-green-600 font-medium">{r.attendance_rate}%</span>
-                </div>
-              ))}
-              {ranking.top_performers.length === 0 && (
-                <p className="text-xs text-gray-400">Belum ada data.</p>
-              )}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-soft p-5">
+              <p className="text-sm font-semibold text-gray-900 mb-4">Top Performers</p>
+              <div className="space-y-3">
+                {ranking.top_performers.map((r, i) => (
+                  <div key={r.id} className="flex items-center gap-3">
+                    <span className={`w-6 h-6 rounded-lg text-xs font-bold flex items-center justify-center shrink-0 ${
+                      i === 0 ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-500'
+                    }`}>
+                      {i + 1}
+                    </span>
+                    <span className="text-sm text-gray-700 mr-auto truncate">{r.name}</span>
+                    <div className="w-24 h-1.5 rounded-full bg-gray-100 overflow-hidden shrink-0">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-500"
+                        style={{ width: `${Math.min(Number(r.attendance_rate), 100)}%` }}
+                      />
+                    </div>
+                    <span className="text-sm font-bold text-emerald-600 w-14 text-right shrink-0">
+                      {r.attendance_rate}%
+                    </span>
+                  </div>
+                ))}
+                {ranking.top_performers.length === 0 && (
+                  <p className="text-xs text-gray-400">Belum ada data.</p>
+                )}
+              </div>
             </div>
 
-            <div className="bg-white rounded-xl border border-gray-200 p-4">
-              <p className="text-sm font-medium text-gray-900 mb-3">Perlu Perhatian (Attendance rendah)</p>
-              {ranking.at_risk.map((r) => (
-                <div key={r.id} className="flex justify-between items-center py-1.5 text-sm">
-                  <span className="text-gray-700">{r.name}</span>
-                  <span className="text-red-600 font-medium">{r.attendance_rate}%</span>
-                </div>
-              ))}
-              {ranking.at_risk.length === 0 && (
-                <p className="text-xs text-gray-400">Tidak ada pegawai berisiko.</p>
-              )}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-soft p-5">
+              <p className="text-sm font-semibold text-gray-900 mb-4">Perlu Perhatian</p>
+              <div className="space-y-3">
+                {ranking.at_risk.map((r) => (
+                  <div key={r.id} className="flex items-center gap-3">
+                    <span className="text-sm text-gray-700 mr-auto truncate">{r.name}</span>
+                    <div className="w-24 h-1.5 rounded-full bg-gray-100 overflow-hidden shrink-0">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-red-400 to-red-500"
+                        style={{ width: `${Math.min(Number(r.attendance_rate), 100)}%` }}
+                      />
+                    </div>
+                    <span className="text-sm font-bold text-red-600 w-14 text-right shrink-0">
+                      {r.attendance_rate}%
+                    </span>
+                  </div>
+                ))}
+                {ranking.at_risk.length === 0 && (
+                  <p className="text-xs text-gray-400">Tidak ada pegawai berisiko. 🎉</p>
+                )}
+              </div>
               {ranking.at_risk.length > 0 && (
                 <button
                   onClick={sendWarningEmails}
                   disabled={sendingWarning}
-                  className="mt-3 text-sm bg-red-600 text-white px-4 py-2 rounded-lg font-medium disabled:opacity-50"
+                  className="mt-4 flex items-center gap-2 text-sm bg-red-600 text-white px-4 py-2 rounded-xl font-semibold transition hover:bg-red-500 disabled:opacity-50"
                 >
+                  <MailIcon className="w-4 h-4" />
                   {sendingWarning ? 'Mengirim...' : 'Kirim Peringatan Email'}
                 </button>
               )}

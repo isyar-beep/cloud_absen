@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
+import { ArrowLeftIcon, CameraIcon, ClockIcon } from '../components/Icons';
 
 export default function Attendance() {
   const videoRef = useRef(null);
@@ -115,53 +116,70 @@ export default function Attendance() {
   const sudahCheckIn = !!todayStatus?.check_in_time;
   const sudahCheckOut = !!todayStatus?.check_out_time;
 
+  function formatJam(t) {
+    return new Date(t).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-6">
       <div className="max-w-md mx-auto">
-        <button onClick={() => navigate(-1)} className="text-sm text-gray-500 mb-4">
-          ← Kembali
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition mb-5"
+        >
+          <ArrowLeftIcon className="w-4 h-4" /> Kembali
         </button>
 
-        <h1 className="text-xl font-semibold text-gray-900 mb-1">Absensi Hari Ini</h1>
+        <h1 className="text-xl font-bold text-gray-900 tracking-tight mb-1">Absensi Hari Ini</h1>
         <p className="text-sm text-gray-500 mb-6">
           {new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
         </p>
 
         {message && (
-          <div className="text-sm text-green-700 bg-green-50 border border-green-100 rounded-lg px-3 py-2 mb-4">
-            {message}
+          <div className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3 mb-4 font-medium">
+            ✓ {message}
           </div>
         )}
         {error && (
-          <div className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2 mb-4">
+          <div className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-3 mb-4">
             {error}
           </div>
         )}
 
         {/* Status ringkas hari ini */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-4 mb-4 flex justify-between text-sm">
-          <div>
-            <p className="text-gray-500">Jam masuk</p>
-            <p className="font-medium text-gray-900">
-              {sudahCheckIn ? new Date(todayStatus.check_in_time).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '-'}
-            </p>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-soft p-5 mb-5 grid grid-cols-2 gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center">
+              <ClockIcon className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Jam masuk</p>
+              <p className="text-base font-bold text-gray-900">
+                {sudahCheckIn ? formatJam(todayStatus.check_in_time) : '—'}
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="text-gray-500">Jam pulang</p>
-            <p className="font-medium text-gray-900">
-              {sudahCheckOut ? new Date(todayStatus.check_out_time).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '-'}
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center">
+              <ClockIcon className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Jam pulang</p>
+              <p className="text-base font-bold text-gray-900">
+                {sudahCheckOut ? formatJam(todayStatus.check_out_time) : '—'}
+              </p>
+            </div>
           </div>
         </div>
 
         {/* Area kamera / hasil foto */}
         {!capturedPhoto && mode && (
-          <div className="bg-black rounded-2xl overflow-hidden mb-4 relative">
+          <div className="rounded-3xl overflow-hidden mb-5 relative ring-4 ring-primary-500/20 shadow-soft bg-black">
             <video ref={videoRef} autoPlay playsInline className="w-full aspect-[4/3] object-cover" />
             {cameraReady && (
               <button
                 onClick={capturePhoto}
-                className="absolute bottom-4 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full bg-white border-4 border-gray-300 active:scale-95 transition"
+                className="absolute bottom-5 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full bg-white/90 backdrop-blur border-4 border-white shadow-lg active:scale-90 transition"
                 aria-label="Ambil foto"
               />
             )}
@@ -169,7 +187,7 @@ export default function Attendance() {
         )}
 
         {capturedPhoto && (
-          <div className="rounded-2xl overflow-hidden mb-4">
+          <div className="rounded-3xl overflow-hidden mb-5 ring-4 ring-emerald-500/20 shadow-soft">
             <img src={capturedPhoto} alt="Preview absensi" className="w-full aspect-[4/3] object-cover" />
           </div>
         )}
@@ -182,15 +200,17 @@ export default function Attendance() {
             <button
               onClick={() => startCamera('check-in')}
               disabled={sudahCheckIn}
-              className="w-full bg-primary-600 text-white py-3 rounded-xl text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-primary-600 to-primary-700 text-white py-3.5 rounded-2xl text-sm font-semibold shadow-glow transition hover:from-primary-500 hover:to-primary-600 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
             >
+              <CameraIcon className="w-5 h-5" />
               {sudahCheckIn ? 'Sudah Absen Masuk' : 'Absen Masuk'}
             </button>
             <button
               onClick={() => startCamera('check-out')}
               disabled={!sudahCheckIn || sudahCheckOut}
-              className="w-full bg-gray-900 text-white py-3 rounded-xl text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+              className="w-full flex items-center justify-center gap-2 bg-gray-900 text-white py-3.5 rounded-2xl text-sm font-semibold transition hover:bg-gray-800 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed"
             >
+              <CameraIcon className="w-5 h-5" />
               {sudahCheckOut ? 'Sudah Absen Pulang' : 'Absen Pulang'}
             </button>
           </div>
@@ -200,14 +220,14 @@ export default function Attendance() {
           <div className="flex gap-3">
             <button
               onClick={retakePhoto}
-              className="flex-1 bg-white border border-gray-300 text-gray-700 py-3 rounded-xl text-sm font-medium"
+              className="flex-1 bg-white border border-gray-200 text-gray-700 py-3.5 rounded-2xl text-sm font-semibold shadow-soft transition hover:border-gray-300"
             >
               Ambil Ulang
             </button>
             <button
               onClick={submitAttendance}
               disabled={loading}
-              className="flex-1 bg-primary-600 text-white py-3 rounded-xl text-sm font-medium disabled:opacity-50"
+              className="flex-1 bg-gradient-to-r from-primary-600 to-primary-700 text-white py-3.5 rounded-2xl text-sm font-semibold shadow-glow transition active:scale-[0.99] disabled:opacity-50"
             >
               {loading ? 'Mengirim...' : 'Kirim Absensi'}
             </button>
