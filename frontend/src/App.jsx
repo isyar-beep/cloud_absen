@@ -2,8 +2,12 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Attendance from './pages/Attendance';
+import Leaves from './pages/Leaves';
+import History from './pages/History';
+import AdminHistory from './pages/AdminHistory';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminUsers from './pages/AdminUsers';
+import AdminLeaves from './pages/AdminLeaves';
 import ProtectedRoute from './components/ProtectedRoute';
 
 export default function App() {
@@ -30,6 +34,23 @@ export default function App() {
         />
 
         <Route
+          path="/leaves"
+          element={
+            <ProtectedRoute>
+              <Leaves />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/history"
+          element={
+            <ProtectedRoute>
+              <History />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
           path="/admin"
           element={
             <ProtectedRoute allowedRole="admin">
@@ -42,6 +63,22 @@ export default function App() {
           element={
             <ProtectedRoute allowedRole="admin">
               <AdminUsers />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/leaves"
+          element={
+            <ProtectedRoute allowedRole="admin">
+              <AdminLeaves />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/history"
+          element={
+            <ProtectedRoute allowedRole="admin">
+              <AdminHistory />
             </ProtectedRoute>
           }
         />

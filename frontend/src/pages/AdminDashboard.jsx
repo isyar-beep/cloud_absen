@@ -9,6 +9,13 @@ export default function AdminDashboard() {
   const [overview, setOverview] = useState(null);
   const [todayAll, setTodayAll] = useState([]);
   const [ranking, setRanking] = useState({ top_performers: [], at_risk: [] });
+  const [reportPeriod, setReportPeriod] = useState({
+    month: new Date().getMonth() + 1,
+    year: new Date().getFullYear(),
+  });
+  const [downloading, setDownloading] = useState('');
+  const [sendingWarning, setSendingWarning] = useState(false);
+  const [warningResult, setWarningResult] = useState('');
 
   useEffect(() => {
     fetchData();
@@ -37,6 +44,48 @@ export default function AdminDashboard() {
     navigate('/login');
   }
 
+  // Download laporan lewat axios supaya header Authorization ikut terkirim,
+  // lalu simpan blob sebagai file di browser
+  async function downloadReport(format) {
+    setDownloading(format);
+    try {
+      const res = await api.get(`/reports/attendance/${format}`, {
+        params: reportPeriod,
+        responseType: 'blob',
+      });
+      const url = URL.createObjectURL(res.data);
+      const link = document.createElement('a');
+      const ext = format === 'excel' ? 'xlsx' : 'pdf';
+      link.href = url;
+      link.download = `laporan-absensi-${reportPeriod.year}-${String(reportPeriod.month).padStart(2, '0')}.${ext}`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert('Gagal mengunduh laporan. Coba lagi.');
+    } finally {
+      setDownloading('');
+    }
+  }
+
+  async function sendWarningEmails() {
+    if (!confirm('Kirim email peringatan ke semua pegawai dengan attendance rendah?')) return;
+    setSendingWarning(true);
+    setWarningResult('');
+    try {
+      const res = await api.post('/notifications/low-attendance');
+      setWarningResult(res.data.message);
+    } catch (err) {
+      setWarningResult(err.response?.data?.message || 'Gagal mengirim peringatan.');
+    } finally {
+      setSendingWarning(false);
+    }
+  }
+
+  const namaBulan = [
+    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+  ];
+
   const statusLabel = {
     hadir: { text: 'Hadir', class: 'bg-green-50 text-green-700' },
     terlambat: { text: 'Terlambat', class: 'bg-amber-50 text-amber-700' },
@@ -54,6 +103,12 @@ export default function AdminDashboard() {
             <p className="font-semibold text-gray-900">{user?.name}</p>
           </div>
           <div className="flex gap-4 items-center">
+            <Link to="/admin/history" className="text-sm text-primary-600 font-medium">
+              Riwayat
+            </Link>
+            <Link to="/admin/leaves" className="text-sm text-primary-600 font-medium">
+              Pengajuan Izin
+            </Link>
             <Link to="/admin/users" className="text-sm text-primary-600 font-medium">
               Kelola Pengguna
             </Link>
@@ -86,6 +141,44 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
+
+        {/* Export laporan */}
+        <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6 flex flex-wrap items-center gap-3">
+          <p className="text-sm font-medium text-gray-900 mr-auto">Export Laporan Bulanan</p>
+          <select
+            value={reportPeriod.month}
+            onChange={(e) => setReportPeriod({ ...reportPeriod, month: Number(e.target.value) })}
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+          >
+            {namaBulan.map((nama, i) => (
+              <option key={nama} value={i + 1}>{nama}</option>
+            ))}
+          </select>
+          <select
+            value={reportPeriod.year}
+            onChange={(e) => setReportPeriod({ ...reportPeriod, year: Number(e.target.value) })}
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+          >
+            {[0, 1, 2].map((offset) => {
+              const tahun = new Date().getFullYear() - offset;
+              return <option key={tahun} value={tahun}>{tahun}</option>;
+            })}
+          </select>
+          <button
+            onClick={() => downloadReport('excel')}
+            disabled={!!downloading}
+            className="text-sm bg-primary-600 text-white px-4 py-2 rounded-lg font-medium disabled:opacity-50"
+          >
+            {downloading === 'excel' ? 'Mengunduh...' : 'Excel'}
+          </button>
+          <button
+            onClick={() => downloadReport('pdf')}
+            disabled={!!downloading}
+            className="text-sm bg-gray-900 text-white px-4 py-2 rounded-lg font-medium disabled:opacity-50"
+          >
+            {downloading === 'pdf' ? 'Mengunduh...' : 'PDF'}
+          </button>
+        </div>
 
         <div className="grid md:grid-cols-2 gap-6">
           {/* Real-time board */}
@@ -139,6 +232,18 @@ export default function AdminDashboard() {
               ))}
               {ranking.at_risk.length === 0 && (
                 <p className="text-xs text-gray-400">Tidak ada pegawai berisiko.</p>
+              )}
+              {ranking.at_risk.length > 0 && (
+                <button
+                  onClick={sendWarningEmails}
+                  disabled={sendingWarning}
+                  className="mt-3 text-sm bg-red-600 text-white px-4 py-2 rounded-lg font-medium disabled:opacity-50"
+                >
+                  {sendingWarning ? 'Mengirim...' : 'Kirim Peringatan Email'}
+                </button>
+              )}
+              {warningResult && (
+                <p className="text-xs text-gray-500 mt-2">{warningResult}</p>
               )}
             </div>
           </div>

@@ -66,9 +66,15 @@ export default function Dashboard() {
         {/* Tombol absen utama */}
         <button
           onClick={() => navigate('/attendance')}
-          className="w-full bg-primary-600 text-white py-4 rounded-2xl font-medium mb-6 flex items-center justify-center gap-2"
+          className="w-full bg-primary-600 text-white py-4 rounded-2xl font-medium mb-3 flex items-center justify-center gap-2"
         >
           Absen Sekarang
+        </button>
+        <button
+          onClick={() => navigate('/leaves')}
+          className="w-full bg-white border border-gray-300 text-gray-700 py-3 rounded-2xl text-sm font-medium mb-6"
+        >
+          Ajukan Izin
         </button>
 
         {/* KPI Cards */}
@@ -110,7 +116,12 @@ export default function Dashboard() {
 
         {/* Riwayat terbaru */}
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <p className="text-sm font-medium text-gray-900 px-4 pt-4 pb-2">Riwayat Terbaru</p>
+          <div className="flex justify-between items-center px-4 pt-4 pb-2">
+            <p className="text-sm font-medium text-gray-900">Riwayat Terbaru</p>
+            <button onClick={() => navigate('/history')} className="text-xs text-primary-600 font-medium">
+              Lihat Semua
+            </button>
+          </div>
           {history.map((item) => (
             <div key={item.id} className="flex justify-between items-center px-4 py-3 border-t border-gray-100">
               <div>

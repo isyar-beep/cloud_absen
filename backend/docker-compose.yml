@@ -13,7 +13,11 @@ services:
       - '5432:5432'
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+      # Skrip init dijalankan berurutan sesuai abjad saat volume masih kosong.
+      # Untuk database yang sudah ada, jalankan file migration secara manual:
+      # docker exec -i cloud_absen_db psql -U postgres -d cloud_absen < database/migrations/001_leave_requests.sql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/10-schema.sql
+      - ./database/migrations/001_leave_requests.sql:/docker-entrypoint-initdb.d/20-leave-requests.sql
 
   api:
     build: .

@@ -94,17 +94,44 @@ async function getTodayStatus(req, res, next) {
   }
 }
 
+// Susun klausa WHERE dinamis untuk filter riwayat (tanggal & status).
+// baseParams diisi dulu (misal user_id), filter menyusul di belakangnya.
+function buildHistoryFilter(queryParams, conditions, params) {
+  const { start_date, end_date, status } = queryParams;
+  const validStatus = ['hadir', 'terlambat', 'izin', 'alpha'];
+
+  if (start_date) {
+    params.push(start_date);
+    conditions.push(`a.date >= $${params.length}`);
+  }
+  if (end_date) {
+    params.push(end_date);
+    conditions.push(`a.date <= $${params.length}`);
+  }
+  if (status && validStatus.includes(status)) {
+    params.push(status);
+    conditions.push(`a.status = $${params.length}`);
+  }
+}
+
 // GET /api/attendance/history -- riwayat absensi milik user sendiri
+// Mendukung filter ?start_date=&end_date=&status= dan paginasi limit/offset
 async function getMyHistory(req, res, next) {
   try {
     const { limit = 30, offset = 0 } = req.query;
+    const conditions = ['a.user_id = $1'];
+    const params = [req.user.id];
+    buildHistoryFilter(req.query, conditions, params);
+
+    params.push(limit, offset);
     const result = await query(
-      `SELECT id, date, check_in_time, check_out_time, status, reason, photo_in_url, photo_out_url
-       FROM attendance
-       WHERE user_id = $1
-       ORDER BY date DESC
-       LIMIT $2 OFFSET $3`,
-      [req.user.id, limit, offset]
+      `SELECT a.id, a.date, a.check_in_time, a.check_out_time, a.status, a.reason,
+              a.photo_in_url, a.photo_out_url
+       FROM attendance a
+       WHERE ${conditions.join(' AND ')}
+       ORDER BY a.date DESC
+       LIMIT $${params.length - 1} OFFSET $${params.length}`,
+      params
     );
     res.json(result.rows);
   } catch (err) {
@@ -137,13 +164,52 @@ async function getTodayAll(req, res, next) {
 async function getUserHistory(req, res, next) {
   try {
     const { limit = 30, offset = 0 } = req.query;
+    const conditions = ['a.user_id = $1'];
+    const params = [req.params.userId];
+    buildHistoryFilter(req.query, conditions, params);
+
+    params.push(limit, offset);
     const result = await query(
-      `SELECT id, date, check_in_time, check_out_time, status, reason, photo_in_url, photo_out_url
-       FROM attendance
-       WHERE user_id = $1
-       ORDER BY date DESC
-       LIMIT $2 OFFSET $3`,
-      [req.params.userId, limit, offset]
+      `SELECT a.id, a.date, a.check_in_time, a.check_out_time, a.status, a.reason,
+              a.photo_in_url, a.photo_out_url
+       FROM attendance a
+       WHERE ${conditions.join(' AND ')}
+       ORDER BY a.date DESC
+       LIMIT $${params.length - 1} OFFSET $${params.length}`,
+      params
+    );
+    res.json(result.rows);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// GET /api/attendance/all -- admin lihat riwayat seluruh pegawai
+// Filter: ?start_date=&end_date=&status=&department_id= + paginasi limit/offset
+async function getAllHistory(req, res, next) {
+  try {
+    const { limit = 50, offset = 0, department_id } = req.query;
+    const conditions = ["u.role != 'admin'"];
+    const params = [];
+    buildHistoryFilter(req.query, conditions, params);
+
+    if (department_id) {
+      params.push(department_id);
+      conditions.push(`u.department_id = $${params.length}`);
+    }
+
+    params.push(limit, offset);
+    const result = await query(
+      `SELECT a.id, a.date, a.check_in_time, a.check_out_time, a.status, a.reason,
+              a.photo_in_url, a.photo_out_url,
+              u.id AS user_id, u.name, d.name AS department
+       FROM attendance a
+       JOIN users u ON a.user_id = u.id
+       LEFT JOIN departments d ON u.department_id = d.id
+       WHERE ${conditions.join(' AND ')}
+       ORDER BY a.date DESC, u.name ASC
+       LIMIT $${params.length - 1} OFFSET $${params.length}`,
+      params
     );
     res.json(result.rows);
   } catch (err) {
@@ -183,5 +249,6 @@ module.exports = {
   getMyHistory,
   getTodayAll,
   getUserHistory,
+  getAllHistory,
   updateStatus,
 };

@@ -7,6 +7,7 @@ const {
   getMyHistory,
   getTodayAll,
   getUserHistory,
+  getAllHistory,
   updateStatus,
 } = require('../controllers/attendanceController');
 const { authenticate, authorize } = require('../middleware/auth');
@@ -20,6 +21,7 @@ router.get('/history', authenticate, getMyHistory);
 
 // Endpoint khusus admin
 router.get('/today-all', authenticate, authorize('admin'), getTodayAll);
+router.get('/all', authenticate, authorize('admin'), getAllHistory);
 router.get('/user/:userId', authenticate, authorize('admin'), getUserHistory);
 router.put('/:id/status', authenticate, authorize('admin'), updateStatus);
 

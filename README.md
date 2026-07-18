@@ -42,7 +42,13 @@ docker-compose up -d postgres
 ```bash
 psql -U postgres -c "CREATE DATABASE cloud_absen;"
 psql -U postgres -d cloud_absen -f database/schema.sql
+psql -U postgres -d cloud_absen -f database/migrations/001_leave_requests.sql
 ```
+
+**Catatan migration:** perubahan schema setelah rilis awal disimpan di
+`database/migrations/` (tidak mengubah `schema.sql`). Jalankan tiap file
+migration secara berurutan pada database yang sudah ada. Untuk Docker,
+migration otomatis ikut dijalankan hanya saat volume database masih baru.
 
 **Buat akun admin pertama:**
 ```bash
@@ -195,15 +201,22 @@ Setelah menjalankan `npm run seed` di backend:
 - Manajemen pengguna oleh admin (tambah, edit, nonaktifkan akun)
 - Statistik personal pegawai (attendance rate, trend, riwayat)
 - Statistik & ranking untuk admin (top performer, pegawai berisiko)
-- Export laporan (dikembangkan lebih lanjut — lihat roadmap)
+- Export laporan bulanan ke Excel & PDF (admin, per periode/departemen)
+- Pengajuan izin oleh pegawai + persetujuan admin (approve otomatis mengisi
+  status `izin` di absensi)
+- Riwayat absensi lengkap dengan filter tanggal/status (pegawai) dan
+  tanggal/status/departemen (admin)
+- Notifikasi email peringatan untuk pegawai dengan attendance rendah
+  (opsional, aktif jika kredensial SMTP diisi di `.env`)
 
 ---
 
 ## 8. Roadmap Selanjutnya
 
-- [ ] Export laporan ke Excel/PDF
-- [ ] Notifikasi email/push untuk pegawai dengan attendance rendah
-- [ ] Fitur pengajuan izin terintegrasi (bukan hanya set manual oleh admin)
+- [x] Export laporan ke Excel/PDF
+- [x] Notifikasi email untuk pegawai dengan attendance rendah
+- [x] Fitur pengajuan izin terintegrasi (bukan hanya set manual oleh admin)
+- [ ] Notifikasi push (mobile)
 - [ ] Dark mode di web & mobile
 - [ ] Multi-bahasa (ID/EN)
 

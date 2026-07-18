@@ -7,6 +7,10 @@ const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const attendanceRoutes = require('./routes/attendanceRoutes');
 const statsRoutes = require('./routes/statsRoutes');
+const reportRoutes = require('./routes/reportRoutes');
+const leaveRoutes = require('./routes/leaveRoutes');
+const departmentRoutes = require('./routes/departmentRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -41,6 +45,10 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/stats', statsRoutes);
+app.use('/api/reports', reportRoutes);
+app.use('/api/leaves', leaveRoutes);
+app.use('/api/departments', departmentRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // 404 handler
 app.use((req, res) => {
