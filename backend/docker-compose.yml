@@ -1,14 +1,13 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:16-alpine
     container_name: cloud_absen_db
     restart: unless-stopped
     environment:
-      POSTGRES_DB: cloud_absen
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      # Nilai diambil dari file .env di folder ini (otomatis dibaca docker compose)
+      POSTGRES_DB: ${DB_NAME:-cloud_absen}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
     ports:
       - '5432:5432'
     volumes:
@@ -18,13 +17,19 @@ services:
       # docker exec -i cloud_absen_db psql -U postgres -d cloud_absen < database/migrations/001_leave_requests.sql
       - ./database/schema.sql:/docker-entrypoint-initdb.d/10-schema.sql
       - ./database/migrations/001_leave_requests.sql:/docker-entrypoint-initdb.d/20-leave-requests.sql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-cloud_absen}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   api:
     build: .
     container_name: cloud_absen_api
     restart: unless-stopped
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     env_file:
       - .env
     environment:

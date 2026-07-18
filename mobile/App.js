@@ -5,6 +5,8 @@ import { StatusBar } from 'expo-status-bar';
 import LoginScreen from './src/screens/LoginScreen';
 import DashboardScreen from './src/screens/DashboardScreen';
 import CameraScreen from './src/screens/CameraScreen';
+import LeavesScreen from './src/screens/LeavesScreen';
+import HistoryScreen from './src/screens/HistoryScreen';
 import { useAuthStore } from './src/store/authStore';
 
 const Stack = createNativeStackNavigator();
@@ -29,6 +31,8 @@ export default function App() {
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Dashboard" component={DashboardScreen} options={{ headerShown: true, title: 'Cloud Absen' }} />
         <Stack.Screen name="Camera" component={CameraScreen} options={{ headerShown: true, title: 'Ambil Foto Absensi' }} />
+        <Stack.Screen name="Leaves" component={LeavesScreen} options={{ headerShown: true, title: 'Pengajuan Izin' }} />
+        <Stack.Screen name="History" component={HistoryScreen} options={{ headerShown: true, title: 'Riwayat Absensi' }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

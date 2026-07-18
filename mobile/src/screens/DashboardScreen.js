@@ -80,6 +80,15 @@ export default function DashboardScreen({ navigation }) {
           </View>
         </View>
       )}
+
+      <View style={styles.menuRow}>
+        <TouchableOpacity style={styles.menuButton} onPress={() => navigation.navigate('Leaves')}>
+          <Text style={styles.menuButtonText}>Ajukan Izin</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.menuButton} onPress={() => navigation.navigate('History')}>
+          <Text style={styles.menuButtonText}>Riwayat Absensi</Text>
+        </TouchableOpacity>
+      </View>
     </ScrollView>
   );
 }
@@ -95,7 +104,13 @@ const styles = StyleSheet.create({
   actionButtonDark: { backgroundColor: '#111827', borderRadius: 14, paddingVertical: 16, alignItems: 'center' },
   actionButtonDisabled: { opacity: 0.4 },
   actionButtonText: { color: '#fff', fontWeight: '600', fontSize: 14 },
-  statsGrid: { flexDirection: 'row', gap: 10 },
+  statsGrid: { flexDirection: 'row', gap: 10, marginBottom: 20 },
+  menuRow: { flexDirection: 'row', gap: 10 },
+  menuButton: {
+    flex: 1, backgroundColor: '#fff', borderRadius: 12, paddingVertical: 14,
+    alignItems: 'center', borderWidth: 1, borderColor: '#d1d5db',
+  },
+  menuButtonText: { fontSize: 13, color: '#374151', fontWeight: '600' },
   statCard: { flex: 1, backgroundColor: '#fff', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#e5e7eb' },
   statLabel: { fontSize: 11, color: '#6b7280', marginBottom: 4 },
   statValue: { fontSize: 18, fontWeight: '600', color: '#111827' },

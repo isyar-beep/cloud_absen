@@ -48,8 +48,9 @@ export default function CameraScreen({ route, navigation }) {
         type: 'image/jpeg',
       });
       if (coords.latitude) {
-        formData.append('latitude', coords.latitude);
-        formData.append('longitude', coords.longitude);
+        // FormData React Native mengharuskan nilai string, bukan number
+        formData.append('latitude', String(coords.latitude));
+        formData.append('longitude', String(coords.longitude));
       }
 
       const endpoint = mode === 'check-in' ? '/attendance/check-in' : '/attendance/check-out';
