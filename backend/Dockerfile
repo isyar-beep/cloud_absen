@@ -10,6 +10,9 @@ RUN npm ci --omit=dev
 
 COPY . .
 
+# Folder foto absensi (di-mount sebagai volume di docker-compose untuk persistensi)
+RUN mkdir -p uploads
+
 EXPOSE 5000
 
 CMD ["node", "src/server.js"]

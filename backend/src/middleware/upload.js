@@ -1,6 +1,6 @@
 const multer = require('multer');
 
-// Simpan file sementara di memory sebelum diunggah ke Firebase Storage
+// Simpan file sementara di memory sebelum ditulis ke disk lokal server
 const storage = multer.memoryStorage();
 
 function fileFilter(req, file, cb) {

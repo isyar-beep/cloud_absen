@@ -16,7 +16,8 @@ dengan Docker, frontend web ke hosting statis, dan build APK mobile.
         |
 [Hosting statis Hostinger] <-- frontend dist/ (React build)
 
-[Firebase Storage] <-- upload foto absensi (dari API)
+Foto absensi disimpan di disk VPS (volume Docker `uploads`) dan di-serve
+langsung oleh API lewat `/uploads/...`.
 ```
 
 ---
@@ -56,7 +57,7 @@ Isi `.env` dengan nilai production. Yang WAJIB diganti:
 | `CORS_ORIGIN` | domain frontend Anda, misal `https://absen.perusahaan.com` |
 | `DB_PASSWORD` | password kuat yang baru (JANGAN `postgres`) |
 | `JWT_SECRET` | string acak panjang, generate: `openssl rand -hex 32` |
-| `FIREBASE_*` | kredensial service account Firebase (lihat README bagian Firebase) |
+| `PUBLIC_BASE_URL` | domain API publik, misal `https://api.perusahaan.com` (dipakai untuk URL foto) |
 | `SMTP_*` | (opsional) kredensial SMTP jika fitur email dipakai |
 
 Catatan keamanan: port database (5432) dan API (5000) di docker-compose
@@ -243,6 +244,6 @@ Cek log: `docker logs cloud_absen_db`. Jika schema berubah tapi volume lama
 masih ada, migration baru harus dijalankan manual (lihat bagian 6).
 
 **Foto tidak terupload**
-Cek log API: `docker logs cloud_absen_api`. Biasanya kredensial Firebase salah
-format — pastikan `FIREBASE_PRIVATE_KEY` di `.env` ditulis satu baris dengan
-`\n` literal (persis seperti di file JSON service account).
+Cek log API: `docker logs cloud_absen_api`. Pastikan folder `uploads/` bisa
+ditulis oleh container (volume `uploads` di `docker-compose.yml` sudah
+menangani ini secara default) dan disk VPS tidak penuh.

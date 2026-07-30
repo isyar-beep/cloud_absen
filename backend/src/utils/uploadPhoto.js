@@ -1,24 +1,29 @@
-const { bucket } = require('../config/firebase');
+const fs = require('fs');
+const path = require('path');
 const crypto = require('crypto');
 
-// Upload buffer foto (dari multer memoryStorage) ke Firebase Storage
-// Mengembalikan public URL yang bisa langsung disimpan di database
+// Direktori tempat foto absensi disimpan di server (bukan cloud storage).
+// Bisa diarahkan ke disk lain via UPLOAD_DIR di .env (mis. volume terpisah di VPS).
+const uploadDir = process.env.UPLOAD_DIR
+  ? path.resolve(process.env.UPLOAD_DIR)
+  : path.join(__dirname, '..', '..', 'uploads');
+
+// URL dasar publik untuk mengakses foto (di-serve lewat express.static di app.js)
+const publicBaseUrl = (process.env.PUBLIC_BASE_URL || '').replace(/\/$/, '');
+
+// Upload buffer foto (dari multer memoryStorage) ke disk lokal server.
+// Mengembalikan URL yang bisa langsung disimpan di database.
 async function uploadPhotoToStorage(fileBuffer, mimetype, folder = 'attendance') {
-  if (!bucket) {
-    const err = new Error('Firebase Storage belum dikonfigurasi. Isi kredensial Firebase di .env.');
-    err.statusCode = 500;
-    throw err;
-  }
+  const targetDir = path.join(uploadDir, folder);
+  await fs.promises.mkdir(targetDir, { recursive: true });
 
-  const filename = `${folder}/${Date.now()}-${crypto.randomUUID()}.jpg`;
-  const file = bucket.file(filename);
+  const filename = `${Date.now()}-${crypto.randomUUID()}.jpg`;
+  const filePath = path.join(targetDir, filename);
 
-  await file.save(fileBuffer, {
-    metadata: { contentType: mimetype },
-    public: true,
-  });
+  await fs.promises.writeFile(filePath, fileBuffer);
 
-  return `https://storage.googleapis.com/${bucket.name}/${filename}`;
+  const relativeUrl = `/uploads/${folder}/${filename}`;
+  return publicBaseUrl ? `${publicBaseUrl}${relativeUrl}` : relativeUrl;
 }
 
-module.exports = { uploadPhotoToStorage };
+module.exports = { uploadPhotoToStorage, uploadDir };

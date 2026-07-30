@@ -41,6 +41,9 @@ services:
     ports:
       # Terikat ke localhost saja -- akses publik lewat Nginx reverse proxy
       - '127.0.0.1:5000:5000'
+    volumes:
+      # Foto absensi disimpan di disk lokal -- volume ini membuatnya persisten antar deploy
+      - uploads:/app/uploads
     healthcheck:
       test: ['CMD', 'wget', '-qO-', 'http://localhost:5000/health']
       interval: 30s
@@ -49,3 +52,4 @@ services:
 
 volumes:
   pgdata:
+  uploads:

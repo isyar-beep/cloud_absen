@@ -21,7 +21,6 @@ cloud_absen/
 ### Prasyarat
 - Node.js versi 18 ke atas
 - PostgreSQL (atau Docker, lebih mudah)
-- Akun Firebase (untuk penyimpanan foto)
 
 ### Langkah setup
 
@@ -63,13 +62,12 @@ npm run dev
 ```
 Server akan berjalan di `http://localhost:5000`. Cek dengan membuka `http://localhost:5000/health`.
 
-### Setup Firebase Storage (untuk foto absensi)
+### Penyimpanan Foto Absensi
 
-1. Buka [Firebase Console](https://console.firebase.google.com) → buat project baru
-2. Aktifkan **Storage** di menu sebelah kiri
-3. Buka **Project Settings > Service Accounts** → klik "Generate new private key"
-4. File JSON yang terdownload berisi `project_id`, `client_email`, `private_key` — masukkan ke `.env`
-5. Isi `FIREBASE_STORAGE_BUCKET` sesuai nama bucket (biasanya `nama-project.appspot.com`)
+Foto absensi disimpan langsung di disk server (folder `backend/uploads/` secara
+default) dan di-serve lewat endpoint `/uploads/...`. Tidak perlu akun cloud
+storage apa pun. Atur lokasi folder lewat `UPLOAD_DIR` dan domain publik API
+lewat `PUBLIC_BASE_URL` di `.env` bila perlu (lihat `.env.example`).
 
 ---
 
@@ -186,7 +184,7 @@ Setelah menjalankan `npm run seed` di backend:
 | Backend | Node.js + Express |
 | Frontend Web | React + Vite + Tailwind CSS |
 | Mobile | React Native + Expo |
-| Cloud Storage | Firebase Storage |
+| Penyimpanan Foto | Disk lokal server (volume Docker) |
 | Autentikasi | JWT (JSON Web Token) |
 | Hosting | Hostinger VPS + Docker |
 

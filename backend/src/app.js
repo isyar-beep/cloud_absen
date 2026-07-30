@@ -4,6 +4,8 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
+const { uploadDir } = require('./utils/uploadPhoto');
+
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const attendanceRoutes = require('./routes/attendanceRoutes');
@@ -23,7 +25,9 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // Header keamanan standar (X-Content-Type-Options, HSTS, dll.)
-app.use(helmet());
+// crossOriginResourcePolicy dilonggarkan supaya foto absensi bisa ditampilkan
+// dari domain frontend yang berbeda (mis. app.domain.com vs api.domain.com).
+app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 
 // Keamanan dasar: batasi jumlah request untuk mencegah brute-force / spam
 const limiter = rateLimit({
@@ -44,6 +48,9 @@ app.use(
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Foto absensi disimpan di disk lokal server dan di-serve sebagai file statis
+app.use('/uploads', express.static(uploadDir));
 
 // Health check -- untuk memastikan server hidup (dipakai monitoring/Hostinger)
 app.get('/health', (req, res) => {
