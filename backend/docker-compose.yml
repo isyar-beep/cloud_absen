@@ -12,7 +12,9 @@ services:
       TZ: ${TZ:-Asia/Jakarta}
     ports:
       # Terikat ke localhost saja -- database TIDAK boleh diakses dari internet
-      - '127.0.0.1:5432:5432'
+      # DB_HOST_PORT bisa diganti di .env kalau port 5432 di komputer Anda sudah
+      # dipakai PostgreSQL lain (mis. instalasi native di Windows)
+      - '127.0.0.1:${DB_HOST_PORT:-5432}:5432'
     volumes:
       - pgdata:/var/lib/postgresql/data
       # Skrip init dijalankan berurutan sesuai abjad saat volume masih kosong.
