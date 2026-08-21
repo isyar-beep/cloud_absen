@@ -30,6 +30,22 @@ async function createLeave(req, res, next) {
       return res.status(409).json({ message: 'Anda sudah punya pengajuan izin di rentang tanggal tersebut.' });
     }
 
+    // Tanggal yang sudah punya catatan absensi (sudah absen, izin, atau alpha)
+    // dianggap "tidak aktif" untuk diajukan izin -- tolak total, bukan sekadar peringatan.
+    // to_char di SQL supaya tanggal dikirim sebagai teks apa adanya, bukan
+    // objek Date JS -- menghindari pergeseran tanggal akibat konversi timezone.
+    const sudahAbsen = await query(
+      `SELECT to_char(date, 'YYYY-MM-DD') AS date FROM attendance
+       WHERE user_id = $1 AND date BETWEEN $2 AND $3
+       ORDER BY date LIMIT 1`,
+      [userId, start_date, end_date]
+    );
+    if (sudahAbsen.rows.length > 0) {
+      return res.status(409).json({
+        message: `Tanggal ${sudahAbsen.rows[0].date} sudah punya catatan absensi, tidak bisa diajukan izin.`,
+      });
+    }
+
     const result = await query(
       `INSERT INTO leave_requests (user_id, start_date, end_date, reason)
        VALUES ($1, $2, $3, $4)
