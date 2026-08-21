@@ -161,10 +161,104 @@ async function getRanking(req, res, next) {
   }
 }
 
+// GET /api/stats/breakdown -- ringkasan hadir/telat/izin/alpha untuk dashboard grafik admin.
+// Query: ?user_id= (kosongkan = gabungan semua pegawai), ?month=&year= (kosongkan
+// keduanya = riwayat keseluruhan, bukan cuma satu bulan).
+async function getBreakdown(req, res, next) {
+  try {
+    const { user_id, month, year } = req.query;
+    const conditions = [`u.role != 'admin'`];
+    const params = [];
+
+    if (user_id) {
+      params.push(user_id);
+      conditions.push(`u.id = $${params.length}`);
+    }
+    if (month && year) {
+      params.push(month);
+      conditions.push(`EXTRACT(MONTH FROM a.date) = $${params.length}`);
+      params.push(year);
+      conditions.push(`EXTRACT(YEAR FROM a.date) = $${params.length}`);
+    }
+
+    const result = await query(
+      `SELECT
+         COUNT(a.*) FILTER (WHERE a.status = 'hadir') AS hadir,
+         COUNT(a.*) FILTER (WHERE a.status = 'terlambat') AS terlambat,
+         COUNT(a.*) FILTER (WHERE a.status = 'izin') AS izin,
+         COUNT(a.*) FILTER (WHERE a.status = 'alpha') AS alpha,
+         COUNT(a.*) AS total_record
+       FROM users u
+       JOIN attendance a ON a.user_id = u.id
+       WHERE ${conditions.join(' AND ')}`,
+      params
+    );
+
+    const row = result.rows[0];
+    const hadirGabungan = Number(row.hadir) + Number(row.terlambat);
+    const totalRecord = Number(row.total_record) || 0;
+
+    res.json({
+      hadir: Number(row.hadir),
+      terlambat: Number(row.terlambat),
+      izin: Number(row.izin),
+      alpha: Number(row.alpha),
+      total_record: totalRecord,
+      attendance_rate: totalRecord > 0 ? ((hadirGabungan / totalRecord) * 100).toFixed(1) : '0.0',
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// GET /api/stats/monthly-series -- breakdown per bulan, untuk bar/line chart.
+// Query: ?user_id= (kosongkan = gabungan semua pegawai)
+async function getMonthlySeries(req, res, next) {
+  try {
+    const { user_id } = req.query;
+    const conditions = [`u.role != 'admin'`];
+    const params = [];
+
+    if (user_id) {
+      params.push(user_id);
+      conditions.push(`u.id = $${params.length}`);
+    }
+
+    const result = await query(
+      `SELECT
+         EXTRACT(YEAR FROM a.date) AS year,
+         EXTRACT(MONTH FROM a.date) AS month,
+         COUNT(a.*) FILTER (WHERE a.status = 'hadir') AS hadir,
+         COUNT(a.*) FILTER (WHERE a.status = 'terlambat') AS terlambat,
+         COUNT(a.*) FILTER (WHERE a.status = 'izin') AS izin,
+         COUNT(a.*) FILTER (WHERE a.status = 'alpha') AS alpha
+       FROM users u
+       JOIN attendance a ON a.user_id = u.id
+       WHERE ${conditions.join(' AND ')}
+       GROUP BY 1, 2
+       ORDER BY 1, 2`,
+      params
+    );
+
+    res.json(result.rows.map((r) => ({
+      year: Number(r.year),
+      month: Number(r.month),
+      hadir: Number(r.hadir),
+      terlambat: Number(r.terlambat),
+      izin: Number(r.izin),
+      alpha: Number(r.alpha),
+    })));
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   getMyStats,
   getMyTrend,
   getOverview,
   getDepartmentStats,
   getRanking,
+  getBreakdown,
+  getMonthlySeries,
 };

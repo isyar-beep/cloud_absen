@@ -4,6 +4,7 @@ import { LogoutIcon } from './Icons';
 
 const navItems = [
   { to: '/admin', label: 'Dashboard' },
+  { to: '/admin/stats', label: 'Statistik' },
   { to: '/admin/history', label: 'Riwayat' },
   { to: '/admin/leaves', label: 'Pengajuan Izin' },
   { to: '/admin/users', label: 'Pengguna' },
