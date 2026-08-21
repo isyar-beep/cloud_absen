@@ -4,12 +4,15 @@ const router = express.Router();
 const { login, getProfile, changePassword, registerPushToken } = require('../controllers/authController');
 const { authenticate } = require('../middleware/auth');
 
-// Rate limit khusus login, lebih ketat dari limiter global,
-// untuk memperlambat percobaan tebak password (brute-force)
+// Rate limit khusus login untuk memperlambat percobaan tebak password.
+// skipSuccessfulRequests: hanya login GAGAL yang dihitung. Tanpa ini, satu
+// kantor yang berbagi satu IP publik akan saling mengunci di jam masuk --
+// 10 pegawai login normal sudah cukup memblokir sisanya.
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 menit
-  max: 10,
-  message: { message: 'Terlalu banyak percobaan login. Coba lagi dalam 15 menit.' },
+  max: 20,
+  skipSuccessfulRequests: true,
+  message: { message: 'Terlalu banyak percobaan login gagal. Coba lagi dalam 15 menit.' },
 });
 
 router.post('/login', loginLimiter, login);

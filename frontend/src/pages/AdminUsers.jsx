@@ -31,6 +31,10 @@ export default function AdminUsers() {
   const [form, setForm] = useState({ name: '', email: '', password: '', role: 'staff', shift_id: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  // Dibedakan dari `error` (kegagalan form) -- ini kegagalan memuat daftar.
+  // Tanpa ini, request yang gagal cuma menampilkan tabel kosong dan terlihat
+  // seolah semua akun terhapus.
+  const [loadError, setLoadError] = useState('');
 
   useEffect(() => {
     fetchUsers();
@@ -38,8 +42,16 @@ export default function AdminUsers() {
   }, []);
 
   async function fetchUsers() {
-    const res = await api.get('/users');
-    setUsers(res.data);
+    try {
+      const res = await api.get('/users');
+      setUsers(res.data);
+      setLoadError('');
+    } catch (err) {
+      setLoadError(
+        err.response?.data?.message ||
+        'Gagal memuat daftar pengguna. Periksa koneksi ke server, lalu muat ulang halaman.'
+      );
+    }
   }
 
   async function handleCreate(e) {
@@ -95,6 +107,12 @@ export default function AdminUsers() {
             Tambah Pengguna
           </button>
         </div>
+
+        {loadError && (
+          <div className="flex items-start gap-2 text-sm text-red-700 bg-red-50 border border-red-100 rounded-xl px-4 py-3 mb-5">
+            {loadError}
+          </div>
+        )}
 
         {showForm && (
           <form onSubmit={handleCreate} className="bg-white rounded-2xl border border-gray-100 shadow-soft p-5 mb-6 space-y-4">

@@ -31,15 +31,10 @@ if (process.env.NODE_ENV === 'production') {
 // dari domain frontend yang berbeda (mis. app.domain.com vs api.domain.com).
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 
-// Keamanan dasar: batasi jumlah request untuk mencegah brute-force / spam
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 menit
-  max: 300,
-  message: { message: 'Terlalu banyak permintaan, coba lagi nanti.' },
-});
-app.use(limiter);
-
-// CORS: hanya domain frontend yang terdaftar yang boleh akses API
+// CORS harus didaftarkan SEBELUM rate limiter. Kalau urutannya terbalik,
+// balasan 429 dari limiter tidak membawa header CORS, sehingga browser
+// melaporkannya sebagai "blocked by CORS policy" dan pesan asli
+// ("Terlalu banyak permintaan") tidak pernah sampai ke pengguna.
 const allowedOrigins = (process.env.CORS_ORIGIN || '').split(',').map((o) => o.trim());
 app.use(
   cors({
@@ -47,6 +42,17 @@ app.use(
     credentials: true,
   })
 );
+
+// Keamanan dasar: batasi jumlah request untuk mencegah spam.
+// Batas dihitung per IP, dan di kantor SEMUA pegawai berbagi satu IP publik --
+// jadi angkanya harus cukup longgar untuk absensi massal di jam masuk,
+// ditambah dashboard admin yang menyegarkan data tiap 30 detik.
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 menit
+  max: 2000,
+  message: { message: 'Terlalu banyak permintaan, coba lagi nanti.' },
+});
+app.use(limiter);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
