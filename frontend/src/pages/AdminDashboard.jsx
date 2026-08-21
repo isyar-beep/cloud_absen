@@ -142,49 +142,52 @@ export default function AdminDashboard() {
         )}
 
         {/* Export laporan */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-soft p-5 mb-6 flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-3 mr-auto">
-            <div className="w-10 h-10 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-soft p-5 mb-6 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center shrink-0">
               <DownloadIcon className="w-5 h-5" />
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-sm font-semibold text-gray-900">Export Laporan Bulanan</p>
-              <p className="text-xs text-gray-500">Rekap & detail absensi seluruh pegawai</p>
+              <p className="text-xs text-gray-500 truncate">Rekap &amp; detail absensi seluruh pegawai</p>
             </div>
           </div>
-          <select
-            value={reportPeriod.month}
-            onChange={(e) => setReportPeriod({ ...reportPeriod, month: Number(e.target.value) })}
-            className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40"
-          >
-            {namaBulan.map((nama, i) => (
-              <option key={nama} value={i + 1}>{nama}</option>
-            ))}
-          </select>
-          <select
-            value={reportPeriod.year}
-            onChange={(e) => setReportPeriod({ ...reportPeriod, year: Number(e.target.value) })}
-            className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40"
-          >
-            {[0, 1, 2].map((offset) => {
-              const tahun = new Date().getFullYear() - offset;
-              return <option key={tahun} value={tahun}>{tahun}</option>;
-            })}
-          </select>
-          <button
-            onClick={() => downloadReport('excel')}
-            disabled={!!downloading}
-            className="text-sm bg-gradient-to-r from-primary-600 to-primary-700 text-white px-4 py-2 rounded-xl font-semibold shadow-glow transition hover:from-primary-500 hover:to-primary-600 disabled:opacity-50"
-          >
-            {downloading === 'excel' ? 'Mengunduh...' : 'Excel'}
-          </button>
-          <button
-            onClick={() => downloadReport('pdf')}
-            disabled={!!downloading}
-            className="text-sm bg-gray-900 text-white px-4 py-2 rounded-xl font-semibold transition hover:bg-gray-800 disabled:opacity-50"
-          >
-            {downloading === 'pdf' ? 'Mengunduh...' : 'PDF'}
-          </button>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              value={reportPeriod.month}
+              onChange={(e) => setReportPeriod({ ...reportPeriod, month: Number(e.target.value) })}
+              className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm transition focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/40"
+            >
+              {namaBulan.map((nama, i) => (
+                <option key={nama} value={i + 1}>{nama}</option>
+              ))}
+            </select>
+            <select
+              value={reportPeriod.year}
+              onChange={(e) => setReportPeriod({ ...reportPeriod, year: Number(e.target.value) })}
+              className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm transition focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/40"
+            >
+              {[0, 1, 2].map((offset) => {
+                const tahun = new Date().getFullYear() - offset;
+                return <option key={tahun} value={tahun}>{tahun}</option>;
+              })}
+            </select>
+            <button
+              onClick={() => downloadReport('excel')}
+              disabled={!!downloading}
+              className="text-sm bg-gradient-to-r from-primary-600 to-primary-700 text-white px-4 py-2 rounded-xl font-semibold shadow-glow transition hover:from-primary-500 hover:to-primary-600 disabled:opacity-50"
+            >
+              {downloading === 'excel' ? 'Mengunduh…' : 'Excel'}
+            </button>
+            <button
+              onClick={() => downloadReport('pdf')}
+              disabled={!!downloading}
+              className="text-sm bg-gray-900 text-white px-4 py-2 rounded-xl font-semibold transition hover:bg-gray-800 disabled:opacity-50"
+            >
+              {downloading === 'pdf' ? 'Mengunduh…' : 'PDF'}
+            </button>
+          </div>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-6">

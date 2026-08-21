@@ -46,7 +46,8 @@ export default function AdminHolidays() {
   }
 
   const inputClass =
-    'px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm transition focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/40';
+    'px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm transition focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/40 focus:border-primary-300';
+  const labelClass = 'block text-xs font-medium text-gray-500 mb-1.5';
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -78,20 +79,26 @@ export default function AdminHolidays() {
               </div>
             )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <input
-                required
-                type="date"
-                value={form.date}
-                onChange={(e) => setForm({ ...form, date: e.target.value })}
-                className={inputClass}
-              />
-              <input
-                required
-                placeholder="Nama (mis. Hari Kemerdekaan)"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className={inputClass}
-              />
+              <div>
+                <label className={labelClass}>Tanggal</label>
+                <input
+                  required
+                  type="date"
+                  value={form.date}
+                  onChange={(e) => setForm({ ...form, date: e.target.value })}
+                  className={`${inputClass} w-full`}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Keterangan</label>
+                <input
+                  required
+                  placeholder="mis. Hari Kemerdekaan"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  className={`${inputClass} w-full`}
+                />
+              </div>
             </div>
             <div className="flex gap-2">
               <button

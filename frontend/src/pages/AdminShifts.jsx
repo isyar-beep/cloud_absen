@@ -60,7 +60,8 @@ export default function AdminShifts() {
   }
 
   const inputClass =
-    'px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm transition focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/40';
+    'px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm transition focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/40 focus:border-primary-300';
+  const labelClass = 'block text-xs font-medium text-gray-500 mb-1.5';
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -90,15 +91,18 @@ export default function AdminShifts() {
               </div>
             )}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <input
-                required
-                placeholder="Nama shift (mis. Shift Pagi)"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className={inputClass}
-              />
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Jam masuk</label>
+                <label className={labelClass}>Nama shift</label>
+                <input
+                  required
+                  placeholder="mis. Shift Pagi"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  className={`${inputClass} w-full`}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Jam masuk</label>
                 <input
                   required
                   type="time"
@@ -108,7 +112,7 @@ export default function AdminShifts() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Jam pulang</label>
+                <label className={labelClass}>Jam pulang</label>
                 <input
                   required
                   type="time"

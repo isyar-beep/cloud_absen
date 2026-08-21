@@ -74,7 +74,8 @@ export default function AdminUsers() {
   }
 
   const inputClass =
-    'px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm transition focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/40';
+    'px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm transition focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/40 focus:border-primary-300';
+  const labelClass = 'block text-xs font-medium text-gray-500 mb-1.5';
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -104,47 +105,62 @@ export default function AdminUsers() {
               </div>
             )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <input
-                required
-                placeholder="Nama lengkap"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className={inputClass}
-              />
-              <input
-                required
-                type="email"
-                placeholder="Email"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                className={inputClass}
-              />
-              <input
-                required
-                type="password"
-                placeholder="Password sementara"
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                className={inputClass}
-              />
-              <select
-                value={form.role}
-                onChange={(e) => setForm({ ...form, role: e.target.value })}
-                className={inputClass}
-              >
-                <option value="staff">Staff</option>
-                <option value="admin">Admin</option>
-              </select>
-              <select
-                value={form.shift_id}
-                onChange={(e) => setForm({ ...form, shift_id: e.target.value })}
-                className={inputClass}
-              >
-                <option value="">Tanpa shift (default 08:00)</option>
-                {shifts.map((s) => (
-                  <option key={s.id} value={s.id}>{s.name} ({s.start_time}-{s.end_time})</option>
-                ))}
-              </select>
+              <div>
+                <label className={labelClass}>Nama lengkap</label>
+                <input
+                  required
+                  placeholder="mis. Budi Santoso"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  className={`${inputClass} w-full`}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Email</label>
+                <input
+                  required
+                  type="email"
+                  placeholder="nama@company.com"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  className={`${inputClass} w-full`}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Password sementara</label>
+                <input
+                  required
+                  type="password"
+                  placeholder="Minimal 6 karakter"
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  className={`${inputClass} w-full`}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Role</label>
+                <select
+                  value={form.role}
+                  onChange={(e) => setForm({ ...form, role: e.target.value })}
+                  className={`${inputClass} w-full`}
+                >
+                  <option value="staff">Staff</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+              <div className="sm:col-span-2">
+                <label className={labelClass}>Shift kerja</label>
+                <select
+                  value={form.shift_id}
+                  onChange={(e) => setForm({ ...form, shift_id: e.target.value })}
+                  className={`${inputClass} w-full`}
+                >
+                  <option value="">Tanpa shift (batas telat default 08:00)</option>
+                  {shifts.map((s) => (
+                    <option key={s.id} value={s.id}>{s.name} ({s.start_time}–{s.end_time})</option>
+                  ))}
+                </select>
+              </div>
             </div>
             <div className="flex gap-2">
               <button
