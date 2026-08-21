@@ -48,9 +48,11 @@ async function login(req, res, next) {
 async function getProfile(req, res, next) {
   try {
     const result = await query(
-      `SELECT u.id, u.name, u.email, u.role, u.avatar_url, d.name AS department
+      `SELECT u.id, u.name, u.email, u.role, u.avatar_url, d.name AS department,
+              s.name AS shift_name, s.start_time AS shift_start, s.end_time AS shift_end
        FROM users u
        LEFT JOIN departments d ON u.department_id = d.id
+       LEFT JOIN shifts s ON u.shift_id = s.id
        WHERE u.id = $1`,
       [req.user.id]
     );
@@ -59,7 +61,12 @@ async function getProfile(req, res, next) {
       return res.status(404).json({ message: 'Pengguna tidak ditemukan.' });
     }
 
-    res.json(result.rows[0]);
+    const profile = result.rows[0];
+    res.json({
+      ...profile,
+      shift_start: profile.shift_start?.slice(0, 5) || null,
+      shift_end: profile.shift_end?.slice(0, 5) || null,
+    });
   } catch (err) {
     next(err);
   }

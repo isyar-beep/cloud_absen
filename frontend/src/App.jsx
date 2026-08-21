@@ -7,6 +7,7 @@ import History from './pages/History';
 import AdminHistory from './pages/AdminHistory';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminUsers from './pages/AdminUsers';
+import AdminShifts from './pages/AdminShifts';
 import AdminLeaves from './pages/AdminLeaves';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -63,6 +64,14 @@ export default function App() {
           element={
             <ProtectedRoute allowedRole="admin">
               <AdminUsers />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/shifts"
+          element={
+            <ProtectedRoute allowedRole="admin">
+              <AdminShifts />
             </ProtectedRoute>
           }
         />

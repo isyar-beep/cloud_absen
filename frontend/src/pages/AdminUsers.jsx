@@ -26,13 +26,15 @@ function InitialAvatar({ name }) {
 
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);
+  const [shifts, setShifts] = useState([]);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'staff' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'staff', shift_id: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetchUsers();
+    api.get('/shifts').then((res) => setShifts(res.data)).catch(console.error);
   }, []);
 
   async function fetchUsers() {
@@ -45,8 +47,8 @@ export default function AdminUsers() {
     setError('');
     setLoading(true);
     try {
-      await api.post('/users', form);
-      setForm({ name: '', email: '', password: '', role: 'staff' });
+      await api.post('/users', { ...form, shift_id: form.shift_id || null });
+      setForm({ name: '', email: '', password: '', role: 'staff', shift_id: '' });
       setShowForm(false);
       fetchUsers();
     } catch (err) {
@@ -63,6 +65,11 @@ export default function AdminUsers() {
     } else {
       await api.put(`/users/${userItem.id}`, { is_active: true });
     }
+    fetchUsers();
+  }
+
+  async function changeShift(userItem, shiftId) {
+    await api.put(`/users/${userItem.id}`, { shift_id: shiftId ? Number(shiftId) : null });
     fetchUsers();
   }
 
@@ -128,6 +135,16 @@ export default function AdminUsers() {
                 <option value="staff">Staff</option>
                 <option value="admin">Admin</option>
               </select>
+              <select
+                value={form.shift_id}
+                onChange={(e) => setForm({ ...form, shift_id: e.target.value })}
+                className={inputClass}
+              >
+                <option value="">Tanpa shift (default 08:00)</option>
+                {shifts.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name} ({s.start_time}-{s.end_time})</option>
+                ))}
+              </select>
             </div>
             <div className="flex gap-2">
               <button
@@ -154,6 +171,7 @@ export default function AdminUsers() {
               <tr className="border-b border-gray-100">
                 <th className="text-left px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Pengguna</th>
                 <th className="text-left px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Role</th>
+                <th className="text-left px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Shift</th>
                 <th className="text-left px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Status</th>
                 <th className="text-right px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Aksi</th>
               </tr>
@@ -178,6 +196,18 @@ export default function AdminUsers() {
                     }`}>
                       {u.role === 'admin' ? 'Admin' : 'Staff'}
                     </span>
+                  </td>
+                  <td className="px-5 py-3.5">
+                    <select
+                      value={u.shift_id || ''}
+                      onChange={(e) => changeShift(u, e.target.value)}
+                      className="text-xs bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500/40"
+                    >
+                      <option value="">Tanpa shift (08:00)</option>
+                      {shifts.map((s) => (
+                        <option key={s.id} value={s.id}>{s.name} ({s.start_time}-{s.end_time})</option>
+                      ))}
+                    </select>
                   </td>
                   <td className="px-5 py-3.5">
                     <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full ring-1 ring-inset ${

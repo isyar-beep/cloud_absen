@@ -16,12 +16,18 @@ async function getAllUsers(req, res, next) {
   try {
     const result = await query(
       `SELECT u.id, u.name, u.email, u.role, u.is_active, u.avatar_url,
-              d.id AS department_id, d.name AS department
+              d.id AS department_id, d.name AS department,
+              s.id AS shift_id, s.name AS shift_name, s.start_time AS shift_start, s.end_time AS shift_end
        FROM users u
        LEFT JOIN departments d ON u.department_id = d.id
+       LEFT JOIN shifts s ON u.shift_id = s.id
        ORDER BY u.name ASC`
     );
-    res.json(result.rows);
+    res.json(result.rows.map((u) => ({
+      ...u,
+      shift_start: u.shift_start?.slice(0, 5) || null,
+      shift_end: u.shift_end?.slice(0, 5) || null,
+    })));
   } catch (err) {
     next(err);
   }
@@ -32,8 +38,11 @@ async function getUserById(req, res, next) {
   try {
     const result = await query(
       `SELECT u.id, u.name, u.email, u.role, u.is_active,
-              d.id AS department_id, d.name AS department
-       FROM users u LEFT JOIN departments d ON u.department_id = d.id
+              d.id AS department_id, d.name AS department,
+              s.id AS shift_id, s.name AS shift_name
+       FROM users u
+       LEFT JOIN departments d ON u.department_id = d.id
+       LEFT JOIN shifts s ON u.shift_id = s.id
        WHERE u.id = $1`,
       [req.params.id]
     );
@@ -49,7 +58,7 @@ async function getUserById(req, res, next) {
 // POST /api/users -- admin membuat akun pengguna baru
 async function createUser(req, res, next) {
   try {
-    const { name, email, password, role, department_id } = req.body;
+    const { name, email, password, role, department_id, shift_id } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'Nama, email, dan password wajib diisi.' });
@@ -69,10 +78,10 @@ async function createUser(req, res, next) {
     const passwordHash = await bcrypt.hash(password, 10);
 
     const result = await query(
-      `INSERT INTO users (name, email, password_hash, role, department_id)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING id, name, email, role, department_id`,
-      [name, email, passwordHash, role || 'staff', department_id || null]
+      `INSERT INTO users (name, email, password_hash, role, department_id, shift_id)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING id, name, email, role, department_id, shift_id`,
+      [name, email, passwordHash, role || 'staff', department_id || null, shift_id || null]
     );
 
     res.status(201).json({ message: 'Pengguna berhasil dibuat.', user: result.rows[0] });
@@ -84,11 +93,15 @@ async function createUser(req, res, next) {
 // PUT /api/users/:id -- admin edit data pengguna
 async function updateUser(req, res, next) {
   try {
-    const { name, email, role, department_id, is_active } = req.body;
+    const { name, email, role, department_id, is_active, shift_id } = req.body;
 
     if (role && !['admin', 'staff'].includes(role)) {
       return res.status(400).json({ message: "Role harus 'admin' atau 'staff'." });
     }
+
+    // shift_id boleh sengaja di-null-kan (lepas shift), jadi tidak pakai COALESCE --
+    // hanya diubah kalau key-nya memang dikirim di body.
+    const ubahShift = 'shift_id' in req.body;
 
     const result = await query(
       `UPDATE users
@@ -97,10 +110,11 @@ async function updateUser(req, res, next) {
            role = COALESCE($3, role),
            department_id = COALESCE($4, department_id),
            is_active = COALESCE($5, is_active),
+           shift_id = CASE WHEN $6 THEN $7 ELSE shift_id END,
            updated_at = NOW()
-       WHERE id = $6
-       RETURNING id, name, email, role, department_id, is_active`,
-      [name, email, role, department_id, is_active, req.params.id]
+       WHERE id = $8
+       RETURNING id, name, email, role, department_id, is_active, shift_id`,
+      [name, email, role, department_id, is_active, ubahShift, shift_id, req.params.id]
     );
 
     if (result.rows.length === 0) {

@@ -14,6 +14,7 @@ const reportRoutes = require('./routes/reportRoutes');
 const leaveRoutes = require('./routes/leaveRoutes');
 const departmentRoutes = require('./routes/departmentRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const shiftRoutes = require('./routes/shiftRoutes');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -66,6 +67,7 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/leaves', leaveRoutes);
 app.use('/api/departments', departmentRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/shifts', shiftRoutes);
 
 // 404 handler
 app.use((req, res) => {

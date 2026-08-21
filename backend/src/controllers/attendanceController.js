@@ -2,7 +2,7 @@ const { query } = require('../config/db');
 const { uploadPhotoToStorage } = require('../utils/uploadPhoto');
 const { todayLocal } = require('../utils/date');
 
-const JAM_MASUK_BATAS = '08:00:00'; // lewat dari jam ini dianggap terlambat (zona waktu server, set env TZ)
+const JAM_MASUK_BATAS_DEFAULT = '08:00:00'; // dipakai kalau pegawai belum di-assign ke shift manapun
 
 // POST /api/attendance/check-in -- pengguna absen masuk dengan foto
 async function checkIn(req, res, next) {
@@ -26,9 +26,16 @@ async function checkIn(req, res, next) {
 
     const photoUrl = await uploadPhotoToStorage(req.file.buffer, req.file.mimetype, 'checkin');
 
+    // Batas telat mengikuti jam masuk shift pegawai (kalau belum di-assign shift, pakai default 08:00)
+    const shiftResult = await query(
+      `SELECT s.start_time FROM users u LEFT JOIN shifts s ON u.shift_id = s.id WHERE u.id = $1`,
+      [userId]
+    );
+    const jamMasukBatas = shiftResult.rows[0]?.start_time || JAM_MASUK_BATAS_DEFAULT;
+
     const now = new Date();
     const currentTime = now.toTimeString().slice(0, 8);
-    const status = currentTime > JAM_MASUK_BATAS ? 'terlambat' : 'hadir';
+    const status = currentTime > jamMasukBatas ? 'terlambat' : 'hadir';
 
     const result = await query(
       `INSERT INTO attendance (user_id, date, check_in_time, status, photo_in_url, latitude, longitude)

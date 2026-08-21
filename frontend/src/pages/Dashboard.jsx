@@ -14,6 +14,7 @@ export default function Dashboard() {
   const [stats, setStats] = useState(null);
   const [trend, setTrend] = useState([]);
   const [history, setHistory] = useState([]);
+  const [profile, setProfile] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -21,12 +22,14 @@ export default function Dashboard() {
 
   async function fetchData() {
     try {
-      const [statsRes, trendRes, historyRes] = await Promise.all([
+      const [statsRes, trendRes, historyRes, profileRes] = await Promise.all([
         api.get('/stats/me'),
         api.get('/stats/me/trend'),
         api.get('/attendance/history?limit=5'),
+        api.get('/auth/me'),
       ]);
       setStats(statsRes.data);
+      setProfile(profileRes.data);
       setTrend(
         trendRes.data.map((d) => ({
           date: new Date(d.date).getDate(),
@@ -66,6 +69,11 @@ export default function Dashboard() {
             <div>
               <p className="text-sm text-primary-100">{tanggalHariIni}</p>
               <p className="text-xl font-bold text-white mt-0.5">Halo, {user?.name} 👋</p>
+              {profile?.shift_name && (
+                <p className="text-xs text-primary-100/90 mt-1">
+                  {profile.shift_name} · {profile.shift_start}–{profile.shift_end}
+                </p>
+              )}
             </div>
             <button
               onClick={handleLogout}

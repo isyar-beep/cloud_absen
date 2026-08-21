@@ -7,6 +7,7 @@ const navItems = [
   { to: '/admin/history', label: 'Riwayat' },
   { to: '/admin/leaves', label: 'Pengajuan Izin' },
   { to: '/admin/users', label: 'Pengguna' },
+  { to: '/admin/shifts', label: 'Shift' },
 ];
 
 // Header admin: sticky dengan efek blur, menandai menu yang sedang aktif
