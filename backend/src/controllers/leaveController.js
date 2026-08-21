@@ -116,13 +116,16 @@ async function reviewLeave(req, res, next) {
     const leave = leaveResult.rows[0];
 
     if (status === 'approved') {
-      // generate_series membuat satu baris attendance per tanggal izin
+      // generate_series membuat satu baris attendance per tanggal izin.
+      // WHERE di DO UPDATE mencegah izin menimpa hari yang sudah punya absensi
+      // asli (sudah check-in) -- kalau tumpang tindih, absensi asli yang menang.
       await client.query(
         `INSERT INTO attendance (user_id, date, status, reason)
          SELECT $1, d::date, 'izin', $2
          FROM generate_series($3::date, $4::date, '1 day') AS d
          ON CONFLICT (user_id, date)
-         DO UPDATE SET status = 'izin', reason = EXCLUDED.reason`,
+         DO UPDATE SET status = 'izin', reason = EXCLUDED.reason
+         WHERE attendance.check_in_time IS NULL`,
         [leave.user_id, leave.reason, leave.start_date, leave.end_date]
       );
     }
