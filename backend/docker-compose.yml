@@ -23,6 +23,8 @@ services:
       - ./database/schema.sql:/docker-entrypoint-initdb.d/10-schema.sql
       - ./database/migrations/001_leave_requests.sql:/docker-entrypoint-initdb.d/20-leave-requests.sql
       - ./database/migrations/002_push_token.sql:/docker-entrypoint-initdb.d/30-push-token.sql
+      - ./database/migrations/003_shifts.sql:/docker-entrypoint-initdb.d/40-shifts.sql
+      - ./database/migrations/004_holidays.sql:/docker-entrypoint-initdb.d/50-holidays.sql
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-cloud_absen}']
       interval: 5s
