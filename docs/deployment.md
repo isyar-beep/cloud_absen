@@ -240,6 +240,15 @@ Pola yang sama juga dipakai untuk push notification pengingat belum check-in
 0 8 * * 1-5 curl -s -X POST https://api.perusahaan.com/api/notifications/checkin-reminder -H "Authorization: Bearer TOKEN"
 ```
 
+Pola yang sama juga dipakai untuk menandai "alpha" otomatis (pegawai yang tidak
+absen & tidak izin di hari kerja). Jalankan sekali sehari, setelah tengah malam,
+supaya menandai hari SEBELUMNYA yang sudah pasti selesai (endpoint ini default
+ke kemarin kalau tanggal tidak dikirim eksplisit):
+
+```cron
+5 0 * * * curl -s -X POST https://api.perusahaan.com/api/attendance/mark-alpha -H "Authorization: Bearer TOKEN"
+```
+
 ## Troubleshooting Production
 
 **API tidak bisa diakses dari frontend (error CORS)**

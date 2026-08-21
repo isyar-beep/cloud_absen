@@ -9,6 +9,7 @@ const {
   getUserHistory,
   getAllHistory,
   updateStatus,
+  markAlpha,
 } = require('../controllers/attendanceController');
 const { authenticate, authorize } = require('../middleware/auth');
 const upload = require('../middleware/upload');
@@ -24,5 +25,6 @@ router.get('/today-all', authenticate, authorize('admin'), getTodayAll);
 router.get('/all', authenticate, authorize('admin'), getAllHistory);
 router.get('/user/:userId', authenticate, authorize('admin'), getUserHistory);
 router.put('/:id/status', authenticate, authorize('admin'), updateStatus);
+router.post('/mark-alpha', authenticate, authorize('admin'), markAlpha);
 
 module.exports = router;

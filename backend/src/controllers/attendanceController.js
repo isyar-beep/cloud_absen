@@ -250,6 +250,42 @@ async function updateStatus(req, res, next) {
   }
 }
 
+// POST /api/attendance/mark-alpha -- tandai pegawai yang tidak absen & tidak izin
+// sebagai "alpha" untuk satu tanggal (default: kemarin). Melewati weekend & hari
+// libur otomatis. Dipanggil admin manual, atau terjadwal dari cron VPS tiap malam:
+//   curl -X POST -H "Authorization: Bearer <token-admin>" .../api/attendance/mark-alpha
+async function markAlpha(req, res, next) {
+  try {
+    // Default ke kemarin -- menandai "hari ini" alpha sebelum harinya berakhir
+    // akan salah kalau pegawai baru absen di sore/malam hari.
+    const kemarin = new Date();
+    kemarin.setDate(kemarin.getDate() - 1);
+    const y = kemarin.getFullYear();
+    const m = String(kemarin.getMonth() + 1).padStart(2, '0');
+    const d = String(kemarin.getDate()).padStart(2, '0');
+    const targetDate = req.body?.date || `${y}-${m}-${d}`;
+
+    const result = await query(
+      `INSERT INTO attendance (user_id, date, status)
+       SELECT u.id, $1::date, 'alpha'
+       FROM users u
+       WHERE u.role != 'admin' AND u.is_active = TRUE
+         AND NOT EXISTS (SELECT 1 FROM attendance a WHERE a.user_id = u.id AND a.date = $1::date)
+         AND EXTRACT(DOW FROM $1::date) NOT IN (0, 6)
+         AND NOT EXISTS (SELECT 1 FROM holidays h WHERE h.date = $1::date)
+       RETURNING user_id`,
+      [targetDate]
+    );
+
+    res.json({
+      message: `${result.rows.length} pegawai ditandai alpha untuk tanggal ${targetDate}.`,
+      data: { tanggal: targetDate, jumlah: result.rows.length },
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   checkIn,
   checkOut,
@@ -259,4 +295,5 @@ module.exports = {
   getUserHistory,
   getAllHistory,
   updateStatus,
+  markAlpha,
 };
