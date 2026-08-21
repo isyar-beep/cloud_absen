@@ -208,6 +208,14 @@ Setelah menjalankan `npm run seed` di backend:
   (opsional, aktif jika kredensial SMTP diisi di `.env`)
 - Notifikasi push ke mobile app (Expo Push Notifications): saat izin
   di-approve/reject, pengingat belum check-in, dan peringatan attendance rendah
+- Shift kerja per pegawai (admin atur jam masuk/pulang tiap shift; deteksi
+  telat otomatis mengikuti jam shift masing-masing pegawai, bukan jam tetap)
+- Kelola hari libur/cuti bersama (Sabtu-Minggu otomatis bukan hari kerja)
+- Alpha otomatis: pegawai yang tidak absen & tidak izin di hari kerja
+  ditandai otomatis (terjadwal via cron, melewati weekend & hari libur)
+- Statistik & grafik lengkap untuk admin: pilih pegawai (semua/individual),
+  pilih periode (bulan tertentu/riwayat keseluruhan), pilih tampilan
+  (bar chart, line chart, pie chart, atau tabel)
 
 ---
 
