@@ -16,7 +16,9 @@ export const useAuthStore = create((set) => ({
     const token = await AsyncStorage.getItem('token');
     if (userStr && token) {
       set({ user: JSON.parse(userStr), token });
+      return token;
     }
+    return null;
   },
 
   logout: async () => {

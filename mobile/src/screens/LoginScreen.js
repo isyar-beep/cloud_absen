@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import api from '../services/api';
 import { useAuthStore } from '../store/authStore';
+import { registerForPushNotifications } from '../services/notifications';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
@@ -18,6 +19,7 @@ export default function LoginScreen({ navigation }) {
     try {
       const res = await api.post('/auth/login', { email, password });
       await login(res.data.user, res.data.token);
+      registerForPushNotifications(); // best-effort, tidak menunda navigasi
       navigation.replace('Dashboard');
     } catch (err) {
       Alert.alert('Gagal login', err.response?.data?.message || 'Terjadi kesalahan.');

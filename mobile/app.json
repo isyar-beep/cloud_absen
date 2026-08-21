@@ -15,7 +15,8 @@
         {
           "cameraPermission": "Aplikasi memerlukan akses kamera untuk mengambil foto absensi."
         }
-      ]
+      ],
+      "expo-notifications"
     ]
   }
 }

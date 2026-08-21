@@ -1,4 +1,5 @@
 const { pool, query } = require('../config/db');
+const { sendPushNotifications } = require('../utils/pushNotification');
 
 // POST /api/leaves -- pegawai mengajukan izin
 async function createLeave(req, res, next) {
@@ -138,6 +139,27 @@ async function reviewLeave(req, res, next) {
     );
 
     await client.query('COMMIT');
+
+    // Kirim push notification ke pegawai (best-effort -- kegagalan tidak menggagalkan review)
+    try {
+      const userResult = await query('SELECT push_token FROM users WHERE id = $1', [leave.user_id]);
+      const pushToken = userResult.rows[0]?.push_token;
+      if (pushToken) {
+        await sendPushNotifications([
+          {
+            to: pushToken,
+            title: status === 'approved' ? 'Pengajuan Izin Disetujui' : 'Pengajuan Izin Ditolak',
+            body:
+              status === 'approved'
+                ? `Izin Anda (${leave.start_date} s/d ${leave.end_date}) telah disetujui.`
+                : `Izin Anda (${leave.start_date} s/d ${leave.end_date}) ditolak.${admin_note ? ` Catatan: ${admin_note}` : ''}`,
+            data: { type: 'leave_review', leaveId: leave.id, status },
+          },
+        ]);
+      }
+    } catch (pushErr) {
+      console.error('Gagal kirim push notification review izin:', pushErr.message);
+    }
 
     res.json({
       message: status === 'approved' ? 'Pengajuan izin disetujui.' : 'Pengajuan izin ditolak.',

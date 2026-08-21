@@ -1,5 +1,7 @@
 const { query } = require('../config/db');
 const { transporter, fromAddress } = require('../config/mailer');
+const { sendPushNotifications } = require('../utils/pushNotification');
+const { todayLocal } = require('../utils/date');
 
 const NAMA_BULAN = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -25,7 +27,7 @@ async function sendLowAttendanceWarning(req, res, next) {
 
     // Pegawai aktif dengan attendance rate di bawah ambang (minimal punya 1 record)
     const result = await query(
-      `SELECT u.id, u.name, u.email,
+      `SELECT u.id, u.name, u.email, u.push_token,
               COUNT(a.*) FILTER (WHERE a.status IN ('hadir','terlambat')) AS hadir,
               COUNT(a.*) AS total_record
        FROM users u
@@ -63,6 +65,22 @@ async function sendLowAttendanceWarning(req, res, next) {
         console.error(`Gagal kirim email ke ${row.email}:`, mailErr.message);
         gagal.push({ id: row.id, name: row.name, email: row.email });
       }
+
+      // Push notification (best-effort, terpisah dari status pengiriman email)
+      if (row.push_token) {
+        try {
+          await sendPushNotifications([
+            {
+              to: row.push_token,
+              title: 'Peringatan Kehadiran',
+              body: `Tingkat kehadiran Anda periode ${periode} tercatat ${rate}%, di bawah batas minimum ${threshold}%.`,
+              data: { type: 'low_attendance', periode },
+            },
+          ]);
+        } catch (pushErr) {
+          console.error(`Gagal kirim push ke user ${row.id}:`, pushErr.message);
+        }
+      }
     }
 
     // Catat aksi untuk audit
@@ -80,4 +98,45 @@ async function sendLowAttendanceWarning(req, res, next) {
   }
 }
 
-module.exports = { sendLowAttendanceWarning };
+// POST /api/notifications/checkin-reminder -- admin kirim push reminder ke
+// pegawai yang belum check-in hari ini (dipanggil manual, atau terjadwal dari
+// cron VPS mirip low-attendance, mis. jam 08:00 setiap hari kerja).
+async function sendCheckinReminder(req, res, next) {
+  try {
+    const today = todayLocal();
+
+    const result = await query(
+      `SELECT u.id, u.name, u.push_token
+       FROM users u
+       LEFT JOIN attendance a ON a.user_id = u.id AND a.date = $1
+       WHERE u.role != 'admin' AND u.is_active = TRUE
+         AND u.push_token IS NOT NULL
+         AND (a.id IS NULL OR a.check_in_time IS NULL)`,
+      [today]
+    );
+
+    if (result.rows.length === 0) {
+      return res.json({ message: 'Tidak ada pegawai yang perlu diingatkan.', data: { terkirim: 0 } });
+    }
+
+    const messages = result.rows.map((row) => ({
+      to: row.push_token,
+      title: 'Pengingat Absensi',
+      body: `Halo ${row.name}, jangan lupa check-in hari ini.`,
+      data: { type: 'checkin_reminder' },
+    }));
+
+    const { sent } = await sendPushNotifications(messages);
+
+    await query(
+      `INSERT INTO admin_logs (admin_id, action, detail) VALUES ($1, 'send_checkin_reminder', $2)`,
+      [req.user.id, `${sent} pegawai diingatkan untuk check-in (${today})`]
+    );
+
+    res.json({ message: `Pengingat terkirim ke ${sent} pegawai.`, data: { terkirim: sent } });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { sendLowAttendanceWarning, sendCheckinReminder };

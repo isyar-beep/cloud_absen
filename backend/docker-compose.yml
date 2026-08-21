@@ -22,6 +22,7 @@ services:
       # docker exec -i cloud_absen_db psql -U postgres -d cloud_absen < database/migrations/001_leave_requests.sql
       - ./database/schema.sql:/docker-entrypoint-initdb.d/10-schema.sql
       - ./database/migrations/001_leave_requests.sql:/docker-entrypoint-initdb.d/20-leave-requests.sql
+      - ./database/migrations/002_push_token.sql:/docker-entrypoint-initdb.d/30-push-token.sql
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-cloud_absen}']
       interval: 5s

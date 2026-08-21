@@ -1,7 +1,7 @@
 const express = require('express');
 const rateLimit = require('express-rate-limit');
 const router = express.Router();
-const { login, getProfile, changePassword } = require('../controllers/authController');
+const { login, getProfile, changePassword, registerPushToken } = require('../controllers/authController');
 const { authenticate } = require('../middleware/auth');
 
 // Rate limit khusus login, lebih ketat dari limiter global,
@@ -15,5 +15,6 @@ const loginLimiter = rateLimit({
 router.post('/login', loginLimiter, login);
 router.get('/me', authenticate, getProfile);
 router.post('/change-password', authenticate, changePassword);
+router.put('/push-token', authenticate, registerPushToken);
 
 module.exports = router;

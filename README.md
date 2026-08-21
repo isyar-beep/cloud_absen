@@ -206,6 +206,8 @@ Setelah menjalankan `npm run seed` di backend:
   tanggal/status/departemen (admin)
 - Notifikasi email peringatan untuk pegawai dengan attendance rendah
   (opsional, aktif jika kredensial SMTP diisi di `.env`)
+- Notifikasi push ke mobile app (Expo Push Notifications): saat izin
+  di-approve/reject, pengingat belum check-in, dan peringatan attendance rendah
 
 ---
 
@@ -214,9 +216,45 @@ Setelah menjalankan `npm run seed` di backend:
 - [x] Export laporan ke Excel/PDF
 - [x] Notifikasi email untuk pegawai dengan attendance rendah
 - [x] Fitur pengajuan izin terintegrasi (bukan hanya set manual oleh admin)
-- [ ] Notifikasi push (mobile)
+- [x] Notifikasi push (mobile)
 - [ ] Dark mode di web & mobile
 - [ ] Multi-bahasa (ID/EN)
+
+---
+
+## 9. Notifikasi Push (Mobile)
+
+Dipakai untuk 3 hal: izin di-approve/reject, pengingat belum check-in, dan
+peringatan attendance rendah. Pakai [Expo Push Notifications](https://docs.expo.dev/push-notifications/overview/) —
+gratis, tanpa kredensial tambahan di backend.
+
+**Setup sekali di project mobile** (supaya push token bisa diterbitkan):
+```bash
+cd mobile
+npm install -g eas-cli
+eas login       # buat akun gratis di expo.dev kalau belum punya
+eas init         # otomatis mengisi extra.eas.projectId di app.json
+```
+Setelah itu, saat pegawai login di app dan mengizinkan notifikasi, push token
+otomatis terdaftar ke backend (`PUT /api/auth/push-token`).
+
+**Trigger otomatis:**
+- Approve/reject izin — langsung terkirim saat admin mereview (`PUT /api/leaves/:id/review`)
+
+**Trigger manual/terjadwal admin** (mirip pola `low-attendance`, bisa dipanggil dari crontab):
+```bash
+# Pengingat belum check-in (mis. jam 08:00 tiap hari kerja)
+curl -X POST https://api.perusahaan.com/api/notifications/checkin-reminder \
+  -H "Authorization: Bearer TOKEN"
+
+# Peringatan attendance rendah (sekarang juga kirim push, selain email)
+curl -X POST https://api.perusahaan.com/api/notifications/low-attendance \
+  -H "Authorization: Bearer TOKEN"
+```
+
+Pegawai yang belum pernah login di mobile app (belum punya push token) otomatis
+dilewati — tidak ada error, cuma tidak menerima notifikasi push (tetap dapat
+email untuk peringatan attendance rendah kalau SMTP dikonfigurasi).
 
 ---
 

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import api from '../services/api';
 import { useAuthStore } from '../store/authStore';
+import { unregisterPushToken } from '../services/notifications';
 
 export default function DashboardScreen({ navigation }) {
   const { user, logout } = useAuthStore();
@@ -28,6 +29,7 @@ export default function DashboardScreen({ navigation }) {
   }
 
   async function handleLogout() {
+    await unregisterPushToken(); // sebelum token JWT dihapus, supaya request masih terautentikasi
     await logout();
     navigation.replace('Login');
   }

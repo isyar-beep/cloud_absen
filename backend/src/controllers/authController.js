@@ -97,4 +97,25 @@ async function changePassword(req, res, next) {
   }
 }
 
-module.exports = { login, getProfile, changePassword };
+// PUT /api/auth/push-token -- simpan/update Expo push token milik user yang login.
+// Dipanggil dari mobile app setelah izin notifikasi diberikan.
+async function registerPushToken(req, res, next) {
+  try {
+    const { push_token } = req.body;
+
+    if (push_token !== null && (!push_token || typeof push_token !== 'string')) {
+      return res.status(400).json({ message: 'push_token wajib diisi (atau null untuk menghapus).' });
+    }
+
+    await query('UPDATE users SET push_token = $1, updated_at = NOW() WHERE id = $2', [
+      push_token,
+      req.user.id,
+    ]);
+
+    res.json({ message: 'Push token tersimpan.' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { login, getProfile, changePassword, registerPushToken };

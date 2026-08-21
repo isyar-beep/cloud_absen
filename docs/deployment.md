@@ -233,6 +233,13 @@ atau buat script kecil yang login dulu):
 0 8 1 * * curl -s -X POST https://api.perusahaan.com/api/notifications/low-attendance -H "Authorization: Bearer TOKEN"
 ```
 
+Pola yang sama juga dipakai untuk push notification pengingat belum check-in
+(kirim ke pegawai yang belum absen sampai jam tertentu, lihat README bagian 9):
+
+```cron
+0 8 * * 1-5 curl -s -X POST https://api.perusahaan.com/api/notifications/checkin-reminder -H "Authorization: Bearer TOKEN"
+```
+
 ## Troubleshooting Production
 
 **API tidak bisa diakses dari frontend (error CORS)**

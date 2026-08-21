@@ -8,6 +8,7 @@ import CameraScreen from './src/screens/CameraScreen';
 import LeavesScreen from './src/screens/LeavesScreen';
 import HistoryScreen from './src/screens/HistoryScreen';
 import { useAuthStore } from './src/store/authStore';
+import { registerForPushNotifications } from './src/services/notifications';
 
 const Stack = createNativeStackNavigator();
 
@@ -16,7 +17,9 @@ export default function App() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    restoreSession().finally(() => setReady(true));
+    restoreSession().then((restoredToken) => {
+      if (restoredToken) registerForPushNotifications();
+    }).finally(() => setReady(true));
   }, []);
 
   if (!ready) return null;
