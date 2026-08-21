@@ -39,6 +39,18 @@ export default function AdminDashboard() {
   const [sendingWarning, setSendingWarning] = useState(false);
   const [warningResult, setWarningResult] = useState('');
 
+  // Tindakan admin: tandai alpha & kirim pengingat absen.
+  // Default tanggal alpha = kemarin, karena hari berjalan belum tentu selesai.
+  const [alphaDate, setAlphaDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  });
+  const [markingAlpha, setMarkingAlpha] = useState(false);
+  const [alphaResult, setAlphaResult] = useState('');
+  const [sendingReminder, setSendingReminder] = useState(false);
+  const [reminderResult, setReminderResult] = useState('');
+
   useEffect(() => {
     fetchData();
     // Refresh otomatis tiap 30 detik untuk data real-time
@@ -95,6 +107,42 @@ export default function AdminDashboard() {
       setWarningResult(err.response?.data?.message || 'Gagal mengirim peringatan.');
     } finally {
       setSendingWarning(false);
+    }
+  }
+
+  async function markAlpha() {
+    const tampilTanggal = new Date(alphaDate).toLocaleDateString('id-ID', {
+      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+    });
+    if (!confirm(
+      `Tandai "alpha" untuk semua pegawai yang tidak absen dan tidak izin pada ${tampilTanggal}?\n\n` +
+      'Akhir pekan dan hari libur terdaftar otomatis dilewati.'
+    )) return;
+
+    setMarkingAlpha(true);
+    setAlphaResult('');
+    try {
+      const res = await api.post('/attendance/mark-alpha', { date: alphaDate });
+      setAlphaResult(res.data.message);
+      fetchData();
+    } catch (err) {
+      setAlphaResult(err.response?.data?.message || 'Gagal menandai alpha.');
+    } finally {
+      setMarkingAlpha(false);
+    }
+  }
+
+  async function sendCheckinReminder() {
+    if (!confirm('Kirim notifikasi pengingat ke pegawai yang belum absen masuk hari ini?')) return;
+    setSendingReminder(true);
+    setReminderResult('');
+    try {
+      const res = await api.post('/notifications/checkin-reminder');
+      setReminderResult(res.data.message);
+    } catch (err) {
+      setReminderResult(err.response?.data?.message || 'Gagal mengirim pengingat.');
+    } finally {
+      setSendingReminder(false);
     }
   }
 
@@ -187,6 +235,67 @@ export default function AdminDashboard() {
             >
               {downloading === 'pdf' ? 'Mengunduh…' : 'PDF'}
             </button>
+          </div>
+        </div>
+
+        {/* Tindakan admin: normalnya dijalankan terjadwal lewat cron di server,
+            tombol ini untuk menjalankan manual / keperluan demo */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-soft p-5 mb-6">
+          <p className="text-sm font-semibold text-gray-900">Tindakan Admin</p>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Biasanya berjalan otomatis terjadwal di server — tombol ini untuk menjalankan manual
+          </p>
+
+          <div className="grid sm:grid-cols-2 gap-4 mt-4">
+            {/* Tandai alpha */}
+            <div className="border border-gray-100 rounded-xl p-4">
+              <div className="flex items-center gap-2.5 mb-1">
+                <span className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center shrink-0">
+                  <AlertIcon className="w-4 h-4" />
+                </span>
+                <p className="text-sm font-semibold text-gray-900">Tandai Alpha</p>
+              </div>
+              <p className="text-xs text-gray-500 mb-3">
+                Pegawai yang tidak absen &amp; tidak izin pada tanggal terpilih. Akhir pekan dan hari libur dilewati.
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  type="date"
+                  value={alphaDate}
+                  onChange={(e) => setAlphaDate(e.target.value)}
+                  className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm transition focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/40"
+                />
+                <button
+                  onClick={markAlpha}
+                  disabled={markingAlpha}
+                  className="text-sm bg-gray-900 text-white px-4 py-2 rounded-xl font-semibold transition hover:bg-gray-800 disabled:opacity-50"
+                >
+                  {markingAlpha ? 'Memproses…' : 'Jalankan'}
+                </button>
+              </div>
+              {alphaResult && <p className="text-xs text-gray-600 mt-2.5">{alphaResult}</p>}
+            </div>
+
+            {/* Pengingat absen */}
+            <div className="border border-gray-100 rounded-xl p-4">
+              <div className="flex items-center gap-2.5 mb-1">
+                <span className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                  <ClockIcon className="w-4 h-4" />
+                </span>
+                <p className="text-sm font-semibold text-gray-900">Pengingat Absen</p>
+              </div>
+              <p className="text-xs text-gray-500 mb-3">
+                Kirim notifikasi ke HP pegawai yang belum absen masuk hari ini.
+              </p>
+              <button
+                onClick={sendCheckinReminder}
+                disabled={sendingReminder}
+                className="text-sm bg-gradient-to-r from-primary-600 to-primary-700 text-white px-4 py-2 rounded-xl font-semibold shadow-glow transition hover:from-primary-500 hover:to-primary-600 disabled:opacity-50"
+              >
+                {sendingReminder ? 'Mengirim…' : 'Kirim Pengingat'}
+              </button>
+              {reminderResult && <p className="text-xs text-gray-600 mt-2.5">{reminderResult}</p>}
+            </div>
           </div>
         </div>
 

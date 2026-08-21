@@ -105,35 +105,66 @@ async function sendCheckinReminder(req, res, next) {
   try {
     const today = todayLocal();
 
+    // Sengaja TIDAK memfilter push_token di SQL: pegawai yang belum absen tapi
+    // belum pernah login di mobile app tetap perlu dilaporkan ke admin, supaya
+    // "tidak ada yang perlu diingatkan" tidak rancu dengan "tidak ada yang bisa dikirimi".
     const result = await query(
       `SELECT u.id, u.name, u.push_token
        FROM users u
        LEFT JOIN attendance a ON a.user_id = u.id AND a.date = $1
        WHERE u.role != 'admin' AND u.is_active = TRUE
-         AND u.push_token IS NOT NULL
          AND (a.id IS NULL OR a.check_in_time IS NULL)`,
       [today]
     );
 
-    if (result.rows.length === 0) {
-      return res.json({ message: 'Tidak ada pegawai yang perlu diingatkan.', data: { terkirim: 0 } });
+    const belumAbsen = result.rows;
+    if (belumAbsen.length === 0) {
+      return res.json({
+        message: 'Semua pegawai sudah absen masuk hari ini.',
+        data: { belum_absen: 0, terkirim: 0 },
+      });
     }
 
-    const messages = result.rows.map((row) => ({
-      to: row.push_token,
-      title: 'Pengingat Absensi',
-      body: `Halo ${row.name}, jangan lupa check-in hari ini.`,
-      data: { type: 'checkin_reminder' },
-    }));
+    const punyaToken = belumAbsen.filter((r) => r.push_token);
+    const tanpaToken = belumAbsen.length - punyaToken.length;
 
-    const { sent } = await sendPushNotifications(messages);
+    let sent = 0;
+    let errorKirim = null;
+    if (punyaToken.length > 0) {
+      const hasil = await sendPushNotifications(
+        punyaToken.map((row) => ({
+          to: row.push_token,
+          title: 'Pengingat Absensi',
+          body: `Halo ${row.name}, jangan lupa check-in hari ini.`,
+          data: { type: 'checkin_reminder' },
+        }))
+      );
+      sent = hasil.sent;
+      errorKirim = hasil.error;
+    }
+
+    // Susun pesan yang membedakan tiap situasi, bukan sekadar angka 0
+    let message = `${belumAbsen.length} pegawai belum absen. `;
+    if (sent > 0) {
+      message += `Pengingat terkirim ke ${sent} pegawai.`;
+    } else if (punyaToken.length === 0) {
+      message += 'Belum ada yang bisa dikirimi notifikasi — pegawai perlu login dulu di aplikasi mobile.';
+    } else {
+      message += `Pengiriman ke ${punyaToken.length} pegawai gagal: ${errorKirim}.`;
+    }
+    if (sent > 0 && tanpaToken > 0) {
+      message += ` ${tanpaToken} pegawai lain belum memakai aplikasi mobile.`;
+    }
 
     await query(
       `INSERT INTO admin_logs (admin_id, action, detail) VALUES ($1, 'send_checkin_reminder', $2)`,
-      [req.user.id, `${sent} pegawai diingatkan untuk check-in (${today})`]
+      [req.user.id, `${belumAbsen.length} belum absen, ${sent} terkirim (${today})`]
     );
 
-    res.json({ message: `Pengingat terkirim ke ${sent} pegawai.`, data: { terkirim: sent } });
+    res.json({
+      message,
+      data: { belum_absen: belumAbsen.length, terkirim: sent, tanpa_token: tanpaToken },
+    });
   } catch (err) {
     next(err);
   }

@@ -4,26 +4,42 @@ const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
 
 // Kirim satu atau beberapa notifikasi sekaligus.
 // messages: [{ to: expoPushToken, title, body, data? }]
-// Token yang formatnya tidak valid (bukan ExponentPushToken[...]) dilewati saja.
+//
+// Mengembalikan { sent, target, error } supaya pemanggil bisa membedakan
+// "tidak ada yang perlu dikirimi" dari "ada tujuan tapi pengiriman gagal" --
+// keduanya sama-sama menghasilkan sent = 0 tapi artinya jauh berbeda.
 async function sendPushNotifications(messages) {
   const valid = messages.filter((m) => m.to && m.to.startsWith('ExponentPushToken'));
-  if (valid.length === 0) return { sent: 0 };
+  const hasil = { sent: 0, target: valid.length, error: null };
 
-  const res = await fetch(EXPO_PUSH_URL, {
-    method: 'POST',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(valid),
-  });
-
-  if (!res.ok) {
-    console.error('Gagal kirim push notification, status:', res.status);
-    return { sent: 0 };
+  if (valid.length === 0) {
+    hasil.error = 'tidak ada push token yang valid';
+    return hasil;
   }
 
-  return { sent: valid.length };
+  try {
+    const res = await fetch(EXPO_PUSH_URL, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(valid),
+    });
+
+    if (!res.ok) {
+      hasil.error = `layanan push menolak permintaan (HTTP ${res.status})`;
+      console.error('Gagal kirim push notification, status:', res.status);
+      return hasil;
+    }
+
+    hasil.sent = valid.length;
+    return hasil;
+  } catch (err) {
+    hasil.error = `tidak bisa menghubungi layanan push (${err.message})`;
+    console.error('Gagal kirim push notification:', err.message);
+    return hasil;
+  }
 }
 
 module.exports = { sendPushNotifications };
