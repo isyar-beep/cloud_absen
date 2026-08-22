@@ -17,7 +17,10 @@ dengan Docker, frontend web ke hosting statis, dan build APK mobile.
 [Hosting statis Hostinger] <-- frontend dist/ (React build)
 
 Foto absensi disimpan di disk VPS (volume Docker `uploads`) dan di-serve
-langsung oleh API lewat `/uploads/...`.
+oleh API lewat `/api/photos/...` — bukan folder statis publik. Setiap
+permintaan foto harus membawa token foto berumur pendek (30 menit) yang
+diterbitkan `/api/photos/token` setelah login. Admin bisa melihat semua
+foto; pegawai hanya fotonya sendiri.
 ```
 
 ---
@@ -58,6 +61,7 @@ Isi `.env` dengan nilai production. Yang WAJIB diganti:
 | `DB_PASSWORD` | password kuat yang baru (JANGAN `postgres`) |
 | `JWT_SECRET` | string acak panjang, generate: `openssl rand -hex 32` |
 | `PUBLIC_BASE_URL` | domain API publik, misal `https://api.perusahaan.com` (dipakai untuk URL foto) |
+| `PHOTO_RETENTION_YEARS` | (opsional) lama foto absensi disimpan, default `2` |
 | `SMTP_*` | (opsional) kredensial SMTP jika fitur email dipakai |
 
 Catatan keamanan: port database (5432) dan API (5000) di docker-compose
@@ -249,6 +253,34 @@ ke kemarin kalau tanggal tidak dikirim eksplisit):
 5 0 * * * curl -s -X POST https://api.perusahaan.com/api/attendance/mark-alpha -H "Authorization: Bearer TOKEN"
 ```
 
+## 9. Pembersihan Foto Lama (Masa Simpan)
+
+Foto absensi menumpuk cepat: 50 pegawai x 2 foto per hari kerja kira-kira
+8 GB per tahun. Kebijakan default menyimpan foto 2 tahun, lalu berkasnya
+dihapus. **Catatan absensinya (tanggal, jam, status) tetap utuh** — yang
+hilang hanya file gambarnya, jadi laporan dan statistik tidak terpengaruh.
+
+Jalankan manual:
+
+```bash
+docker exec cloud_absen_api npm run purge:photos
+```
+
+Terjadwal tiap tanggal 1 jam 03:00 (crontab -e):
+
+```cron
+0 3 1 * * docker exec cloud_absen_api npm run purge:photos >> /root/purge-photos.log 2>&1
+```
+
+Ganti masa simpan lewat `PHOTO_RETENTION_YEARS` di `.env` backend
+(misal `PHOTO_RETENTION_YEARS=3`), lalu restart API.
+
+Untuk memantau pemakaian disk volume foto:
+
+```bash
+docker exec cloud_absen_api du -sh uploads
+```
+
 ## Troubleshooting Production
 
 **API tidak bisa diakses dari frontend (error CORS)**
@@ -263,3 +295,10 @@ masih ada, migration baru harus dijalankan manual (lihat bagian 6).
 Cek log API: `docker logs cloud_absen_api`. Pastikan folder `uploads/` bisa
 ditulis oleh container (volume `uploads` di `docker-compose.yml` sudah
 menangani ini secara default) dan disk VPS tidak penuh.
+
+**Foto tampil sebagai gambar rusak di web admin**
+Foto sekarang dilayani lewat `/api/photos/...` dengan token, bukan folder
+statis. Pastikan Nginx meneruskan seluruh `/api/` ke API (jangan ada rule
+khusus yang memotong `/uploads`), dan cek di DevTools apakah permintaan
+`/api/photos/token` mengembalikan 200. Respons 401 berarti sesi sudah
+kedaluwarsa (login ulang), 403 berarti pegawai membuka foto milik orang lain.

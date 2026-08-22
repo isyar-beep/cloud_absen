@@ -4,7 +4,6 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
-const { uploadDir } = require('./utils/uploadPhoto');
 
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
@@ -16,6 +15,7 @@ const departmentRoutes = require('./routes/departmentRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const shiftRoutes = require('./routes/shiftRoutes');
 const holidayRoutes = require('./routes/holidayRoutes');
+const photoRoutes = require('./routes/photoRoutes');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -57,8 +57,9 @@ app.use(limiter);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Foto absensi disimpan di disk lokal server dan di-serve sebagai file statis
-app.use('/uploads', express.static(uploadDir));
+// CATATAN: folder uploads TIDAK lagi dilayani sebagai berkas statis terbuka.
+// Foto wajah adalah data pribadi -- sekarang disajikan lewat /api/photos yang
+// memeriksa token dan kepemilikan. Lihat controllers/photoController.js
 
 // Health check -- untuk memastikan server hidup (dipakai monitoring/Hostinger)
 app.get('/health', (req, res) => {
@@ -76,6 +77,7 @@ app.use('/api/departments', departmentRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/shifts', shiftRoutes);
 app.use('/api/holidays', holidayRoutes);
+app.use('/api/photos', photoRoutes);
 
 // 404 handler
 app.use((req, res) => {

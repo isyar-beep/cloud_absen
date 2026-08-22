@@ -1,7 +1,7 @@
 const bcrypt = require('bcryptjs');
 const { query } = require('../config/db');
 const { generateToken } = require('../utils/jwt');
-const { uploadPhotoToStorage, hapusFotoLama } = require('../utils/uploadPhoto');
+const { uploadFotoProfil, hapusFotoLama } = require('../utils/uploadPhoto');
 
 // POST /api/auth/login
 async function login(req, res, next) {
@@ -134,8 +134,11 @@ async function uploadAvatar(req, res, next) {
       return res.status(400).json({ message: 'Foto profil wajib dipilih.' });
     }
 
-    const lama = await query('SELECT avatar_url FROM users WHERE id = $1', [req.user.id]);
-    const avatarUrl = await uploadPhotoToStorage(req.file.buffer, req.file.mimetype, 'avatar');
+    const lama = await query('SELECT avatar_url, name FROM users WHERE id = $1', [req.user.id]);
+    const avatarUrl = await uploadFotoProfil(req.file.buffer, {
+      userId: req.user.id,
+      userName: lama.rows[0]?.name,
+    });
 
     await query('UPDATE users SET avatar_url = $1, updated_at = NOW() WHERE id = $2', [
       avatarUrl,

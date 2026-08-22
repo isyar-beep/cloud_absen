@@ -10,6 +10,7 @@ import AdminUsers from './pages/AdminUsers';
 import AdminShifts from './pages/AdminShifts';
 import AdminHolidays from './pages/AdminHolidays';
 import AdminStats from './pages/AdminStats';
+import AdminGallery from './pages/AdminGallery';
 import AdminLeaves from './pages/AdminLeaves';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -82,6 +83,14 @@ export default function App() {
           element={
             <ProtectedRoute allowedRole="admin">
               <AdminStats />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/gallery"
+          element={
+            <ProtectedRoute allowedRole="admin">
+              <AdminGallery />
             </ProtectedRoute>
           }
         />

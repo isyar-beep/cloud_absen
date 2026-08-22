@@ -1,5 +1,5 @@
 const { query } = require('../config/db');
-const { uploadPhotoToStorage } = require('../utils/uploadPhoto');
+const { uploadFotoAbsensi } = require('../utils/uploadPhoto');
 const { todayLocal } = require('../utils/date');
 
 const JAM_MASUK_BATAS_DEFAULT = '08:00:00'; // dipakai kalau pegawai belum di-assign ke shift manapun
@@ -24,7 +24,11 @@ async function checkIn(req, res, next) {
       return res.status(409).json({ message: 'Anda sudah melakukan absen masuk hari ini.' });
     }
 
-    const photoUrl = await uploadPhotoToStorage(req.file.buffer, req.file.mimetype, 'checkin');
+    const photoUrl = await uploadFotoAbsensi(req.file.buffer, {
+      userId,
+      userName: req.user.name,
+      jenis: 'masuk',
+    });
 
     // Batas telat mengikuti jam masuk shift pegawai (kalau belum di-assign shift, pakai default 08:00)
     const shiftResult = await query(
@@ -72,7 +76,11 @@ async function checkOut(req, res, next) {
       return res.status(409).json({ message: 'Anda sudah melakukan absen pulang hari ini.' });
     }
 
-    const photoUrl = await uploadPhotoToStorage(req.file.buffer, req.file.mimetype, 'checkout');
+    const photoUrl = await uploadFotoAbsensi(req.file.buffer, {
+      userId,
+      userName: req.user.name,
+      jenis: 'pulang',
+    });
 
     const result = await query(
       `UPDATE attendance
@@ -196,7 +204,7 @@ async function getUserHistory(req, res, next) {
 // Filter: ?start_date=&end_date=&status=&department_id= + paginasi limit/offset
 async function getAllHistory(req, res, next) {
   try {
-    const { limit = 50, offset = 0, department_id } = req.query;
+    const { limit = 50, offset = 0, department_id, user_id, sort, with_photo } = req.query;
     const conditions = ["u.role != 'admin'"];
     const params = [];
     buildHistoryFilter(req.query, conditions, params);
@@ -205,17 +213,28 @@ async function getAllHistory(req, res, next) {
       params.push(department_id);
       conditions.push(`u.department_id = $${params.length}`);
     }
+    if (user_id) {
+      params.push(user_id);
+      conditions.push(`u.id = $${params.length}`);
+    }
+    // Dipakai halaman galeri: hanya hari yang benar-benar punya foto
+    if (with_photo === 'true') {
+      conditions.push('(a.photo_in_url IS NOT NULL OR a.photo_out_url IS NOT NULL)');
+    }
+
+    // Hanya dua nilai yang diterima, tidak pernah disisipkan dari input mentah
+    const urutan = sort === 'asc' ? 'ASC' : 'DESC';
 
     params.push(limit, offset);
     const result = await query(
       `SELECT a.id, a.date, a.check_in_time, a.check_out_time, a.status, a.reason,
               a.photo_in_url, a.photo_out_url,
-              u.id AS user_id, u.name, d.name AS department
+              u.id AS user_id, u.name, u.avatar_url, d.name AS department
        FROM attendance a
        JOIN users u ON a.user_id = u.id
        LEFT JOIN departments d ON u.department_id = d.id
        WHERE ${conditions.join(' AND ')}
-       ORDER BY a.date DESC, u.name ASC
+       ORDER BY a.date ${urutan}, u.name ASC
        LIMIT $${params.length - 1} OFFSET $${params.length}`,
       params
     );

@@ -1,12 +1,13 @@
 import { useEffect, useState, useCallback } from 'react';
 import api from '../api/axios';
-import { urlFoto } from '../api/fileUrl';
+import { urlFoto, useTokenFoto } from '../api/fileUrl';
 import AdminHeader from '../components/AdminHeader';
 import StatusBadge from '../components/StatusBadge';
 
 const LIMIT = 50;
 
 export default function AdminHistory() {
+  const tokenFoto = useTokenFoto();
   const [items, setItems] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [filter, setFilter] = useState({ start_date: '', end_date: '', status: '', department_id: '' });
@@ -136,12 +137,12 @@ export default function AdminHistory() {
                   </td>
                   <td className="px-5 py-3.5 space-x-2 whitespace-nowrap">
                     {item.photo_in_url && (
-                      <a href={urlFoto(item.photo_in_url)} target="_blank" rel="noreferrer" className="text-xs text-primary-600 font-medium hover:underline">
+                      <a href={urlFoto(item.photo_in_url, tokenFoto)} target="_blank" rel="noreferrer" className="text-xs text-primary-600 font-medium hover:underline">
                         Masuk
                       </a>
                     )}
                     {item.photo_out_url && (
-                      <a href={urlFoto(item.photo_out_url)} target="_blank" rel="noreferrer" className="text-xs text-primary-600 font-medium hover:underline">
+                      <a href={urlFoto(item.photo_out_url, tokenFoto)} target="_blank" rel="noreferrer" className="text-xs text-primary-600 font-medium hover:underline">
                         Pulang
                       </a>
                     )}

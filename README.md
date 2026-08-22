@@ -74,9 +74,28 @@ Server akan berjalan di `http://localhost:5000`. Cek dengan membuka `http://loca
 ### Penyimpanan Foto Absensi
 
 Foto absensi disimpan langsung di disk server (folder `backend/uploads/` secara
-default) dan di-serve lewat endpoint `/uploads/...`. Tidak perlu akun cloud
-storage apa pun. Atur lokasi folder lewat `UPLOAD_DIR` dan domain publik API
-lewat `PUBLIC_BASE_URL` di `.env` bila perlu (lihat `.env.example`).
+default). Tidak perlu akun cloud storage apa pun. Atur lokasi folder lewat
+`UPLOAD_DIR` dan domain publik API lewat `PUBLIC_BASE_URL` di `.env` bila perlu
+(lihat `.env.example`).
+
+**Nama berkas** dibuat rapi supaya mudah dicari dan diarsipkan:
+
+```
+uploads/absensi/2026-08/2026-08-22_12-31-22_id02_budi-pegawai_masuk_a636.jpg
+                        └tanggal─┘ └─jam──┘ └id┘ └──nama───┘ └jenis┘ └acak┘
+```
+
+Foto profil terpisah di `uploads/profil/`. Berkas dikelompokkan per bulan
+supaya satu folder tidak berisi puluhan ribu file.
+
+**Akses foto butuh login.** Foto TIDAK dilayani sebagai folder statis publik.
+Frontend memanggil `/api/photos/token` untuk mendapat token berumur 30 menit,
+lalu memuat gambar lewat `/api/photos/<path>?t=<token>`. Admin boleh membuka
+semua foto, pegawai hanya fotonya sendiri, dan percobaan path traversal ditolak.
+
+**Masa simpan.** Foto lama dibersihkan dengan `npm run purge:photos` (default
+2 tahun, atur lewat `PHOTO_RETENTION_YEARS`). Yang dihapus hanya berkas
+gambarnya — catatan absensi tetap utuh. Lihat `docs/deployment.md` untuk cron-nya.
 
 ---
 
@@ -225,6 +244,12 @@ Setelah menjalankan `npm run seed` di backend:
 - Statistik & grafik lengkap untuk admin: pilih pegawai (semua/individual),
   pilih periode (bulan tertentu/riwayat keseluruhan), pilih tampilan
   (bar chart, line chart, pie chart, atau tabel)
+- Galeri foto absensi untuk admin: satu kartu per pegawai per hari berisi
+  foto masuk & pulang berdampingan, filter tanggal/pegawai/jenis/status,
+  urutan terbaru-terlama, dan jendela detail dengan navigasi panah keyboard.
+  Hari tanpa absen pulang tampil sebagai slot kosong agar mudah terlihat
+- Foto profil pegawai (upload dari web, otomatis dikecilkan sebelum dikirim)
+- Keterlambatan tetap dihitung hadir, ditandai "Hadir (Terlambat)" warna kuning
 
 ---
 

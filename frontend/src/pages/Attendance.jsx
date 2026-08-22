@@ -57,11 +57,19 @@ export default function Attendance() {
     setCameraReady(false);
   }
 
+  // Batas sisi terpanjang foto absensi. Kamera HP modern menghasilkan foto
+  // beberapa MB; wajah tetap jelas di 1000px, sementara ukuran berkas turun
+  // sekitar tiga kali lipat -- hemat kuota pegawai dan disk server.
+  const MAKS_PIKSEL = 1000;
+
   function capturePhoto() {
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+
+    const skala = Math.min(1, MAKS_PIKSEL / Math.max(video.videoWidth, video.videoHeight));
+    canvas.width = Math.round(video.videoWidth * skala);
+    canvas.height = Math.round(video.videoHeight * skala);
+
     const ctx = canvas.getContext('2d');
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     const dataUrl = canvas.toDataURL('image/jpeg', 0.85);

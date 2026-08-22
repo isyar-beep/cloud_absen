@@ -1,13 +1,14 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
-import { urlFoto } from '../api/fileUrl';
+import { urlFoto, useTokenFoto } from '../api/fileUrl';
 import StatusBadge from '../components/StatusBadge';
 import { ArrowLeftIcon } from '../components/Icons';
 
 const LIMIT = 30;
 
 export default function History() {
+  const tokenFoto = useTokenFoto();
   const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [filter, setFilter] = useState({ start_date: '', end_date: '', status: '' });
@@ -109,12 +110,12 @@ export default function History() {
                 <span>Masuk: <span className="font-medium text-gray-700">{formatJam(item.check_in_time)}</span></span>
                 <span>Pulang: <span className="font-medium text-gray-700">{formatJam(item.check_out_time)}</span></span>
                 {item.photo_in_url && (
-                  <a href={urlFoto(item.photo_in_url)} target="_blank" rel="noreferrer" className="text-primary-600 font-medium hover:underline">
+                  <a href={urlFoto(item.photo_in_url, tokenFoto)} target="_blank" rel="noreferrer" className="text-primary-600 font-medium hover:underline">
                     Foto masuk
                   </a>
                 )}
                 {item.photo_out_url && (
-                  <a href={urlFoto(item.photo_out_url)} target="_blank" rel="noreferrer" className="text-primary-600 font-medium hover:underline">
+                  <a href={urlFoto(item.photo_out_url, tokenFoto)} target="_blank" rel="noreferrer" className="text-primary-600 font-medium hover:underline">
                     Foto pulang
                   </a>
                 )}

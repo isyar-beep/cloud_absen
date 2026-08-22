@@ -1,4 +1,4 @@
-import { urlFoto } from '../api/fileUrl';
+import { urlFoto, useTokenFoto } from '../api/fileUrl';
 
 // Avatar tunggal untuk seluruh aplikasi: tampilkan foto profil bila ada,
 // jatuh ke inisial nama bila belum. Sebelumnya kode ini terduplikasi di
@@ -26,12 +26,14 @@ function warnaDari(nama) {
 }
 
 export default function Avatar({ name, src, size = 36, className = '' }) {
+  // Token diambil sekali lalu dipakai bersama seluruh avatar di halaman
+  const tokenFoto = useTokenFoto();
   const gaya = { width: size, height: size };
 
-  if (src) {
+  if (src && tokenFoto) {
     return (
       <img
-        src={urlFoto(src)}
+        src={urlFoto(src, tokenFoto)}
         alt={name || 'Foto profil'}
         style={gaya}
         className={`rounded-full object-cover bg-gray-100 shrink-0 ${className}`}
