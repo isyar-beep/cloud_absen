@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import StatusBadge from '../components/StatusBadge';
 import { ArrowLeftIcon } from '../components/Icons';
+import { formatTanggal } from '../utils/tanggal';
 
 export default function Leaves() {
   const navigate = useNavigate();
@@ -42,9 +43,6 @@ export default function Leaves() {
     }
   }
 
-  function formatTanggal(d) {
-    return new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
-  }
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-6">

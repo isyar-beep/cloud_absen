@@ -67,9 +67,10 @@ async function simpanFoto(fileBuffer, { folder, nama }) {
   return `/uploads/${folder}/${nama}`;
 }
 
-// Foto absensi
-async function uploadFotoAbsensi(fileBuffer, { userId, userName, jenis }) {
-  return simpanFoto(fileBuffer, namaBerkasAbsensi({ userId, userName, jenis }));
+// Foto absensi. `waktu` hanya diisi oleh seed demo yang menulis foto
+// bertanggal mundur; absen sungguhan selalu memakai waktu sekarang.
+async function uploadFotoAbsensi(fileBuffer, { userId, userName, jenis, waktu }) {
+  return simpanFoto(fileBuffer, namaBerkasAbsensi({ userId, userName, jenis, waktu }));
 }
 
 // Foto profil

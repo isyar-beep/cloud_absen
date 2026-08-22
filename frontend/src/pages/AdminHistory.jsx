@@ -3,6 +3,7 @@ import api from '../api/axios';
 import { urlFoto, useTokenFoto } from '../api/fileUrl';
 import AdminHeader from '../components/AdminHeader';
 import StatusBadge from '../components/StatusBadge';
+import { formatTanggal, formatJam } from '../utils/tanggal';
 
 const LIMIT = 50;
 
@@ -40,13 +41,7 @@ export default function AdminHistory() {
     fetchHistory();
   }, [fetchHistory]);
 
-  function formatTanggal(d) {
-    return new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
-  }
 
-  function formatJam(t) {
-    return t ? new Date(t).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '—';
-  }
 
   const inputClass =
     'w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm transition focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/40';

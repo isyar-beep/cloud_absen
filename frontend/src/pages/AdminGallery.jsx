@@ -4,6 +4,7 @@ import { urlFoto, useTokenFoto } from '../api/fileUrl';
 import AdminHeader from '../components/AdminHeader';
 import Avatar from '../components/Avatar';
 import StatusBadge from '../components/StatusBadge';
+import { formatTanggalHari, formatJam, formatJamDetik } from '../utils/tanggal';
 
 const LIMIT = 24;
 
@@ -15,18 +16,6 @@ const JENIS = [
 
 function tanggalIso(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-function formatTanggal(d) {
-  return new Date(d).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
-}
-
-function formatJam(t) {
-  return t ? new Date(t).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : null;
-}
-
-function formatJamDetik(t) {
-  return t ? new Date(t).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '—';
 }
 
 // Satu sisi foto (masuk / pulang). Slot kosong tampil jelas supaya
@@ -272,7 +261,7 @@ export default function AdminGallery() {
           <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-gray-100">
             <span className="text-xs text-gray-400">Filter aktif</span>
             <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-primary-50 text-primary-700 border border-primary-100">
-              {formatTanggal(filter.start_date)} – {formatTanggal(filter.end_date)}
+              {formatTanggalHari(filter.start_date)} – {formatTanggalHari(filter.end_date)}
             </span>
             {chips.map((c) => (
               <button key={c.teks} onClick={c.bersih}
@@ -332,7 +321,7 @@ export default function AdminGallery() {
                   <p className="text-sm font-semibold text-gray-900 truncate leading-tight min-w-0">{r.name}</p>
                 </div>
                 <div className="flex items-center justify-between gap-2 mt-2">
-                  <span className="text-[11.5px] text-gray-400 shrink-0">{formatTanggal(r.date)}</span>
+                  <span className="text-[11.5px] text-gray-400 shrink-0">{formatTanggalHari(r.date)}</span>
                   {r.photo_in_url && !r.photo_out_url && !hanyaSatuJenis ? (
                     <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20 shrink-0">
                       <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
@@ -346,12 +335,12 @@ export default function AdminGallery() {
 
               <div className={`grid gap-px bg-gray-100 ${hanyaSatuJenis ? 'grid-cols-1' : 'grid-cols-2'}`}>
                 {filter.jenis !== 'pulang' && (
-                  <SlotFoto url={r.photo_in_url} jenis="masuk" jam={formatJam(r.check_in_time)}
+                  <SlotFoto url={r.photo_in_url} jenis="masuk" jam={r.check_in_time ? formatJam(r.check_in_time) : null}
                     token={tokenFoto} status={r.status}
                     onClick={() => setDetail({ row: r, jenis: 'masuk' })} />
                 )}
                 {filter.jenis !== 'masuk' && (
-                  <SlotFoto url={r.photo_out_url} jenis="pulang" jam={formatJam(r.check_out_time)}
+                  <SlotFoto url={r.photo_out_url} jenis="pulang" jam={r.check_out_time ? formatJam(r.check_out_time) : null}
                     token={tokenFoto} status={r.status}
                     onClick={() => setDetail({ row: r, jenis: 'pulang' })} />
                 )}
@@ -394,7 +383,7 @@ export default function AdminGallery() {
                 <div className="min-w-0">
                   <p className="font-bold text-gray-900 leading-tight">{detail.row.name}</p>
                   <p className="text-xs text-gray-500">
-                    {formatTanggal(detail.row.date)} · Absen {detail.jenis}
+                    {formatTanggalHari(detail.row.date)} · Absen {detail.jenis}
                   </p>
                 </div>
               </div>

@@ -11,6 +11,8 @@
 // dan hari libur terdaftar dilewati.
 // ============================================================
 const { pool, query } = require('../src/config/db');
+const { uploadFotoAbsensi, hapusFotoLama } = require('../src/utils/uploadPhoto');
+const { gambarContoh } = require('./foto-contoh');
 require('dotenv').config();
 
 const TANGGAL_MULAI = 1; // 1 Agustus
@@ -47,6 +49,25 @@ function tanggalStr(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+// Ubah "2026-08-20" + "07:41:12" jadi objek Date lokal, supaya nama berkas
+// fotonya memakai tanggal & jam absen -- bukan waktu seed dijalankan.
+function waktuDari(tgl, jamStr) {
+  const [y, m, d] = tgl.split('-').map(Number);
+  const [hh, mm, ss] = jamStr.split(':').map(Number);
+  return new Date(y, m - 1, d, hh, mm, ss);
+}
+
+// Tulis satu foto contoh ke disk dengan penamaan yang sama persis seperti
+// absen sungguhan, lalu kembalikan path relatifnya untuk disimpan di database.
+async function fotoDemo(p, tgl, jamStr, jenis) {
+  return uploadFotoAbsensi(gambarContoh(p.id), {
+    userId: p.id,
+    userName: p.name,
+    jenis,
+    waktu: waktuDari(tgl, jamStr),
+  });
+}
+
 async function main() {
   const pegawai = await query(
     `SELECT u.id, u.name, COALESCE(s.start_time, '08:00:00') AS mulai, COALESCE(s.end_time, '17:00:00') AS selesai
@@ -66,8 +87,20 @@ async function main() {
   const hariIni = new Date();
   const mulai = new Date(hariIni.getFullYear(), BULAN_MULAI - 1, TANGGAL_MULAI);
 
-  // Bersihkan dulu rentang yang sama supaya bisa dijalankan berulang
-  // tanpa menumpuk data yang saling bertabrakan.
+  // Bersihkan dulu rentang yang sama supaya bisa dijalankan berulang tanpa
+  // menumpuk data yang saling bertabrakan. Berkas fotonya ikut dibuang
+  // supaya tidak ada foto yatim yang tertinggal di disk.
+  const fotoLama = await query(
+    `SELECT photo_in_url, photo_out_url FROM attendance
+     WHERE date >= $1 AND date <= $2
+       AND (photo_in_url IS NOT NULL OR photo_out_url IS NOT NULL)`,
+    [tanggalStr(mulai), tanggalStr(hariIni)]
+  );
+  for (const baris of fotoLama.rows) {
+    await hapusFotoLama(baris.photo_in_url);
+    await hapusFotoLama(baris.photo_out_url);
+  }
+
   const hapus = await query(
     `DELETE FROM attendance WHERE date >= $1 AND date <= $2`,
     [tanggalStr(mulai), tanggalStr(hariIni)]
@@ -75,6 +108,7 @@ async function main() {
 
   let dibuat = 0;
   let dilewati = 0;
+  let foto = 0;
 
   for (const p of pegawai.rows) {
     const [jamMulai] = p.mulai.split(':').map(Number);
@@ -108,13 +142,22 @@ async function main() {
         : jam(jamMulai, acakInt(5, 45), acakInt(0, 59));
 
       const [jamSelesai] = p.selesai.split(':').map(Number);
-      const pulang = jam(jamSelesai, acakInt(0, 40), acakInt(0, 59));
+
+      // Sekitar 1 dari 8 hari sengaja tidak punya absen pulang -- kejadian
+      // nyata (pegawai lupa absen pulang) dan sekaligus memperlihatkan slot
+      // foto kosong di galeri saat diperagakan.
+      const lupaPulang = Math.random() < 0.12;
+      const pulang = lupaPulang ? null : jam(jamSelesai, acakInt(0, 40), acakInt(0, 59));
+
+      const fotoMasuk = await fotoDemo(p, tgl, masuk, 'masuk');
+      const fotoPulang = pulang ? await fotoDemo(p, tgl, pulang, 'pulang') : null;
+      foto += pulang ? 2 : 1;
 
       await query(
-        `INSERT INTO attendance (user_id, date, check_in_time, check_out_time, status)
-         VALUES ($1, $2, $3::timestamp, $4::timestamp, $5)
+        `INSERT INTO attendance (user_id, date, check_in_time, check_out_time, status, photo_in_url, photo_out_url)
+         VALUES ($1, $2, $3::timestamp, $4::timestamp, $5, $6, $7)
          ON CONFLICT (user_id, date) DO NOTHING`,
-        [p.id, tgl, `${tgl} ${masuk}`, `${tgl} ${pulang}`, status]
+        [p.id, tgl, `${tgl} ${masuk}`, pulang ? `${tgl} ${pulang}` : null, status, fotoMasuk, fotoPulang]
       );
       dibuat++;
     }
@@ -125,6 +168,7 @@ async function main() {
   console.log(`Pegawai   : ${pegawai.rows.map((p) => p.name).join(', ')}`);
   console.log(`Periode   : ${tanggalStr(mulai)} s/d ${tanggalStr(hariIni)}`);
   console.log(`Dibuat    : ${dibuat} catatan (${hapus.rowCount} catatan lama dihapus)`);
+  console.log(`Foto      : ${foto} berkas contoh di uploads/absensi/`);
   console.log(`Dilewati  : ${dilewati} hari (akhir pekan & hari libur)`);
   console.log('============================================');
 }

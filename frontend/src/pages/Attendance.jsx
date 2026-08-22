@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { ArrowLeftIcon, CameraIcon, ClockIcon } from '../components/Icons';
+import { formatJam } from '../utils/tanggal';
 
 export default function Attendance() {
   const videoRef = useRef(null);
@@ -123,10 +124,6 @@ export default function Attendance() {
 
   const sudahCheckIn = !!todayStatus?.check_in_time;
   const sudahCheckOut = !!todayStatus?.check_out_time;
-
-  function formatJam(t) {
-    return new Date(t).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-  }
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-6">

@@ -62,6 +62,9 @@ npm run seed:demo
 ```
 Mengisi absensi acak sejak 1 Agustus untuk seluruh pegawai aktif, supaya grafik
 dan laporan terlihat berisi saat didemokan. Akhir pekan dan hari libur dilewati.
+Foto contoh (siluet berwarna, bukan foto orang sungguhan) ikut ditulis ke
+`uploads/absensi/` supaya Galeri Foto tidak kosong. Sekitar satu dari delapan
+hari sengaja tanpa absen pulang, meniru pegawai yang lupa absen keluar.
 Sengaja dipisah dari `npm run seed` supaya **tidak pernah tereksekusi di server
 produksi** — perintah ini menghapus lalu menulis ulang absensi pada rentang tersebut.
 

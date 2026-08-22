@@ -4,6 +4,7 @@ import api from '../api/axios';
 import { urlFoto, useTokenFoto } from '../api/fileUrl';
 import StatusBadge from '../components/StatusBadge';
 import { ArrowLeftIcon } from '../components/Icons';
+import { formatTanggalHari, formatJam } from '../utils/tanggal';
 
 const LIMIT = 30;
 
@@ -37,15 +38,7 @@ export default function History() {
     fetchHistory();
   }, [fetchHistory]);
 
-  function formatTanggal(d) {
-    return new Date(d).toLocaleDateString('id-ID', {
-      weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
-    });
-  }
 
-  function formatJam(t) {
-    return t ? new Date(t).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '—';
-  }
 
   const inputClass =
     'w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm transition focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/40';
@@ -103,7 +96,7 @@ export default function History() {
           {items.map((item) => (
             <div key={item.id} className="px-5 py-4 border-b border-gray-50 last:border-b-0 hover:bg-gray-50/60 transition">
               <div className="flex justify-between items-center mb-1.5">
-                <p className="text-sm font-semibold text-gray-900">{formatTanggal(item.date)}</p>
+                <p className="text-sm font-semibold text-gray-900">{formatTanggalHari(item.date)}</p>
                 <StatusBadge status={item.status} />
               </div>
               <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">

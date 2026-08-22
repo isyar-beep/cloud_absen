@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import api from '../api/axios';
 import AdminHeader from '../components/AdminHeader';
 import { PlusIcon } from '../components/Icons';
+import { tanggalLokal } from '../utils/tanggal';
 
 export default function AdminHolidays() {
   const [holidays, setHolidays] = useState([]);
@@ -42,7 +43,7 @@ export default function AdminHolidays() {
   }
 
   function formatTanggal(d) {
-    return new Date(d).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    return tanggalLokal(d).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   }
 
   const inputClass =

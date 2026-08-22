@@ -3,6 +3,7 @@ import {
   View, Text, TouchableOpacity, StyleSheet, FlatList,
 } from 'react-native';
 import api from '../services/api';
+import { formatTanggalHari, formatJam } from '../utils/tanggal';
 
 const LIMIT = 30;
 
@@ -47,22 +48,12 @@ export default function HistoryScreen() {
     fetchHistory();
   }, [fetchHistory]);
 
-  function formatTanggal(d) {
-    return new Date(d).toLocaleDateString('id-ID', {
-      weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
-    });
-  }
-
-  function formatJam(t) {
-    return t ? new Date(t).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '-';
-  }
-
   function renderItem({ item }) {
     const info = statusInfo[item.status] || statusInfo.hadir;
     return (
       <View style={styles.card}>
         <View style={styles.cardHeader}>
-          <Text style={styles.date}>{formatTanggal(item.date)}</Text>
+          <Text style={styles.date}>{formatTanggalHari(item.date)}</Text>
           <View style={[styles.badge, { backgroundColor: info.bg }]}>
             <Text style={[styles.badgeText, { color: info.color }]}>{info.text}</Text>
           </View>

@@ -3,6 +3,7 @@ import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert,
 } from 'react-native';
 import api from '../services/api';
+import { formatTanggal } from '../utils/tanggal';
 
 const statusInfo = {
   pending: { text: 'Menunggu', color: '#b45309', bg: '#fffbeb' },
@@ -51,10 +52,6 @@ export default function LeavesScreen() {
     } finally {
       setLoading(false);
     }
-  }
-
-  function formatTanggal(d) {
-    return new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
   }
 
   return (

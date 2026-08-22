@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import api from '../api/axios';
 import AdminHeader from '../components/AdminHeader';
 import StatusBadge from '../components/StatusBadge';
+import { formatTanggal } from '../utils/tanggal';
 
 export default function AdminLeaves() {
   const [leaves, setLeaves] = useState([]);
@@ -35,9 +36,6 @@ export default function AdminLeaves() {
     }
   }
 
-  function formatTanggal(d) {
-    return new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
-  }
 
   const filters = [
     { key: 'pending', label: 'Menunggu' },

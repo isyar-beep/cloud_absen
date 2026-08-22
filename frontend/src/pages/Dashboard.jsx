@@ -8,6 +8,7 @@ import AvatarUploader from '../components/AvatarUploader';
 import {
   CameraIcon, CalendarIcon, ClockIcon, ChartIcon, CheckBadgeIcon, LogoutIcon,
 } from '../components/Icons';
+import { tanggalLokal, formatJam } from '../utils/tanggal';
 
 export default function Dashboard() {
   const { user, logout } = useAuthStore();
@@ -33,7 +34,7 @@ export default function Dashboard() {
       setProfile(profileRes.data);
       setTrend(
         trendRes.data.map((d) => ({
-          date: new Date(d.date).getDate(),
+          date: tanggalLokal(d.date).getDate(),
           jam: d.work_hours ? Number(d.work_hours).toFixed(1) : 0,
         }))
       );
@@ -178,11 +179,11 @@ export default function Dashboard() {
             <div key={item.id} className="flex justify-between items-center px-5 py-3.5 border-t border-gray-50 hover:bg-gray-50/60 transition">
               <div>
                 <p className="text-sm font-medium text-gray-900">
-                  {new Date(item.date).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' })}
+                  {tanggalLokal(item.date).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' })}
                 </p>
                 <p className="text-xs text-gray-400 mt-0.5">
                   {item.check_in_time
-                    ? `Masuk ${new Date(item.check_in_time).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}`
+                    ? `Masuk ${formatJam(item.check_in_time)}`
                     : 'Tidak ada jam masuk'}
                 </p>
               </div>
