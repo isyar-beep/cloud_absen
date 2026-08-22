@@ -1,8 +1,11 @@
 const express = require('express');
 const rateLimit = require('express-rate-limit');
 const router = express.Router();
-const { login, getProfile, changePassword, registerPushToken } = require('../controllers/authController');
+const {
+  login, getProfile, changePassword, registerPushToken, uploadAvatar, deleteAvatar,
+} = require('../controllers/authController');
 const { authenticate } = require('../middleware/auth');
+const upload = require('../middleware/upload');
 
 // Rate limit khusus login untuk memperlambat percobaan tebak password.
 // skipSuccessfulRequests: hanya login GAGAL yang dihitung. Tanpa ini, satu
@@ -19,5 +22,7 @@ router.post('/login', loginLimiter, login);
 router.get('/me', authenticate, getProfile);
 router.post('/change-password', authenticate, changePassword);
 router.put('/push-token', authenticate, registerPushToken);
+router.put('/avatar', authenticate, upload.single('photo'), uploadAvatar);
+router.delete('/avatar', authenticate, deleteAvatar);
 
 module.exports = router;

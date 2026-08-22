@@ -8,7 +8,7 @@ const LIMIT = 30;
 
 const statusInfo = {
   hadir: { text: 'Hadir', color: '#15803d', bg: '#f0fdf4' },
-  terlambat: { text: 'Terlambat', color: '#b45309', bg: '#fffbeb' },
+  terlambat: { text: 'Hadir (Terlambat)', color: '#b45309', bg: '#fffbeb' },
   izin: { text: 'Izin', color: '#1d4ed8', bg: '#eff6ff' },
   alpha: { text: 'Alpha', color: '#b91c1c', bg: '#fef2f2' },
 };

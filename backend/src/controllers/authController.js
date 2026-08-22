@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const { query } = require('../config/db');
 const { generateToken } = require('../utils/jwt');
+const { uploadPhotoToStorage, hapusFotoLama } = require('../utils/uploadPhoto');
 
 // POST /api/auth/login
 async function login(req, res, next) {
@@ -125,4 +126,42 @@ async function registerPushToken(req, res, next) {
   }
 }
 
-module.exports = { login, getProfile, changePassword, registerPushToken };
+// PUT /api/auth/avatar -- pegawai mengunggah/mengganti foto profilnya sendiri.
+// Ukuran sudah diperkecil di sisi perangkat sebelum dikirim.
+async function uploadAvatar(req, res, next) {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'Foto profil wajib dipilih.' });
+    }
+
+    const lama = await query('SELECT avatar_url FROM users WHERE id = $1', [req.user.id]);
+    const avatarUrl = await uploadPhotoToStorage(req.file.buffer, req.file.mimetype, 'avatar');
+
+    await query('UPDATE users SET avatar_url = $1, updated_at = NOW() WHERE id = $2', [
+      avatarUrl,
+      req.user.id,
+    ]);
+
+    // Baru dihapus setelah yang baru tersimpan, supaya tidak kehilangan
+    // keduanya kalau penyimpanan gagal di tengah jalan.
+    await hapusFotoLama(lama.rows[0]?.avatar_url);
+
+    res.json({ message: 'Foto profil diperbarui.', avatar_url: avatarUrl });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// DELETE /api/auth/avatar -- kembali memakai inisial nama
+async function deleteAvatar(req, res, next) {
+  try {
+    const lama = await query('SELECT avatar_url FROM users WHERE id = $1', [req.user.id]);
+    await query('UPDATE users SET avatar_url = NULL, updated_at = NOW() WHERE id = $1', [req.user.id]);
+    await hapusFotoLama(lama.rows[0]?.avatar_url);
+    res.json({ message: 'Foto profil dihapus.' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { login, getProfile, changePassword, registerPushToken, uploadAvatar, deleteAvatar };

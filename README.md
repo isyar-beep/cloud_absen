@@ -56,6 +56,15 @@ npm run seed
 Ini akan membuat akun `admin@company.com` dengan password `admin123`.
 **Segera ganti password ini setelah login pertama kali.**
 
+**Isi data contoh untuk peragaan (opsional):**
+```bash
+npm run seed:demo
+```
+Mengisi absensi acak sejak 1 Agustus untuk seluruh pegawai aktif, supaya grafik
+dan laporan terlihat berisi saat didemokan. Akhir pekan dan hari libur dilewati.
+Sengaja dipisah dari `npm run seed` supaya **tidak pernah tereksekusi di server
+produksi** — perintah ini menghapus lalu menulis ulang absensi pada rentang tersebut.
+
 **Jalankan server:**
 ```bash
 npm run dev

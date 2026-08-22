@@ -122,15 +122,18 @@ export default function AdminStats() {
     [series]
   );
 
-  // Ringkasan angka di atas grafik -- untuk mode series dihitung dari seluruh bulan
+  // Ringkasan angka di atas grafik -- untuk mode series dihitung dari seluruh bulan.
+  // Rumus rate harus sama persis dengan backend (utils/attendanceRate.js):
+  // izin & cuti dikeluarkan dari penyebut, hanya hadir/terlambat/alpha yang dihitung.
   const ringkasan = useMemo(() => {
     if (butuhSeries) {
       const total = KATEGORI.reduce((acc, k) => ({ ...acc, [k]: series.reduce((s, r) => s + r[k], 0) }), {});
-      const record = KATEGORI.reduce((a, k) => a + total[k], 0);
+      const masuk = total.hadir + total.terlambat;
+      const hariEfektif = masuk + total.alpha;
       return {
         ...total,
-        total_record: record,
-        attendance_rate: record > 0 ? (((total.hadir + total.terlambat) / record) * 100).toFixed(1) : '0.0',
+        total_record: KATEGORI.reduce((a, k) => a + total[k], 0),
+        attendance_rate: hariEfektif > 0 ? ((masuk / hariEfektif) * 100).toFixed(1) : '0.0',
       };
     }
     return breakdown;
@@ -285,7 +288,9 @@ export default function AdminStats() {
 
             {!loading && !error && adaData && tipeGrafik === 'bar' && (
               <ResponsiveContainer width="100%" height={TINGGI_CHART}>
-                <BarChart data={seriesChart} margin={{ top: 8, right: 8, left: -14, bottom: 0 }}>
+                {/* Bar berdampingan, bukan bertumpuk -- supaya hadir dan terlambat
+                    bisa dibandingkan langsung, tidak menyatu jadi satu batang. */}
+                <BarChart data={seriesChart} margin={{ top: 8, right: 8, left: -14, bottom: 0 }} barGap={3} barCategoryGap="22%">
                   <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#f1f5f9" />
                   <XAxis dataKey="label" fontSize={11} stroke="#9ca3af" tickLine={false} axisLine={false} dy={6} />
                   <YAxis fontSize={11} stroke="#9ca3af" tickLine={false} axisLine={false} allowDecimals={false} width={44} />
@@ -295,10 +300,9 @@ export default function AdminStats() {
                     <Bar
                       key={key}
                       dataKey={key}
-                      stackId="a"
                       fill={WARNA[key]}
-                      barSize={34}
-                      radius={[2, 2, 0, 0]}
+                      maxBarSize={18}
+                      radius={[3, 3, 0, 0]}
                       animationDuration={600}
                     />
                   ))}

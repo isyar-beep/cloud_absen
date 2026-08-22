@@ -2,27 +2,7 @@ import { useEffect, useState } from 'react';
 import api from '../api/axios';
 import AdminHeader from '../components/AdminHeader';
 import { PlusIcon } from '../components/Icons';
-
-// Avatar inisial nama dengan warna deterministik
-function InitialAvatar({ name }) {
-  const colors = [
-    'bg-primary-100 text-primary-700', 'bg-violet-100 text-violet-700',
-    'bg-emerald-100 text-emerald-700', 'bg-amber-100 text-amber-700',
-    'bg-rose-100 text-rose-700', 'bg-sky-100 text-sky-700',
-  ];
-  const idx = (name || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0) % colors.length;
-  const initials = (name || '?')
-    .split(' ')
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join('')
-    .toUpperCase();
-  return (
-    <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${colors[idx]}`}>
-      {initials}
-    </div>
-  );
-}
+import Avatar from '../components/Avatar';
 
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);
@@ -215,7 +195,7 @@ export default function AdminUsers() {
                 <tr key={u.id} className="border-b border-gray-50 last:border-b-0 hover:bg-gray-50/60 transition">
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-3">
-                      <InitialAvatar name={u.name} />
+                      <Avatar name={u.name} src={u.avatar_url} />
                       <div className="min-w-0">
                         <p className="font-medium text-gray-900 truncate">{u.name}</p>
                         <p className="text-xs text-gray-400 truncate">{u.email}</p>

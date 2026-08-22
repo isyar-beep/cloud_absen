@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import api from '../api/axios';
+import { urlFoto } from '../api/fileUrl';
 import AdminHeader from '../components/AdminHeader';
 import StatusBadge from '../components/StatusBadge';
 
@@ -135,12 +136,12 @@ export default function AdminHistory() {
                   </td>
                   <td className="px-5 py-3.5 space-x-2 whitespace-nowrap">
                     {item.photo_in_url && (
-                      <a href={item.photo_in_url} target="_blank" rel="noreferrer" className="text-xs text-primary-600 font-medium hover:underline">
+                      <a href={urlFoto(item.photo_in_url)} target="_blank" rel="noreferrer" className="text-xs text-primary-600 font-medium hover:underline">
                         Masuk
                       </a>
                     )}
                     {item.photo_out_url && (
-                      <a href={item.photo_out_url} target="_blank" rel="noreferrer" className="text-xs text-primary-600 font-medium hover:underline">
+                      <a href={urlFoto(item.photo_out_url)} target="_blank" rel="noreferrer" className="text-xs text-primary-600 font-medium hover:underline">
                         Pulang
                       </a>
                     )}

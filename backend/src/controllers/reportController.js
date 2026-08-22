@@ -1,6 +1,7 @@
 const ExcelJS = require('exceljs');
 const PDFDocument = require('pdfkit');
 const { query } = require('../config/db');
+const { hitungRate } = require('../utils/attendanceRate');
 
 const NAMA_BULAN = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -47,11 +48,7 @@ async function ambilDataLaporan(month, year, departmentId) {
   return { rekap: rekap.rows, detail: detail.rows };
 }
 
-function hitungRate(row) {
-  const hadirGabungan = Number(row.hadir) + Number(row.terlambat);
-  const total = Number(row.total_record);
-  return total > 0 ? ((hadirGabungan / total) * 100).toFixed(1) : '0.0';
-}
+// Rumusnya ada di utils/attendanceRate.js supaya sama persis dengan statistik
 
 function formatJam(timestamp) {
   if (!timestamp) return '-';

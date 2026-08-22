@@ -1,7 +1,9 @@
 // Badge status absensi dengan titik indikator -- dipakai konsisten di semua halaman
 const styles = {
   hadir: { text: 'Hadir', chip: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20', dot: 'bg-emerald-500' },
-  terlambat: { text: 'Terlambat', chip: 'bg-amber-50 text-amber-700 ring-amber-600/20', dot: 'bg-amber-500' },
+  // Terlambat tetap dihitung hadir -- teksnya menyebut keduanya supaya
+  // pegawai tidak salah paham dikira tidak masuk.
+  terlambat: { text: 'Hadir (Terlambat)', chip: 'bg-amber-50 text-amber-700 ring-amber-600/20', dot: 'bg-amber-500' },
   izin: { text: 'Izin', chip: 'bg-blue-50 text-blue-700 ring-blue-600/20', dot: 'bg-blue-500' },
   alpha: { text: 'Alpha', chip: 'bg-red-50 text-red-700 ring-red-600/20', dot: 'bg-red-500' },
   pending: { text: 'Menunggu', chip: 'bg-amber-50 text-amber-700 ring-amber-600/20', dot: 'bg-amber-500' },

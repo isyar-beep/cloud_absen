@@ -5,27 +5,7 @@ import StatusBadge from '../components/StatusBadge';
 import {
   UsersIcon, CheckBadgeIcon, ClockIcon, AlertIcon, DownloadIcon, MailIcon,
 } from '../components/Icons';
-
-// Avatar inisial nama dengan warna deterministik (nama sama = warna sama)
-function InitialAvatar({ name }) {
-  const colors = [
-    'bg-primary-100 text-primary-700', 'bg-violet-100 text-violet-700',
-    'bg-emerald-100 text-emerald-700', 'bg-amber-100 text-amber-700',
-    'bg-rose-100 text-rose-700', 'bg-sky-100 text-sky-700',
-  ];
-  const idx = (name || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0) % colors.length;
-  const initials = (name || '?')
-    .split(' ')
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join('')
-    .toUpperCase();
-  return (
-    <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${colors[idx]}`}>
-      {initials}
-    </div>
-  );
-}
+import Avatar from '../components/Avatar';
 
 export default function AdminDashboard() {
   const [overview, setOverview] = useState(null);
@@ -315,7 +295,7 @@ export default function AdminDashboard() {
             <div className="max-h-[26rem] overflow-y-auto">
               {todayAll.map((item) => (
                 <div key={item.user_id} className="flex items-center gap-3 px-5 py-3 border-t border-gray-50 hover:bg-gray-50/60 transition">
-                  <InitialAvatar name={item.name} />
+                  <Avatar name={item.name} src={item.avatar_url} />
                   <div className="min-w-0 mr-auto">
                     <p className="text-sm font-medium text-gray-900 truncate">{item.name}</p>
                     <p className="text-xs text-gray-400 truncate">{item.department || '—'}</p>

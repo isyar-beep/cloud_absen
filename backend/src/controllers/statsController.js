@@ -1,5 +1,6 @@
 const { query } = require('../config/db');
 const { todayLocal } = require('../utils/date');
+const { hitungRate } = require('../utils/attendanceRate');
 
 // GET /api/stats/me -- statistik personal pengguna (bulan berjalan)
 async function getMyStats(req, res, next) {
@@ -26,16 +27,18 @@ async function getMyStats(req, res, next) {
     );
 
     const row = result.rows[0];
-    const totalHadirGabungan = Number(row.total_hadir) + Number(row.total_terlambat);
-    const totalRecord = Number(row.total_record) || 1;
 
     res.json({
-      total_hadir: totalHadirGabungan,
+      total_hadir: Number(row.total_hadir) + Number(row.total_terlambat),
       total_terlambat: Number(row.total_terlambat),
       total_izin: Number(row.total_izin),
       total_alpha: Number(row.total_alpha),
       avg_work_hours: row.avg_work_hours ? Number(row.avg_work_hours).toFixed(1) : 0,
-      attendance_rate: ((totalHadirGabungan / totalRecord) * 100).toFixed(1),
+      attendance_rate: hitungRate({
+        hadir: row.total_hadir,
+        terlambat: row.total_terlambat,
+        alpha: row.total_alpha,
+      }),
     });
   } catch (err) {
     next(err);
@@ -99,8 +102,9 @@ async function getDepartmentStats(req, res, next) {
 
     const result = await query(
       `SELECT d.name AS department,
-              COUNT(a.*) FILTER (WHERE a.status IN ('hadir','terlambat')) AS hadir,
-              COUNT(a.*) AS total_record
+              COUNT(a.*) FILTER (WHERE a.status = 'hadir') AS hadir,
+              COUNT(a.*) FILTER (WHERE a.status = 'terlambat') AS terlambat,
+              COUNT(a.*) FILTER (WHERE a.status = 'alpha') AS alpha
        FROM departments d
        LEFT JOIN users u ON u.department_id = d.id AND u.role != 'admin'
        LEFT JOIN attendance a ON a.user_id = u.id
@@ -113,9 +117,7 @@ async function getDepartmentStats(req, res, next) {
 
     const stats = result.rows.map((row) => ({
       department: row.department,
-      attendance_rate: row.total_record > 0
-        ? ((row.hadir / row.total_record) * 100).toFixed(1)
-        : '0.0',
+      attendance_rate: hitungRate(row),
     }));
 
     res.json(stats);
@@ -132,24 +134,32 @@ async function getRanking(req, res, next) {
     const targetYear = year || new Date().getFullYear();
 
     const result = await query(
+      // HAVING memakai hari efektif, bukan seluruh catatan: pegawai yang
+      // sebulan penuh izin resmi tidak boleh muncul sebagai 0% dan masuk
+      // daftar berisiko. Urutannya juga memakai rumus yang sama dengan
+      // angka yang ditampilkan, supaya peringkat tidak bertentangan.
       `SELECT u.id, u.name,
-              COUNT(a.*) FILTER (WHERE a.status IN ('hadir','terlambat')) AS hadir,
-              COUNT(a.*) AS total_record
+              COUNT(a.*) FILTER (WHERE a.status = 'hadir') AS hadir,
+              COUNT(a.*) FILTER (WHERE a.status = 'terlambat') AS terlambat,
+              COUNT(a.*) FILTER (WHERE a.status = 'alpha') AS alpha
        FROM users u
        LEFT JOIN attendance a ON a.user_id = u.id
          AND EXTRACT(MONTH FROM a.date) = $1
          AND EXTRACT(YEAR FROM a.date) = $2
        WHERE u.role != 'admin' AND u.is_active = TRUE
        GROUP BY u.id, u.name
-       HAVING COUNT(a.*) > 0
-       ORDER BY (COUNT(a.*) FILTER (WHERE a.status IN ('hadir','terlambat'))::float / COUNT(a.*)) DESC`,
+       HAVING COUNT(a.*) FILTER (WHERE a.status IN ('hadir','terlambat','alpha')) > 0
+       ORDER BY (
+         COUNT(a.*) FILTER (WHERE a.status IN ('hadir','terlambat'))::float
+         / COUNT(a.*) FILTER (WHERE a.status IN ('hadir','terlambat','alpha'))
+       ) DESC`,
       [targetMonth, targetYear]
     );
 
     const ranked = result.rows.map((row) => ({
       id: row.id,
       name: row.name,
-      attendance_rate: ((row.hadir / row.total_record) * 100).toFixed(1),
+      attendance_rate: hitungRate(row),
     }));
 
     res.json({
@@ -195,16 +205,16 @@ async function getBreakdown(req, res, next) {
     );
 
     const row = result.rows[0];
-    const hadirGabungan = Number(row.hadir) + Number(row.terlambat);
-    const totalRecord = Number(row.total_record) || 0;
 
     res.json({
       hadir: Number(row.hadir),
       terlambat: Number(row.terlambat),
       izin: Number(row.izin),
       alpha: Number(row.alpha),
-      total_record: totalRecord,
-      attendance_rate: totalRecord > 0 ? ((hadirGabungan / totalRecord) * 100).toFixed(1) : '0.0',
+      total_record: Number(row.total_record),
+      // hari efektif = penyebut rate; izin tidak ikut dihitung
+      hari_efektif: Number(row.hadir) + Number(row.terlambat) + Number(row.alpha),
+      attendance_rate: hitungRate(row),
     });
   } catch (err) {
     next(err);

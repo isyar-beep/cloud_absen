@@ -4,6 +4,7 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'rec
 import api from '../api/axios';
 import { useAuthStore } from '../store/authStore';
 import StatusBadge from '../components/StatusBadge';
+import AvatarUploader from '../components/AvatarUploader';
 import {
   CameraIcon, CalendarIcon, ClockIcon, ChartIcon, CheckBadgeIcon, LogoutIcon,
 } from '../components/Icons';
@@ -74,6 +75,13 @@ export default function Dashboard() {
                   {profile.shift_name} · {profile.shift_start}–{profile.shift_end}
                 </p>
               )}
+              <div className="mt-4">
+                <AvatarUploader
+                  name={user?.name}
+                  src={profile?.avatar_url}
+                  onChange={(url) => setProfile((p) => ({ ...p, avatar_url: url }))}
+                />
+              </div>
             </div>
             <button
               onClick={handleLogout}

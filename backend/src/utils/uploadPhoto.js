@@ -26,4 +26,22 @@ async function uploadPhotoToStorage(fileBuffer, mimetype, folder = 'attendance')
   return publicBaseUrl ? `${publicBaseUrl}${relativeUrl}` : relativeUrl;
 }
 
-module.exports = { uploadPhotoToStorage, uploadDir };
+// Hapus berkas lama saat foto diganti, supaya disk server tidak menumpuk
+// file yatim. URL yang tidak dikenali (mis. dari domain lain) diabaikan.
+async function hapusFotoLama(url) {
+  if (!url) return;
+  const relatif = url.replace(publicBaseUrl, '');
+  if (!relatif.startsWith('/uploads/')) return;
+
+  const target = path.join(uploadDir, relatif.replace('/uploads/', ''));
+  // Pastikan tetap di dalam folder uploads -- cegah path traversal
+  if (!path.resolve(target).startsWith(path.resolve(uploadDir))) return;
+
+  try {
+    await fs.promises.unlink(target);
+  } catch (err) {
+    if (err.code !== 'ENOENT') console.error('Gagal hapus foto lama:', err.message);
+  }
+}
+
+module.exports = { uploadPhotoToStorage, hapusFotoLama, uploadDir };

@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
+import { urlFoto } from '../api/fileUrl';
 import StatusBadge from '../components/StatusBadge';
 import { ArrowLeftIcon } from '../components/Icons';
 
@@ -108,12 +109,12 @@ export default function History() {
                 <span>Masuk: <span className="font-medium text-gray-700">{formatJam(item.check_in_time)}</span></span>
                 <span>Pulang: <span className="font-medium text-gray-700">{formatJam(item.check_out_time)}</span></span>
                 {item.photo_in_url && (
-                  <a href={item.photo_in_url} target="_blank" rel="noreferrer" className="text-primary-600 font-medium hover:underline">
+                  <a href={urlFoto(item.photo_in_url)} target="_blank" rel="noreferrer" className="text-primary-600 font-medium hover:underline">
                     Foto masuk
                   </a>
                 )}
                 {item.photo_out_url && (
-                  <a href={item.photo_out_url} target="_blank" rel="noreferrer" className="text-primary-600 font-medium hover:underline">
+                  <a href={urlFoto(item.photo_out_url)} target="_blank" rel="noreferrer" className="text-primary-600 font-medium hover:underline">
                     Foto pulang
                   </a>
                 )}
