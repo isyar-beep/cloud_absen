@@ -4,6 +4,7 @@ import {
 } from 'react-native';
 import api from '../services/api';
 import { formatTanggalHari, formatJam } from '../utils/tanggal';
+import { rentangPreset } from '../utils/periode';
 
 const LIMIT = 30;
 
@@ -13,6 +14,17 @@ const statusInfo = {
   izin: { text: 'Izin', color: '#1d4ed8', bg: '#eff6ff' },
   alpha: { text: 'Alpha', color: '#b91c1c', bg: '#fef2f2' },
 };
+
+// Preset periode. Dropdown bulan/tahun dan rentang khusus sengaja tidak
+// dibawa ke mobile: di layar sempit, empat preset ini sudah menutup hampir
+// semua kebutuhan, dan pemilih tanggal butuh paket tambahan.
+const periodeOptions = [
+  { key: 'minggu_ini', label: 'Minggu ini' },
+  { key: 'bulan_ini', label: 'Bulan ini' },
+  { key: 'bulan_lalu', label: 'Bulan lalu' },
+  { key: 'tahun_ini', label: 'Tahun ini' },
+  { key: 'semua', label: 'Semua' },
+];
 
 const filterOptions = [
   { key: '', label: 'Semua' },
@@ -24,15 +36,21 @@ const filterOptions = [
 
 export default function HistoryScreen() {
   const [items, setItems] = useState([]);
+  const [rekap, setRekap] = useState(null);
   const [statusFilter, setStatusFilter] = useState('');
+  const [periode, setPeriode] = useState('bulan_ini');
   const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const rentang = rentangPreset(periode);
 
   const fetchHistory = useCallback(async (offset = 0, append = false) => {
     setLoading(true);
     try {
       const params = { limit: LIMIT, offset };
       if (statusFilter) params.status = statusFilter;
+      if (rentang.start_date) params.start_date = rentang.start_date;
+      if (rentang.end_date) params.end_date = rentang.end_date;
 
       const res = await api.get('/attendance/history', { params });
       setItems((prev) => (append ? [...prev, ...res.data] : res.data));
@@ -42,11 +60,29 @@ export default function HistoryScreen() {
     } finally {
       setLoading(false);
     }
-  }, [statusFilter]);
+  }, [statusFilter, rentang.start_date, rentang.end_date]);
+
+  // Rekap tidak ikut saringan status -- justru ini yang memberi tahu ada
+  // berapa banyak tiap status dalam periode terpilih.
+  const fetchRekap = useCallback(async () => {
+    try {
+      const params = {};
+      if (rentang.start_date) params.start_date = rentang.start_date;
+      if (rentang.end_date) params.end_date = rentang.end_date;
+      const res = await api.get('/attendance/history/summary', { params });
+      setRekap(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  }, [rentang.start_date, rentang.end_date]);
 
   useEffect(() => {
     fetchHistory();
   }, [fetchHistory]);
+
+  useEffect(() => {
+    fetchRekap();
+  }, [fetchRekap]);
 
   function renderItem({ item }) {
     const info = statusInfo[item.status] || statusInfo.hadir;
@@ -68,6 +104,49 @@ export default function HistoryScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Pilih periode */}
+      <View style={styles.filterRow}>
+        {periodeOptions.map((p) => (
+          <TouchableOpacity
+            key={p.key}
+            style={[styles.filterChip, periode === p.key && styles.filterChipActive]}
+            onPress={() => setPeriode(p.key)}
+          >
+            <Text style={[styles.filterText, periode === p.key && styles.filterTextActive]}>
+              {p.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* Rekap periode terpilih. Angkanya juga jadi pintasan ke saringan
+          status yang bersangkutan. */}
+      {rekap ? (
+        <View>
+          <View style={styles.rekapRow}>
+            {[
+              { key: 'hadir', label: 'Hadir', nilai: rekap.hadir, warna: '#15803d' },
+              { key: 'terlambat', label: 'Terlambat', nilai: rekap.terlambat, warna: '#b45309' },
+              { key: 'izin', label: 'Izin', nilai: rekap.izin, warna: '#1d4ed8' },
+              { key: 'alpha', label: 'Alpha', nilai: rekap.alpha, warna: '#b91c1c' },
+            ].map((k) => (
+              <TouchableOpacity
+                key={k.key}
+                style={[styles.rekapCard, statusFilter === k.key && styles.rekapCardActive]}
+                onPress={() => setStatusFilter(statusFilter === k.key ? '' : k.key)}
+              >
+                <Text style={[styles.rekapNilai, { color: k.warna }]}>{k.nilai}</Text>
+                <Text style={styles.rekapLabel}>{k.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <Text style={styles.rekapKeterangan}>
+            Kehadiran {rekap.rate}% dari {rekap.hari_efektif} hari efektif.
+            {' '}Izin tidak mengurangi angka ini.
+          </Text>
+        </View>
+      ) : null}
+
       {/* Filter status */}
       <View style={styles.filterRow}>
         {filterOptions.map((f) => (
@@ -89,7 +168,9 @@ export default function HistoryScreen() {
         renderItem={renderItem}
         contentContainerStyle={{ paddingBottom: 24 }}
         ListEmptyComponent={
-          !loading ? <Text style={styles.empty}>Tidak ada data untuk filter ini.</Text> : null
+          !loading ? (
+            <Text style={styles.empty}>Tidak ada catatan absensi pada periode dan saringan ini.</Text>
+          ) : null
         }
         ListFooterComponent={
           hasMore ? (
@@ -119,6 +200,15 @@ const styles = StyleSheet.create({
   filterChipActive: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
   filterText: { fontSize: 12, color: '#4b5563', fontWeight: '500' },
   filterTextActive: { color: '#fff' },
+  rekapRow: { flexDirection: 'row', gap: 8, marginBottom: 6 },
+  rekapCard: {
+    flex: 1, backgroundColor: '#fff', borderRadius: 12, paddingVertical: 8,
+    alignItems: 'center', borderWidth: 1, borderColor: '#e5e7eb',
+  },
+  rekapCardActive: { borderColor: '#93c5fd', backgroundColor: '#eff6ff' },
+  rekapNilai: { fontSize: 18, fontWeight: '700' },
+  rekapLabel: { fontSize: 11, color: '#6b7280' },
+  rekapKeterangan: { fontSize: 11, color: '#9ca3af', marginBottom: 12 },
   card: {
     backgroundColor: '#fff', borderRadius: 12, padding: 14,
     borderWidth: 1, borderColor: '#e5e7eb', marginBottom: 8,

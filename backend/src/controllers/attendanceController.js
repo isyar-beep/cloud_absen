@@ -3,6 +3,7 @@ const { uploadFotoAbsensi } = require('../utils/uploadPhoto');
 const { todayLocal } = require('../utils/date');
 const { jendelaAbsen, shiftPegawai } = require('../utils/shiftWindow');
 const { cekHariKerja } = require('../utils/workday');
+const { hitungRate } = require('../utils/attendanceRate');
 
 // POST /api/attendance/check-in -- pengguna absen masuk dengan foto
 async function checkIn(req, res, next) {
@@ -226,6 +227,49 @@ async function getMyHistory(req, res, next) {
   }
 }
 
+// GET /api/attendance/history/summary -- rekap milik user sendiri untuk
+// filter yang sedang aktif. Dipisah dari daftar riwayat karena daftarnya
+// dipaginasi: menghitung dari 30 baris pertama akan salah begitu pegawai
+// punya lebih banyak catatan.
+async function getMyHistorySummary(req, res, next) {
+  try {
+    const conditions = ['a.user_id = $1'];
+    const params = [req.user.id];
+    // Status sengaja diabaikan di sini -- rekapnya justru yang memberi tahu
+    // ada berapa banyak tiap status dalam rentang tanggal yang dipilih.
+    buildHistoryFilter({ start_date: req.query.start_date, end_date: req.query.end_date }, conditions, params);
+
+    const hasil = await query(
+      `SELECT
+         COUNT(*) FILTER (WHERE a.status = 'hadir')     AS hadir,
+         COUNT(*) FILTER (WHERE a.status = 'terlambat') AS terlambat,
+         COUNT(*) FILTER (WHERE a.status = 'izin')      AS izin,
+         COUNT(*) FILTER (WHERE a.status = 'alpha')     AS alpha,
+         COUNT(*)                                       AS total
+       FROM attendance a
+       WHERE ${conditions.join(' AND ')}`,
+      params
+    );
+
+    const r = hasil.rows[0];
+    const rekap = {
+      hadir: Number(r.hadir),
+      terlambat: Number(r.terlambat),
+      izin: Number(r.izin),
+      alpha: Number(r.alpha),
+      total: Number(r.total),
+    };
+    // Hari efektif & rate memakai rumus yang sama dengan statistik admin,
+    // supaya angka di layar pegawai tidak pernah berbeda dari laporan.
+    rekap.hari_efektif = rekap.hadir + rekap.terlambat + rekap.alpha;
+    rekap.rate = hitungRate(rekap);
+
+    res.json(rekap);
+  } catch (err) {
+    next(err);
+  }
+}
+
 // GET /api/attendance/today-all -- admin lihat semua absensi hari ini (real-time board)
 async function getTodayAll(req, res, next) {
   try {
@@ -381,6 +425,7 @@ module.exports = {
   checkOut,
   getTodayStatus,
   getMyHistory,
+  getMyHistorySummary,
   getTodayAll,
   getUserHistory,
   getAllHistory,

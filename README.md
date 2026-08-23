@@ -233,8 +233,12 @@ Setelah menjalankan `npm run seed` di backend:
 - Export laporan bulanan ke Excel & PDF (admin, per periode/departemen)
 - Pengajuan izin oleh pegawai + persetujuan admin (approve otomatis mengisi
   status `izin` di absensi)
-- Riwayat absensi lengkap dengan filter tanggal/status (pegawai) dan
-  tanggal/status/departemen (admin)
+- Riwayat absensi pegawai: preset periode (minggu ini, bulan ini, bulan lalu,
+  tahun ini, semua) plus pilih bulan/tahun tertentu atau rentang khusus, tab
+  status (semua/hadir/terlambat/izin/alpha), dan rekap jumlah tiap status yang
+  sekaligus jadi pintasan ke tab-nya. Rekap dihitung di server, jadi tetap
+  benar walau daftarnya dipaginasi
+- Riwayat absensi admin dengan filter tanggal/status/departemen
 - Notifikasi email peringatan untuk pegawai dengan attendance rendah
   (opsional, aktif jika kredensial SMTP diisi di `.env`)
 - Notifikasi push ke mobile app (Expo Push Notifications): saat izin

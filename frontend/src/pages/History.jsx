@@ -1,28 +1,78 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { urlFoto, useTokenFoto } from '../api/fileUrl';
 import StatusBadge from '../components/StatusBadge';
 import { ArrowLeftIcon } from '../components/Icons';
 import { formatTanggalHari, formatJam } from '../utils/tanggal';
+import {
+  NAMA_BULAN, daftarTahun, rentangBulan, rentangPreset, rentangTahun,
+} from '../utils/periode';
 
 const LIMIT = 30;
+
+const TAB = [
+  { id: '', label: 'Semua' },
+  { id: 'hadir', label: 'Hadir' },
+  { id: 'terlambat', label: 'Terlambat' },
+  { id: 'izin', label: 'Izin' },
+  { id: 'alpha', label: 'Alpha' },
+];
+
+const PRESET = [
+  { id: 'minggu_ini', label: 'Minggu ini' },
+  { id: 'bulan_ini', label: 'Bulan ini' },
+  { id: 'bulan_lalu', label: 'Bulan lalu' },
+  { id: 'tahun_ini', label: 'Tahun ini' },
+  { id: 'semua', label: 'Semua' },
+];
+
+// Kartu angka kecil di baris rekap. Angkanya ikut jadi tombol pintas ke
+// tab yang bersangkutan -- pegawai yang melihat "3 alpha" biasanya
+// langsung ingin tahu tanggal berapa saja.
+function KartuRekap({ label, nilai, warna, aktif, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`rounded-xl border px-2 py-2 text-center transition ${
+        aktif ? 'border-primary-300 bg-primary-50/60' : 'border-gray-100 bg-white hover:border-gray-200'
+      }`}
+    >
+      <p className={`text-lg font-bold tabular-nums ${warna}`}>{nilai}</p>
+      <p className="text-[11px] text-gray-500">{label}</p>
+    </button>
+  );
+}
 
 export default function History() {
   const tokenFoto = useTokenFoto();
   const navigate = useNavigate();
   const [items, setItems] = useState([]);
-  const [filter, setFilter] = useState({ start_date: '', end_date: '', status: '' });
+  const [rekap, setRekap] = useState(null);
+  const [status, setStatus] = useState('');
+  const [preset, setPreset] = useState('bulan_ini');
+  const [pilihan, setPilihan] = useState({ tahun: new Date().getFullYear(), bulan: new Date().getMonth() + 1 });
+  const [khusus, setKhusus] = useState({ start_date: '', end_date: '' });
+  const [modePeriode, setModePeriode] = useState('preset'); // 'preset' | 'bulan' | 'tahun' | 'khusus'
   const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // Satu sumber kebenaran rentang tanggal: apa pun cara pegawai memilihnya,
+  // yang dikirim ke server selalu pasangan start_date/end_date yang sama.
+  const rentang = useMemo(() => {
+    if (modePeriode === 'bulan') return rentangBulan(pilihan.tahun, pilihan.bulan);
+    if (modePeriode === 'tahun') return rentangTahun(pilihan.tahun);
+    if (modePeriode === 'khusus') return khusus;
+    return rentangPreset(preset);
+  }, [modePeriode, preset, pilihan, khusus]);
 
   const fetchHistory = useCallback(async (offset = 0, append = false) => {
     setLoading(true);
     try {
       const params = { limit: LIMIT, offset };
-      if (filter.start_date) params.start_date = filter.start_date;
-      if (filter.end_date) params.end_date = filter.end_date;
-      if (filter.status) params.status = filter.status;
+      if (rentang.start_date) params.start_date = rentang.start_date;
+      if (rentang.end_date) params.end_date = rentang.end_date;
+      if (status) params.status = status;
 
       const res = await api.get('/attendance/history', { params });
       setItems((prev) => (append ? [...prev, ...res.data] : res.data));
@@ -32,16 +82,37 @@ export default function History() {
     } finally {
       setLoading(false);
     }
-  }, [filter]);
+  }, [rentang, status]);
 
-  useEffect(() => {
-    fetchHistory();
-  }, [fetchHistory]);
+  // Rekap sengaja tidak ikut filter status: justru rekap inilah yang
+  // memberi tahu ada berapa banyak tiap status di rentang ini.
+  const fetchRekap = useCallback(async () => {
+    try {
+      const params = {};
+      if (rentang.start_date) params.start_date = rentang.start_date;
+      if (rentang.end_date) params.end_date = rentang.end_date;
+      const res = await api.get('/attendance/history/summary', { params });
+      setRekap(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  }, [rentang]);
 
+  useEffect(() => { fetchHistory(); }, [fetchHistory]);
+  useEffect(() => { fetchRekap(); }, [fetchRekap]);
 
+  function pilihPreset(id) {
+    setModePeriode('preset');
+    setPreset(id);
+  }
 
   const inputClass =
     'w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm transition focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/40';
+
+  const chipClass = (aktif) =>
+    `px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition ${
+      aktif ? 'bg-primary-600 text-white shadow-glow' : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-300'
+    }`;
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-6">
@@ -55,40 +126,119 @@ export default function History() {
 
         <h1 className="text-xl font-bold text-gray-900 tracking-tight mb-4">Riwayat Absensi</h1>
 
-        {/* Filter */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-soft p-4 mb-4 grid grid-cols-3 gap-3">
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">Dari</label>
-            <input
-              type="date"
-              value={filter.start_date}
-              onChange={(e) => setFilter({ ...filter, start_date: e.target.value })}
-              className={inputClass}
-            />
+        {/* Pilih periode */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-soft p-4 mb-3">
+          <p className="text-xs font-medium text-gray-500 mb-2">Periode</p>
+          <div className="flex flex-wrap gap-1.5">
+            {PRESET.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => pilihPreset(p.id)}
+                className={chipClass(modePeriode === 'preset' && preset === p.id)}
+              >
+                {p.label}
+              </button>
+            ))}
+            <button onClick={() => setModePeriode('bulan')} className={chipClass(modePeriode === 'bulan')}>
+              Per bulan
+            </button>
+            <button onClick={() => setModePeriode('tahun')} className={chipClass(modePeriode === 'tahun')}>
+              Per tahun
+            </button>
+            <button onClick={() => setModePeriode('khusus')} className={chipClass(modePeriode === 'khusus')}>
+              Rentang khusus
+            </button>
           </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">Sampai</label>
-            <input
-              type="date"
-              value={filter.end_date}
-              onChange={(e) => setFilter({ ...filter, end_date: e.target.value })}
-              className={inputClass}
-            />
+
+          {(modePeriode === 'bulan' || modePeriode === 'tahun') && (
+            <div className="grid grid-cols-2 gap-3 mt-3">
+              {modePeriode === 'bulan' && (
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1.5">Bulan</label>
+                  <select
+                    value={pilihan.bulan}
+                    onChange={(e) => setPilihan({ ...pilihan, bulan: Number(e.target.value) })}
+                    className={inputClass}
+                  >
+                    {NAMA_BULAN.map((nama, i) => (
+                      <option key={nama} value={i + 1}>{nama}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              <div className={modePeriode === 'tahun' ? 'col-span-2' : ''}>
+                <label className="block text-xs font-medium text-gray-500 mb-1.5">Tahun</label>
+                <select
+                  value={pilihan.tahun}
+                  onChange={(e) => setPilihan({ ...pilihan, tahun: Number(e.target.value) })}
+                  className={inputClass}
+                >
+                  {daftarTahun().map((t) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
+
+          {modePeriode === 'khusus' && (
+            <div className="grid grid-cols-2 gap-3 mt-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1.5">Dari</label>
+                <input
+                  type="date"
+                  value={khusus.start_date}
+                  onChange={(e) => setKhusus({ ...khusus, start_date: e.target.value })}
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1.5">Sampai</label>
+                <input
+                  type="date"
+                  value={khusus.end_date}
+                  onChange={(e) => setKhusus({ ...khusus, end_date: e.target.value })}
+                  className={inputClass}
+                />
+              </div>
+            </div>
+          )}
+
+          {(rentang.start_date || rentang.end_date) && (
+            <p className="text-[11px] text-gray-400 mt-2.5">
+              {rentang.start_date ? formatTanggalHari(rentang.start_date) : 'awal'} —{' '}
+              {rentang.end_date ? formatTanggalHari(rentang.end_date) : 'sekarang'}
+            </p>
+          )}
+        </div>
+
+        {/* Rekap periode terpilih */}
+        {rekap && (
+          <div className="mb-3">
+            <div className="grid grid-cols-4 gap-2">
+              <KartuRekap label="Hadir" nilai={rekap.hadir} warna="text-emerald-600"
+                aktif={status === 'hadir'} onClick={() => setStatus(status === 'hadir' ? '' : 'hadir')} />
+              <KartuRekap label="Terlambat" nilai={rekap.terlambat} warna="text-amber-600"
+                aktif={status === 'terlambat'} onClick={() => setStatus(status === 'terlambat' ? '' : 'terlambat')} />
+              <KartuRekap label="Izin" nilai={rekap.izin} warna="text-blue-600"
+                aktif={status === 'izin'} onClick={() => setStatus(status === 'izin' ? '' : 'izin')} />
+              <KartuRekap label="Alpha" nilai={rekap.alpha} warna="text-red-500"
+                aktif={status === 'alpha'} onClick={() => setStatus(status === 'alpha' ? '' : 'alpha')} />
+            </div>
+            <p className="text-[11px] text-gray-400 mt-2">
+              Kehadiran {rekap.rate}% dari {rekap.hari_efektif} hari efektif.
+              {' '}Izin tidak mengurangi angka ini.
+            </p>
           </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">Status</label>
-            <select
-              value={filter.status}
-              onChange={(e) => setFilter({ ...filter, status: e.target.value })}
-              className={inputClass}
-            >
-              <option value="">Semua</option>
-              <option value="hadir">Hadir</option>
-              <option value="terlambat">Terlambat</option>
-              <option value="izin">Izin</option>
-              <option value="alpha">Alpha</option>
-            </select>
-          </div>
+        )}
+
+        {/* Tab status */}
+        <div className="flex gap-1.5 overflow-x-auto mb-3 pb-0.5">
+          {TAB.map((t) => (
+            <button key={t.id} onClick={() => setStatus(t.id)} className={chipClass(status === t.id)}>
+              {t.label}
+            </button>
+          ))}
         </div>
 
         {/* Daftar riwayat */}
@@ -119,7 +269,7 @@ export default function History() {
 
           {items.length === 0 && !loading && (
             <p className="text-sm text-gray-400 px-5 py-10 text-center">
-              Tidak ada data untuk filter ini.
+              Tidak ada catatan absensi pada periode dan saringan ini.
             </p>
           )}
         </div>

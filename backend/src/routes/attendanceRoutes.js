@@ -5,6 +5,7 @@ const {
   checkOut,
   getTodayStatus,
   getMyHistory,
+  getMyHistorySummary,
   getTodayAll,
   getUserHistory,
   getAllHistory,
@@ -19,6 +20,7 @@ router.post('/check-in', authenticate, upload.single('photo'), checkIn);
 router.post('/check-out', authenticate, upload.single('photo'), checkOut);
 router.get('/today', authenticate, getTodayStatus);
 router.get('/history', authenticate, getMyHistory);
+router.get('/history/summary', authenticate, getMyHistorySummary);
 
 // Endpoint khusus admin
 router.get('/today-all', authenticate, authorize('admin'), getTodayAll);
