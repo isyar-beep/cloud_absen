@@ -13,6 +13,7 @@
 const { pool, query } = require('../src/config/db');
 const { uploadFotoAbsensi, hapusFotoLama } = require('../src/utils/uploadPhoto');
 const { gambarContoh } = require('./foto-contoh');
+const { durasiMenit } = require('../src/utils/shiftWindow');
 require('dotenv').config();
 
 const TANGGAL_MULAI = 1; // 1 Agustus
@@ -41,10 +42,6 @@ function acakInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-function jam(h, m, s) {
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-}
-
 function tanggalStr(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
@@ -59,13 +56,21 @@ function waktuDari(tgl, jamStr) {
 
 // Tulis satu foto contoh ke disk dengan penamaan yang sama persis seperti
 // absen sungguhan, lalu kembalikan path relatifnya untuk disimpan di database.
-async function fotoDemo(p, tgl, jamStr, jenis) {
+async function fotoDemo(p, waktu, jenis) {
   return uploadFotoAbsensi(gambarContoh(p.id), {
     userId: p.id,
     userName: p.name,
     jenis,
-    waktu: waktuDari(tgl, jamStr),
+    waktu,
   });
+}
+
+// "2026-08-21 22:05:13" -- bentuk yang diterima kolom TIMESTAMP.
+function stempel(d) {
+  const jj = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  const dd = String(d.getSeconds()).padStart(2, '0');
+  return `${tanggalStr(d)} ${jj}:${mm}:${dd}`;
 }
 
 async function main() {
@@ -111,7 +116,7 @@ async function main() {
   let foto = 0;
 
   for (const p of pegawai.rows) {
-    const [jamMulai] = p.mulai.split(':').map(Number);
+    const lamaShift = durasiMenit({ start_time: p.mulai, end_time: p.selesai });
 
     for (let d = new Date(mulai); d <= hariIni; d.setDate(d.getDate() + 1)) {
       const tgl = tanggalStr(d);
@@ -136,28 +141,37 @@ async function main() {
         continue;
       }
 
-      // hadir: masuk sebelum jam shift. terlambat: sesudahnya.
-      const masuk = status === 'hadir'
-        ? jam(jamMulai - 1, acakInt(35, 59), acakInt(0, 59))
-        : jam(jamMulai, acakInt(5, 45), acakInt(0, 59));
+      // Jam absen dihitung dari kejadian shift yang konkret, bukan dari
+      // angka jam saja. Untuk shift malam 22:00-06:00, absen pulang otomatis
+      // jatuh di tanggal berikutnya -- kalau tidak, data demo akan tampil
+      // ganjil: "masuk 22.05, pulang 06.12" di tanggal yang sama.
+      const shiftMulai = waktuDari(tgl, p.mulai);
+      const shiftSelesai = new Date(shiftMulai.getTime() + lamaShift * 60000);
 
-      const [jamSelesai] = p.selesai.split(':').map(Number);
+      const masuk = new Date(shiftMulai.getTime() + (status === 'hadir'
+        ? -acakInt(1, 25) * 60000       // hadir: datang sebelum jam shift
+        : acakInt(5, 45) * 60000));     // terlambat: sesudahnya
+      masuk.setSeconds(acakInt(0, 59));
 
       // Sekitar 1 dari 8 hari sengaja tidak punya absen pulang -- kejadian
       // nyata (pegawai lupa absen pulang) dan sekaligus memperlihatkan slot
       // foto kosong di galeri saat diperagakan.
       const lupaPulang = Math.random() < 0.12;
-      const pulang = lupaPulang ? null : jam(jamSelesai, acakInt(0, 40), acakInt(0, 59));
+      let pulang = null;
+      if (!lupaPulang) {
+        pulang = new Date(shiftSelesai.getTime() + acakInt(0, 40) * 60000);
+        pulang.setSeconds(acakInt(0, 59));
+      }
 
-      const fotoMasuk = await fotoDemo(p, tgl, masuk, 'masuk');
-      const fotoPulang = pulang ? await fotoDemo(p, tgl, pulang, 'pulang') : null;
+      const fotoMasuk = await fotoDemo(p, masuk, 'masuk');
+      const fotoPulang = pulang ? await fotoDemo(p, pulang, 'pulang') : null;
       foto += pulang ? 2 : 1;
 
       await query(
         `INSERT INTO attendance (user_id, date, check_in_time, check_out_time, status, photo_in_url, photo_out_url)
          VALUES ($1, $2, $3::timestamp, $4::timestamp, $5, $6, $7)
          ON CONFLICT (user_id, date) DO NOTHING`,
-        [p.id, tgl, `${tgl} ${masuk}`, pulang ? `${tgl} ${pulang}` : null, status, fotoMasuk, fotoPulang]
+        [p.id, tgl, stempel(masuk), pulang ? stempel(pulang) : null, status, fotoMasuk, fotoPulang]
       );
       dibuat++;
     }

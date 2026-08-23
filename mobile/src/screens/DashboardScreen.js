@@ -34,8 +34,10 @@ export default function DashboardScreen({ navigation }) {
     navigation.replace('Login');
   }
 
-  const sudahCheckIn = !!todayStatus?.check_in_time;
-  const sudahCheckOut = !!todayStatus?.check_out_time;
+  // /attendance/today kini mengirim { absensi, shift, masuk, pulang, ... }
+  const absensi = todayStatus?.absensi;
+  const sudahCheckIn = !!absensi?.check_in_time;
+  const sudahCheckOut = !!absensi?.check_out_time;
 
   return (
     <ScrollView style={styles.container}>

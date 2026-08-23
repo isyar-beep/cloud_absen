@@ -1,27 +1,41 @@
 const { query } = require('../config/db');
 const { uploadFotoAbsensi } = require('../utils/uploadPhoto');
 const { todayLocal } = require('../utils/date');
-
-const JAM_MASUK_BATAS_DEFAULT = '08:00:00'; // dipakai kalau pegawai belum di-assign ke shift manapun
+const { jendelaAbsen, shiftPegawai } = require('../utils/shiftWindow');
 
 // POST /api/attendance/check-in -- pengguna absen masuk dengan foto
 async function checkIn(req, res, next) {
   try {
     const userId = req.user.id;
-    const today = todayLocal();
     const { latitude, longitude } = req.body;
 
     if (!req.file) {
       return res.status(400).json({ message: 'Foto wajib diambil untuk absen.' });
     }
 
-    // Cek apakah sudah absen hari ini
+    const jendela = jendelaAbsen(await shiftPegawai(query, userId));
+    if (!jendela.masuk.boleh) {
+      return res.status(403).json({ message: jendela.masuk.alasan, jendela });
+    }
+
+    // Tanggal shift, bukan tanggal kalender. Untuk shift malam yang mulai
+    // pukul 22:00, absen masuk pukul 00:30 tetap tercatat di tanggal shift
+    // kemarin -- satu shift = satu baris absensi.
+    const tanggal = jendela.tanggal_shift_masuk;
+
     const existing = await query(
-      'SELECT id FROM attendance WHERE user_id = $1 AND date = $2',
-      [userId, today]
+      'SELECT id, status, check_in_time FROM attendance WHERE user_id = $1 AND date = $2',
+      [userId, tanggal]
     );
-    if (existing.rows.length > 0) {
-      return res.status(409).json({ message: 'Anda sudah melakukan absen masuk hari ini.' });
+    const lama = existing.rows[0];
+
+    if (lama?.check_in_time) {
+      return res.status(409).json({ message: 'Anda sudah melakukan absen masuk untuk shift ini.' });
+    }
+    if (lama && lama.status === 'izin') {
+      return res.status(409).json({
+        message: 'Tanggal ini tercatat izin. Hubungi admin bila Anda tetap masuk kerja.',
+      });
     }
 
     const photoUrl = await uploadFotoAbsensi(req.file.buffer, {
@@ -30,23 +44,26 @@ async function checkIn(req, res, next) {
       jenis: 'masuk',
     });
 
-    // Batas telat mengikuti jam masuk shift pegawai (kalau belum di-assign shift, pakai default 08:00)
-    const shiftResult = await query(
-      `SELECT s.start_time FROM users u LEFT JOIN shifts s ON u.shift_id = s.id WHERE u.id = $1`,
-      [userId]
-    );
-    const jamMasukBatas = shiftResult.rows[0]?.start_time || JAM_MASUK_BATAS_DEFAULT;
+    const status = jendela.terlambat ? 'terlambat' : 'hadir';
 
-    const now = new Date();
-    const currentTime = now.toTimeString().slice(0, 8);
-    const status = currentTime > jamMasukBatas ? 'terlambat' : 'hadir';
-
-    const result = await query(
-      `INSERT INTO attendance (user_id, date, check_in_time, status, photo_in_url, latitude, longitude)
-       VALUES ($1, $2, NOW(), $3, $4, $5, $6)
-       RETURNING id, date, check_in_time, status, photo_in_url`,
-      [userId, today, status, photoUrl, latitude || null, longitude || null]
-    );
+    // Baris "alpha" bisa sudah dibuat penanda otomatis tengah malam padahal
+    // pegawai shift malam baru absen setelahnya. Baris seperti itu ditimpa,
+    // bukan ditolak -- alpha hanya penanda sementara selama belum ada absen.
+    const result = lama
+      ? await query(
+          `UPDATE attendance
+           SET check_in_time = NOW(), status = $1, photo_in_url = $2,
+               latitude = $3, longitude = $4, reason = NULL
+           WHERE id = $5
+           RETURNING id, date, check_in_time, status, photo_in_url`,
+          [status, photoUrl, latitude || null, longitude || null, lama.id]
+        )
+      : await query(
+          `INSERT INTO attendance (user_id, date, check_in_time, status, photo_in_url, latitude, longitude)
+           VALUES ($1, $2, NOW(), $3, $4, $5, $6)
+           RETURNING id, date, check_in_time, status, photo_in_url`,
+          [userId, tanggal, status, photoUrl, latitude || null, longitude || null]
+        );
 
     res.status(201).json({ message: 'Absen masuk berhasil.', attendance: result.rows[0] });
   } catch (err) {
@@ -58,22 +75,31 @@ async function checkIn(req, res, next) {
 async function checkOut(req, res, next) {
   try {
     const userId = req.user.id;
-    const today = todayLocal();
 
     if (!req.file) {
       return res.status(400).json({ message: 'Foto wajib diambil untuk absen pulang.' });
     }
 
+    const jendela = jendelaAbsen(await shiftPegawai(query, userId));
+    if (!jendela.pulang.boleh) {
+      return res.status(403).json({ message: jendela.pulang.alasan, jendela });
+    }
+
+    // Tanggal shift yang sedang berjalan. Inilah kunci perbaikan shift
+    // malam: pukul 06:10 tanggal 22, absen pulang dicari di tanggal shift
+    // 21 -- tempat absen masuk pukul 22:00 tadi malam disimpan.
+    const tanggal = jendela.tanggal_shift_pulang;
+
     const existing = await query(
-      'SELECT id, check_out_time FROM attendance WHERE user_id = $1 AND date = $2',
-      [userId, today]
+      'SELECT id, check_in_time, check_out_time FROM attendance WHERE user_id = $1 AND date = $2',
+      [userId, tanggal]
     );
 
-    if (existing.rows.length === 0) {
-      return res.status(400).json({ message: 'Anda belum melakukan absen masuk hari ini.' });
+    if (existing.rows.length === 0 || !existing.rows[0].check_in_time) {
+      return res.status(400).json({ message: 'Anda belum melakukan absen masuk untuk shift ini.' });
     }
     if (existing.rows[0].check_out_time) {
-      return res.status(409).json({ message: 'Anda sudah melakukan absen pulang hari ini.' });
+      return res.status(409).json({ message: 'Anda sudah melakukan absen pulang untuk shift ini.' });
     }
 
     const photoUrl = await uploadFotoAbsensi(req.file.buffer, {
@@ -85,9 +111,9 @@ async function checkOut(req, res, next) {
     const result = await query(
       `UPDATE attendance
        SET check_out_time = NOW(), photo_out_url = $1
-       WHERE user_id = $2 AND date = $3
+       WHERE id = $2
        RETURNING id, date, check_in_time, check_out_time, status, photo_out_url`,
-      [photoUrl, userId, today]
+      [photoUrl, existing.rows[0].id]
     );
 
     res.json({ message: 'Absen pulang berhasil.', attendance: result.rows[0] });
@@ -96,15 +122,35 @@ async function checkOut(req, res, next) {
   }
 }
 
-// GET /api/attendance/today -- status absensi hari ini (untuk user)
+// GET /api/attendance/today -- status shift yang sedang berjalan (untuk user).
+// Selain catatan absensinya, dikirim juga info shift dan jendela waktunya
+// supaya layar pegawai bisa menampilkan "sudah boleh absen atau belum"
+// tanpa menebak-nebak aturan yang ada di server.
 async function getTodayStatus(req, res, next) {
   try {
-    const today = todayLocal();
-    const result = await query(
-      'SELECT * FROM attendance WHERE user_id = $1 AND date = $2',
-      [req.user.id, today]
+    const jendela = jendelaAbsen(await shiftPegawai(query, req.user.id));
+
+    // Untuk shift malam, kedua tanggal ini bisa berbeda saat pergantian
+    // hari. Yang ditampilkan adalah shift yang absen masuknya sudah ada
+    // tapi belum absen pulang; kalau tidak ada, pakai tanggal shift masuk.
+    const tanggalDicoba = [...new Set([jendela.tanggal_shift_pulang, jendela.tanggal_shift_masuk])];
+    const hasil = await query(
+      'SELECT * FROM attendance WHERE user_id = $1 AND date = ANY($2::date[]) ORDER BY date DESC',
+      [req.user.id, tanggalDicoba]
     );
-    res.json(result.rows[0] || null);
+
+    const berjalan = hasil.rows.find((r) => r.check_in_time && !r.check_out_time);
+    const absensi = berjalan
+      || hasil.rows.find((r) => r.date === jendela.tanggal_shift_masuk)
+      || hasil.rows[0]
+      || null;
+
+    res.json({
+      absensi,
+      tanggal_shift: absensi?.date || jendela.tanggal_shift_masuk,
+      hari_ini: todayLocal(),
+      ...jendela,
+    });
   } catch (err) {
     next(err);
   }

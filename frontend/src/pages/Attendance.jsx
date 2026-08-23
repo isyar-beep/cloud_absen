@@ -2,7 +2,28 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { ArrowLeftIcon, CameraIcon, ClockIcon } from '../components/Icons';
-import { formatJam } from '../utils/tanggal';
+import { formatJam, formatTanggalHari } from '../utils/tanggal';
+
+// Satu baris "kapan boleh absen": rentang jamnya, plus titik warna yang
+// langsung terbaca -- hijau berarti sedang dibuka, abu berarti belum/sudah
+// lewat, biru berarti absennya memang sudah selesai dilakukan.
+function JendelaBaris({ label, info, selesai }) {
+  const warna = selesai ? 'bg-primary-500' : info?.boleh ? 'bg-emerald-500' : 'bg-gray-300';
+  const keterangan = selesai ? 'Sudah dilakukan' : info?.boleh ? 'Dibuka sekarang' : 'Belum dibuka';
+
+  return (
+    <div>
+      <p className="text-[11px] text-gray-400">{label}</p>
+      <p className="text-sm font-semibold text-gray-800">
+        {info ? `${info.buka}–${info.tutup}` : '—'}
+      </p>
+      <p className="flex items-center gap-1.5 text-[11px] text-gray-500 mt-0.5">
+        <span className={`w-1.5 h-1.5 rounded-full ${warna}`} />
+        {selesai || info?.boleh ? keterangan : info?.alasan?.replace(/^Absen \w+ /, '') || keterangan}
+      </p>
+    </div>
+  );
+}
 
 export default function Attendance() {
   const videoRef = useRef(null);
@@ -13,20 +34,27 @@ export default function Attendance() {
   const [cameraReady, setCameraReady] = useState(false);
   const [capturedPhoto, setCapturedPhoto] = useState(null);
   const [mode, setMode] = useState(null); // 'check-in' | 'check-out'
-  const [todayStatus, setTodayStatus] = useState(null);
+  const [info, setInfo] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
     fetchTodayStatus();
-    return () => stopCamera();
+    // Jendela absen bergerak mengikuti jam. Tanpa penyegaran berkala,
+    // pegawai yang membuka halaman ini pukul 07.28 akan terus melihat
+    // "belum dibuka" walau sudah lewat pukul 07.30.
+    const timer = setInterval(fetchTodayStatus, 30000);
+    return () => {
+      clearInterval(timer);
+      stopCamera();
+    };
   }, []);
 
   async function fetchTodayStatus() {
     try {
       const res = await api.get('/attendance/today');
-      setTodayStatus(res.data);
+      setInfo(res.data);
     } catch (err) {
       console.error(err);
     }
@@ -122,8 +150,26 @@ export default function Attendance() {
     }
   }
 
-  const sudahCheckIn = !!todayStatus?.check_in_time;
-  const sudahCheckOut = !!todayStatus?.check_out_time;
+  const absensi = info?.absensi;
+  const sudahCheckIn = !!absensi?.check_in_time;
+  const sudahCheckOut = !!absensi?.check_out_time;
+
+  // Tombol hidup hanya kalau server bilang jendelanya terbuka. Ini salinan
+  // dari aturan yang sama di server -- server tetap yang menolak, ini
+  // supaya pegawai tahu duluan tanpa harus memotret dulu lalu ditolak.
+  const bolehMasuk = !sudahCheckIn && !!info?.masuk?.boleh;
+  const bolehPulang = sudahCheckIn && !sudahCheckOut && !!info?.pulang?.boleh;
+
+  // Alasan yang ditampilkan di bawah tombol saat tombolnya mati.
+  const catatanMasuk = sudahCheckIn ? null : info?.masuk?.alasan;
+  const catatanPulang = !sudahCheckIn
+    ? 'Absen masuk dulu sebelum absen pulang.'
+    : sudahCheckOut
+      ? null
+      : info?.pulang?.alasan;
+
+  const shift = info?.shift;
+  const tanggalShiftBeda = info?.tanggal_shift && info.tanggal_shift !== info.hari_ini;
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-6">
@@ -136,9 +182,41 @@ export default function Attendance() {
         </button>
 
         <h1 className="text-xl font-bold text-gray-900 tracking-tight mb-1">Absensi Hari Ini</h1>
-        <p className="text-sm text-gray-500 mb-6">
+        <p className="text-sm text-gray-500 mb-4">
           {new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
         </p>
+
+        {/* Kartu shift: pegawai perlu tahu jam kerjanya dan kapan absen dibuka,
+            sebelum menekan tombol. Untuk shift malam, tanggal shift bisa
+            berbeda dari tanggal hari ini -- itu disebut terang-terangan. */}
+        {shift && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-soft p-4 mb-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-xs text-gray-500">Shift Anda</p>
+                <p className="text-base font-bold text-gray-900 truncate">{shift.nama}</p>
+              </div>
+              <div className="text-right shrink-0">
+                <p className="text-xs text-gray-500">Jam kerja</p>
+                <p className="text-base font-bold text-gray-900">
+                  {shift.mulai}–{shift.selesai}
+                  {shift.lintas_hari && <span className="text-xs font-medium text-violet-600 ml-1">+1 hari</span>}
+                </p>
+              </div>
+            </div>
+
+            {tanggalShiftBeda && (
+              <p className="text-xs text-violet-700 bg-violet-50 border border-violet-100 rounded-lg px-2.5 py-1.5 mt-3">
+                Absen ini tercatat untuk shift tanggal {formatTanggalHari(info.tanggal_shift)}.
+              </p>
+            )}
+
+            <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-gray-50">
+              <JendelaBaris label="Absen masuk" info={info.masuk} selesai={sudahCheckIn} />
+              <JendelaBaris label="Absen pulang" info={info.pulang} selesai={sudahCheckOut} />
+            </div>
+          </div>
+        )}
 
         {message && (
           <div className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3 mb-4 font-medium">
@@ -160,7 +238,7 @@ export default function Attendance() {
             <div>
               <p className="text-xs text-gray-500">Jam masuk</p>
               <p className="text-base font-bold text-gray-900">
-                {sudahCheckIn ? formatJam(todayStatus.check_in_time) : '—'}
+                {sudahCheckIn ? formatJam(absensi.check_in_time) : '—'}
               </p>
             </div>
           </div>
@@ -171,7 +249,7 @@ export default function Attendance() {
             <div>
               <p className="text-xs text-gray-500">Jam pulang</p>
               <p className="text-base font-bold text-gray-900">
-                {sudahCheckOut ? formatJam(todayStatus.check_out_time) : '—'}
+                {sudahCheckOut ? formatJam(absensi.check_out_time) : '—'}
               </p>
             </div>
           </div>
@@ -202,22 +280,32 @@ export default function Attendance() {
         {/* Tombol aksi */}
         {!mode && (
           <div className="space-y-3">
-            <button
-              onClick={() => startCamera('check-in')}
-              disabled={sudahCheckIn}
-              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-primary-600 to-primary-700 text-white py-3.5 rounded-2xl text-sm font-semibold shadow-glow transition hover:from-primary-500 hover:to-primary-600 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
-            >
-              <CameraIcon className="w-5 h-5" />
-              {sudahCheckIn ? 'Sudah Absen Masuk' : 'Absen Masuk'}
-            </button>
-            <button
-              onClick={() => startCamera('check-out')}
-              disabled={!sudahCheckIn || sudahCheckOut}
-              className="w-full flex items-center justify-center gap-2 bg-gray-900 text-white py-3.5 rounded-2xl text-sm font-semibold transition hover:bg-gray-800 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <CameraIcon className="w-5 h-5" />
-              {sudahCheckOut ? 'Sudah Absen Pulang' : 'Absen Pulang'}
-            </button>
+            <div>
+              <button
+                onClick={() => startCamera('check-in')}
+                disabled={!bolehMasuk}
+                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-primary-600 to-primary-700 text-white py-3.5 rounded-2xl text-sm font-semibold shadow-glow transition hover:from-primary-500 hover:to-primary-600 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
+              >
+                <CameraIcon className="w-5 h-5" />
+                {sudahCheckIn ? 'Sudah Absen Masuk' : 'Absen Masuk'}
+              </button>
+              {catatanMasuk && (
+                <p className="text-xs text-gray-500 text-center mt-1.5">{catatanMasuk}</p>
+              )}
+            </div>
+            <div>
+              <button
+                onClick={() => startCamera('check-out')}
+                disabled={!bolehPulang}
+                className="w-full flex items-center justify-center gap-2 bg-gray-900 text-white py-3.5 rounded-2xl text-sm font-semibold transition hover:bg-gray-800 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <CameraIcon className="w-5 h-5" />
+                {sudahCheckOut ? 'Sudah Absen Pulang' : 'Absen Pulang'}
+              </button>
+              {catatanPulang && (
+                <p className="text-xs text-gray-500 text-center mt-1.5">{catatanPulang}</p>
+              )}
+            </div>
           </div>
         )}
 

@@ -41,7 +41,7 @@ docker-compose up -d postgres
 ```bash
 psql -U postgres -c "CREATE DATABASE cloud_absen;"
 psql -U postgres -d cloud_absen -f database/schema.sql
-psql -U postgres -d cloud_absen -f database/migrations/001_leave_requests.sql
+for f in database/migrations/*.sql; do psql -U postgres -d cloud_absen -f "$f"; done
 ```
 
 **Catatan migration:** perubahan schema setelah rilis awal disimpan di
@@ -241,6 +241,13 @@ Setelah menjalankan `npm run seed` di backend:
   di-approve/reject, pengingat belum check-in, dan peringatan attendance rendah
 - Shift kerja per pegawai (admin atur jam masuk/pulang tiap shift; deteksi
   telat otomatis mengikuti jam shift masing-masing pegawai, bukan jam tetap)
+- Jendela waktu absen per shift: absen masuk dan pulang hanya diterima dalam
+  rentang yang diatur admin, dihitung dalam menit terhadap jam shift. Halaman
+  Absensi pegawai menampilkan shift, jam kerja, rentang jendelanya, dan apakah
+  absen sudah boleh dilakukan sekarang
+- Shift yang menyeberang tengah malam (mis. 22:00-06:00) ditangani utuh: absen
+  masuk pukul 22:00 dan absen pulang pukul 06:10 keesokan harinya tercatat
+  sebagai satu shift yang sama
 - Kelola hari libur/cuti bersama (Sabtu-Minggu otomatis bukan hari kerja)
 - Alpha otomatis: pegawai yang tidak absen & tidak izin di hari kerja
   ditandai otomatis (terjadwal via cron, melewati weekend & hari libur)

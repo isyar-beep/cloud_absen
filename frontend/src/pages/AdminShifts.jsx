@@ -3,11 +3,42 @@ import api from '../api/axios';
 import AdminHeader from '../components/AdminHeader';
 import { PlusIcon } from '../components/Icons';
 
+// Nilai bawaan jendela absen, sama dengan default di migration 005.
+const JENDELA_AWAL = {
+  checkin_open_minutes: 30,
+  checkin_close_minutes: 240,
+  checkout_open_minutes: 15,
+  checkout_close_minutes: 360,
+};
+
+const JENDELA_FIELD = [
+  { key: 'checkin_open_minutes', label: 'Masuk dibuka', bantu: 'menit sebelum jam masuk' },
+  { key: 'checkin_close_minutes', label: 'Masuk ditutup', bantu: 'menit setelah jam masuk' },
+  { key: 'checkout_open_minutes', label: 'Pulang dibuka', bantu: 'menit sebelum jam pulang' },
+  { key: 'checkout_close_minutes', label: 'Pulang ditutup', bantu: 'menit setelah jam pulang' },
+];
+
+// "07.30" dari jam "08:00" dikurangi 30 menit -- dipakai untuk memperlihatkan
+// jendela yang akan berlaku, supaya admin tidak perlu berhitung sendiri.
+function geserJam(jam, menit) {
+  const [h, m] = String(jam).split(':').map(Number);
+  if (Number.isNaN(h)) return '—';
+  const total = ((h * 60 + m + menit) % 1440 + 1440) % 1440;
+  return `${String(Math.floor(total / 60)).padStart(2, '0')}.${String(total % 60).padStart(2, '0')}`;
+}
+
+// Shift yang jam pulangnya tidak lebih besar dari jam masuk menyeberang
+// tengah malam (mis. 22:00-06:00).
+function lintasHari(mulai, selesai) {
+  const ke = (t) => { const [h, m] = String(t).split(':').map(Number); return h * 60 + m; };
+  return ke(selesai) <= ke(mulai);
+}
+
 export default function AdminShifts() {
   const [shifts, setShifts] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [form, setForm] = useState({ name: '', start_time: '08:00', end_time: '17:00' });
+  const [form, setForm] = useState({ name: '', start_time: '08:00', end_time: '17:00', ...JENDELA_AWAL });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -22,14 +53,22 @@ export default function AdminShifts() {
 
   function openCreateForm() {
     setEditingId(null);
-    setForm({ name: '', start_time: '08:00', end_time: '17:00' });
+    setForm({ name: '', start_time: '08:00', end_time: '17:00', ...JENDELA_AWAL });
     setError('');
     setShowForm(true);
   }
 
   function openEditForm(shift) {
     setEditingId(shift.id);
-    setForm({ name: shift.name, start_time: shift.start_time, end_time: shift.end_time });
+    setForm({
+      name: shift.name,
+      start_time: shift.start_time,
+      end_time: shift.end_time,
+      checkin_open_minutes: shift.checkin_open_minutes ?? JENDELA_AWAL.checkin_open_minutes,
+      checkin_close_minutes: shift.checkin_close_minutes ?? JENDELA_AWAL.checkin_close_minutes,
+      checkout_open_minutes: shift.checkout_open_minutes ?? JENDELA_AWAL.checkout_open_minutes,
+      checkout_close_minutes: shift.checkout_close_minutes ?? JENDELA_AWAL.checkout_close_minutes,
+    });
     setError('');
     setShowForm(true);
   }
@@ -71,7 +110,7 @@ export default function AdminShifts() {
         <div className="flex justify-between items-center mb-6 gap-3">
           <div>
             <h1 className="text-xl font-bold text-gray-900 tracking-tight">Kelola Shift</h1>
-            <p className="text-sm text-gray-500 mt-0.5">{shifts.length} shift terdaftar — menentukan batas jam telat per pegawai</p>
+            <p className="text-sm text-gray-500 mt-0.5">{shifts.length} shift terdaftar — menentukan batas jam telat dan jendela waktu absen</p>
           </div>
           <button
             onClick={openCreateForm}
@@ -122,6 +161,43 @@ export default function AdminShifts() {
                 />
               </div>
             </div>
+            {lintasHari(form.start_time, form.end_time) && (
+              <p className="text-xs text-violet-700 bg-violet-50 border border-violet-100 rounded-xl px-3 py-2">
+                Shift ini menyeberang tengah malam. Absen masuk dan absen pulangnya
+                tetap dihitung sebagai satu shift yang sama, meski jatuh di dua tanggal.
+              </p>
+            )}
+
+            <div>
+              <p className="text-xs font-semibold text-gray-700 mb-1">Jendela waktu absen</p>
+              <p className="text-xs text-gray-400 mb-2.5">
+                Di luar jendela ini absen ditolak. Dihitung dalam menit terhadap jam
+                shift, jadi aturannya ikut bergeser kalau jam shift diubah.
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {JENDELA_FIELD.map((f) => (
+                  <div key={f.key}>
+                    <label className={labelClass}>{f.label}</label>
+                    <input
+                      required
+                      type="number"
+                      min="0"
+                      max="1440"
+                      value={form[f.key]}
+                      onChange={(e) => setForm({ ...form, [f.key]: e.target.value === '' ? '' : Number(e.target.value) })}
+                      className={`${inputClass} w-full`}
+                    />
+                    <p className="text-[11px] text-gray-400 mt-1">{f.bantu}</p>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-gray-500 mt-2.5">
+                Absen masuk: <span className="font-semibold tabular-nums">{geserJam(form.start_time, -form.checkin_open_minutes)}–{geserJam(form.start_time, form.checkin_close_minutes)}</span>
+                {' · '}
+                Absen pulang: <span className="font-semibold tabular-nums">{geserJam(form.end_time, -form.checkout_open_minutes)}–{geserJam(form.end_time, form.checkout_close_minutes)}</span>
+              </p>
+            </div>
+
             <p className="text-xs text-gray-400">
               Pegawai yang check-in setelah jam masuk shift ini otomatis tercatat "terlambat".
             </p>
@@ -150,6 +226,7 @@ export default function AdminShifts() {
               <tr className="border-b border-gray-100">
                 <th className="text-left px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Shift</th>
                 <th className="text-left px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Jam Kerja</th>
+                <th className="text-left px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Jendela Absen</th>
                 <th className="text-left px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Pegawai</th>
                 <th className="text-right px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Aksi</th>
               </tr>
@@ -158,7 +235,14 @@ export default function AdminShifts() {
               {shifts.map((s) => (
                 <tr key={s.id} className="border-b border-gray-50 last:border-b-0 hover:bg-gray-50/60 transition">
                   <td className="px-5 py-3.5 font-medium text-gray-900">{s.name}</td>
-                  <td className="px-5 py-3.5 text-gray-600 tabular-nums">{s.start_time} — {s.end_time}</td>
+                  <td className="px-5 py-3.5 text-gray-600 tabular-nums whitespace-nowrap">
+                    {s.start_time} — {s.end_time}
+                    {s.lintas_hari && <span className="text-[11px] text-violet-600 ml-1.5">+1 hari</span>}
+                  </td>
+                  <td className="px-5 py-3.5 text-gray-500 text-xs tabular-nums whitespace-nowrap">
+                    <div>Masuk {geserJam(s.start_time, -s.checkin_open_minutes)}–{geserJam(s.start_time, s.checkin_close_minutes)}</div>
+                    <div>Pulang {geserJam(s.end_time, -s.checkout_open_minutes)}–{geserJam(s.end_time, s.checkout_close_minutes)}</div>
+                  </td>
                   <td className="px-5 py-3.5 text-gray-600">{s.jumlah_pegawai} orang</td>
                   <td className="px-5 py-3.5 text-right space-x-3">
                     <button onClick={() => openEditForm(s)} className="text-xs font-semibold text-primary-600 hover:text-primary-700 transition">
@@ -172,7 +256,7 @@ export default function AdminShifts() {
               ))}
               {shifts.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="text-center text-sm text-gray-400 px-5 py-12">
+                  <td colSpan={5} className="text-center text-sm text-gray-400 px-5 py-12">
                     Belum ada shift. Tambahkan shift pertama.
                   </td>
                 </tr>
