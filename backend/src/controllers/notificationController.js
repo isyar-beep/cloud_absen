@@ -98,29 +98,89 @@ async function sendLowAttendanceWarning(req, res, next) {
   }
 }
 
+// GET /api/notifications/pending-checkin -- daftar pegawai yang belum absen
+// masuk hari ini, berikut apakah HP-nya bisa dikirimi notifikasi. Dipakai
+// admin untuk memilih siapa yang mau diingatkan, bukan menembak semuanya.
+async function getBelumCheckin(req, res, next) {
+  try {
+    const today = todayLocal();
+    const hasil = await query(
+      `SELECT u.id, u.name, u.avatar_url, d.name AS department,
+              (u.push_token IS NOT NULL) AS bisa_dikirimi,
+              s.name AS shift_name, s.start_time AS shift_start
+       FROM users u
+       LEFT JOIN attendance a ON a.user_id = u.id AND a.date = $1
+       LEFT JOIN departments d ON u.department_id = d.id
+       LEFT JOIN shifts s ON u.shift_id = s.id
+       WHERE u.role != 'admin' AND u.is_active = TRUE
+         AND (a.id IS NULL OR a.check_in_time IS NULL)
+       ORDER BY u.name ASC`,
+      [today]
+    );
+    res.json(hasil.rows);
+  } catch (err) {
+    next(err);
+  }
+}
+
 // POST /api/notifications/checkin-reminder -- admin kirim push reminder ke
-// pegawai yang belum check-in hari ini (dipanggil manual, atau terjadwal dari
-// cron VPS mirip low-attendance, mis. jam 08:00 setiap hari kerja).
+// pegawai yang belum check-in hari ini.
+//
+// Body semuanya opsional:
+//   user_ids : kirim hanya ke pegawai tertentu. Tanpa ini, dikirim ke semua
+//              yang belum absen -- bentuk inilah yang dipakai cron harian.
+//   message  : ganti isi pesannya, mis. untuk pengingat yang lebih personal.
 async function sendCheckinReminder(req, res, next) {
   try {
     const today = todayLocal();
+    const { user_ids, message: pesanKustom } = req.body || {};
+
+    // Daftar id harus benar-benar berupa angka sebelum masuk query.
+    let idTerpilih = null;
+    if (user_ids !== undefined && user_ids !== null) {
+      if (!Array.isArray(user_ids) || user_ids.length === 0) {
+        return res.status(400).json({ message: 'user_ids harus berupa daftar id pegawai yang tidak kosong.' });
+      }
+      idTerpilih = user_ids.map(Number);
+      if (idTerpilih.some((n) => !Number.isInteger(n) || n <= 0)) {
+        return res.status(400).json({ message: 'user_ids berisi id yang tidak valid.' });
+      }
+    }
+
+    if (pesanKustom !== undefined && pesanKustom !== null && String(pesanKustom).length > 300) {
+      return res.status(400).json({ message: 'Pesan pengingat maksimal 300 karakter.' });
+    }
 
     // Sengaja TIDAK memfilter push_token di SQL: pegawai yang belum absen tapi
     // belum pernah login di mobile app tetap perlu dilaporkan ke admin, supaya
     // "tidak ada yang perlu diingatkan" tidak rancu dengan "tidak ada yang bisa dikirimi".
+    //
+    // Penyaringan id juga dilakukan di SQL, bukan di JavaScript: admin yang
+    // mengirim id pegawai yang ternyata sudah absen tidak boleh membuat
+    // pegawai itu ikut diingatkan.
+    const params = [today];
+    let filterId = '';
+    if (idTerpilih) {
+      params.push(idTerpilih);
+      filterId = `AND u.id = ANY($${params.length}::int[])`;
+    }
+
     const result = await query(
       `SELECT u.id, u.name, u.push_token
        FROM users u
        LEFT JOIN attendance a ON a.user_id = u.id AND a.date = $1
        WHERE u.role != 'admin' AND u.is_active = TRUE
-         AND (a.id IS NULL OR a.check_in_time IS NULL)`,
-      [today]
+         AND (a.id IS NULL OR a.check_in_time IS NULL)
+         ${filterId}`,
+      params
     );
 
     const belumAbsen = result.rows;
     if (belumAbsen.length === 0) {
       return res.json({
-        message: 'Semua pegawai sudah absen masuk hari ini.',
+        message: idTerpilih
+          ? 'Pegawai yang dipilih ternyata sudah absen masuk hari ini.'
+          : 'Semua pegawai sudah absen masuk hari ini.',
         data: { belum_absen: 0, terkirim: 0 },
       });
     }
@@ -135,7 +195,9 @@ async function sendCheckinReminder(req, res, next) {
         punyaToken.map((row) => ({
           to: row.push_token,
           title: 'Pengingat Absensi',
-          body: `Halo ${row.name}, jangan lupa check-in hari ini.`,
+          body: pesanKustom
+            ? String(pesanKustom).trim()
+            : `Halo ${row.name}, jangan lupa check-in hari ini.`,
           data: { type: 'checkin_reminder' },
         }))
       );
@@ -144,7 +206,9 @@ async function sendCheckinReminder(req, res, next) {
     }
 
     // Susun pesan yang membedakan tiap situasi, bukan sekadar angka 0
-    let message = `${belumAbsen.length} pegawai belum absen. `;
+    let message = idTerpilih
+      ? `${belumAbsen.length} pegawai terpilih belum absen. `
+      : `${belumAbsen.length} pegawai belum absen. `;
     if (sent > 0) {
       message += `Pengingat terkirim ke ${sent} pegawai.`;
     } else if (punyaToken.length === 0) {
@@ -158,7 +222,12 @@ async function sendCheckinReminder(req, res, next) {
 
     await query(
       `INSERT INTO admin_logs (admin_id, action, detail) VALUES ($1, 'send_checkin_reminder', $2)`,
-      [req.user.id, `${belumAbsen.length} belum absen, ${sent} terkirim (${today})`]
+      [
+        req.user.id,
+        `${belumAbsen.length} belum absen, ${sent} terkirim (${today})`
+          + (idTerpilih ? ` -- dipilih manual: ${belumAbsen.map((r) => r.name).join(', ')}` : ' -- semua')
+          + (pesanKustom ? ' -- pesan kustom' : ''),
+      ]
     );
 
     res.json({
@@ -170,4 +239,4 @@ async function sendCheckinReminder(req, res, next) {
   }
 }
 
-module.exports = { sendLowAttendanceWarning, sendCheckinReminder };
+module.exports = { sendLowAttendanceWarning, sendCheckinReminder, getBelumCheckin };

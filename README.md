@@ -252,6 +252,10 @@ Setelah menjalankan `npm run seed` di backend:
   (opsional, aktif jika kredensial SMTP diisi di `.env`)
 - Notifikasi push ke mobile app (Expo Push Notifications): saat izin
   di-approve/reject, pengingat belum check-in, dan peringatan attendance rendah
+- Pengingat absen bisa dikirim ke semua pegawai yang belum absen sekaligus
+  (bentuk yang dipakai cron harian) atau ke orang tertentu saja. Dashboard admin
+  menampilkan daftar yang belum absen dengan kotak centang, dan admin bisa
+  menulis pesan sendiri (maks. 300 karakter) menggantikan teks bawaan
 - Shift kerja per pegawai (admin atur jam masuk/pulang tiap shift; deteksi
   telat otomatis mengikuti jam shift masing-masing pegawai, bukan jam tetap)
 - Jendela waktu absen per shift: absen masuk dan pulang hanya diterima dalam

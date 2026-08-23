@@ -244,6 +244,11 @@ Pola yang sama juga dipakai untuk push notification pengingat belum check-in
 0 8 * * 1-5 curl -s -X POST https://api.perusahaan.com/api/notifications/checkin-reminder -H "Authorization: Bearer TOKEN"
 ```
 
+Tanpa body, endpoint ini mengirim ke SEMUA pegawai yang belum absen — bentuk
+inilah yang dipakai cron. Untuk mengingatkan orang tertentu saja, admin memakai
+daftar bercentang di dashboard web, yang mengirim `{"user_ids": [...]}` ke
+endpoint yang sama.
+
 Pola yang sama juga dipakai untuk menandai "alpha" otomatis (pegawai yang tidak
 absen & tidak izin di hari kerja). Jalankan sekali sehari, setelah tengah malam,
 supaya menandai hari SEBELUMNYA yang sudah pasti selesai (endpoint ini default

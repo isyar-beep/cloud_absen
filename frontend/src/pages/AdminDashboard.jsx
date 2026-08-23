@@ -6,6 +6,7 @@ import {
   UsersIcon, CheckBadgeIcon, ClockIcon, AlertIcon, DownloadIcon, MailIcon,
 } from '../components/Icons';
 import Avatar from '../components/Avatar';
+import PengingatAbsen from '../components/PengingatAbsen';
 
 export default function AdminDashboard() {
   const [overview, setOverview] = useState(null);
@@ -23,8 +24,9 @@ export default function AdminDashboard() {
   // terjadwal di server tiap dini hari (lihat docs/deployment.md); tombol
   // manualnya justru rawan dipakai untuk tanggal yang harinya belum selesai.
   // Koreksi kasus per kasus sekarang lewat menu Riwayat > Koreksi.
-  const [sendingReminder, setSendingReminder] = useState(false);
-  const [reminderResult, setReminderResult] = useState('');
+  //
+  // Pengingat absen pindah ke komponen PengingatAbsen, yang mengurus
+  // daftar pegawai dan pilihannya sendiri.
 
   useEffect(() => {
     fetchData();
@@ -82,20 +84,6 @@ export default function AdminDashboard() {
       setWarningResult(err.response?.data?.message || 'Gagal mengirim peringatan.');
     } finally {
       setSendingWarning(false);
-    }
-  }
-
-  async function sendCheckinReminder() {
-    if (!confirm('Kirim notifikasi pengingat ke pegawai yang belum absen masuk hari ini?')) return;
-    setSendingReminder(true);
-    setReminderResult('');
-    try {
-      const res = await api.post('/notifications/checkin-reminder');
-      setReminderResult(res.data.message);
-    } catch (err) {
-      setReminderResult(err.response?.data?.message || 'Gagal mengirim pengingat.');
-    } finally {
-      setSendingReminder(false);
     }
   }
 
@@ -200,27 +188,8 @@ export default function AdminDashboard() {
             Untuk mengoreksi satu catatan absensi, buka menu Riwayat lalu klik Koreksi.
           </p>
 
-          <div className="grid sm:grid-cols-2 gap-4 mt-4">
-            {/* Pengingat absen */}
-            <div className="border border-gray-100 rounded-xl p-4">
-              <div className="flex items-center gap-2.5 mb-1">
-                <span className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-                  <ClockIcon className="w-4 h-4" />
-                </span>
-                <p className="text-sm font-semibold text-gray-900">Pengingat Absen</p>
-              </div>
-              <p className="text-xs text-gray-500 mb-3">
-                Kirim notifikasi ke HP pegawai yang belum absen masuk hari ini.
-              </p>
-              <button
-                onClick={sendCheckinReminder}
-                disabled={sendingReminder}
-                className="text-sm bg-gradient-to-r from-primary-600 to-primary-700 text-white px-4 py-2 rounded-xl font-semibold shadow-glow transition hover:from-primary-500 hover:to-primary-600 disabled:opacity-50"
-              >
-                {sendingReminder ? 'Mengirim…' : 'Kirim Pengingat'}
-              </button>
-              {reminderResult && <p className="text-xs text-gray-600 mt-2.5">{reminderResult}</p>}
-            </div>
+          <div className="mt-4">
+            <PengingatAbsen />
           </div>
         </div>
 
