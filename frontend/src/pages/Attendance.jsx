@@ -212,6 +212,13 @@ export default function Attendance() {
               </div>
             </div>
 
+            {info.wfa?.aktif && (
+              <p className="text-xs text-violet-700 bg-violet-50 border border-violet-100 rounded-lg px-2.5 py-1.5 mt-3">
+                <span className="font-semibold">Hari ini Anda terdaftar WFA.</span>{' '}
+                {info.wfa.catatan || 'Absen tetap seperti biasa, berfoto.'}
+              </p>
+            )}
+
             {info.hari_kerja && !info.hari_kerja.kerja && (
               <p className="text-xs text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-2.5 py-1.5 mt-3">
                 {info.hari_kerja.libur

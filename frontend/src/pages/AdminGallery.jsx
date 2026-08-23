@@ -4,6 +4,7 @@ import { urlFoto, useTokenFoto } from '../api/fileUrl';
 import AdminHeader from '../components/AdminHeader';
 import Avatar from '../components/Avatar';
 import StatusBadge from '../components/StatusBadge';
+import WfaBadge from '../components/WfaBadge';
 import { formatTanggalHari, formatJam, formatJamDetik } from '../utils/tanggal';
 
 const LIMIT = 24;
@@ -328,7 +329,10 @@ export default function AdminGallery() {
                       Pulang kosong
                     </span>
                   ) : (
-                    <StatusBadge status={r.status} />
+                    <span className="flex items-center gap-1.5">
+                      <WfaBadge mode={r.work_mode} />
+                      <StatusBadge status={r.status} />
+                    </span>
                   )}
                 </div>
               </div>

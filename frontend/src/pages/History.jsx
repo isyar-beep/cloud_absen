@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { urlFoto, useTokenFoto } from '../api/fileUrl';
 import StatusBadge from '../components/StatusBadge';
+import WfaBadge from '../components/WfaBadge';
 import AjukanKoreksiModal from '../components/AjukanKoreksiModal';
 import { ArrowLeftIcon } from '../components/Icons';
 import { formatTanggalHari, formatJam } from '../utils/tanggal';
@@ -278,7 +279,10 @@ export default function History() {
             <div key={item.id} className="px-5 py-4 border-b border-gray-50 last:border-b-0 hover:bg-gray-50/60 transition">
               <div className="flex justify-between items-center mb-1.5">
                 <p className="text-sm font-semibold text-gray-900">{formatTanggalHari(item.date)}</p>
-                <StatusBadge status={item.status} />
+                <span className="flex items-center gap-1.5">
+                  <WfaBadge mode={item.work_mode} />
+                  <StatusBadge status={item.status} />
+                </span>
               </div>
               <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
                 <span>Masuk: <span className="font-medium text-gray-700">{formatJam(item.check_in_time)}</span></span>

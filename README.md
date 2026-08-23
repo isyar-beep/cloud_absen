@@ -265,6 +265,14 @@ Setelah menjalankan `npm run seed` di backend:
 - Shift yang menyeberang tengah malam (mis. 22:00-06:00) ditangani utuh: absen
   masuk pukul 22:00 dan absen pulang pukul 06:10 keesokan harinya tercatat
   sebagai satu shift yang sama
+- WFA (Work From Anywhere) ditetapkan admin per pegawai untuk rentang tanggal
+  tertentu, di menu Shift & WFA. Pegawainya tetap absen berfoto seperti biasa;
+  catatan absensinya ditandai WFA dan penanda itu tampil di riwayat pegawai,
+  riwayat admin, dan galeri foto. Rentang yang tumpang tindih untuk pegawai
+  yang sama ditolak, dijaga sampai tingkat database.
+  **Catatan:** sistem ini merekam koordinat absen tapi belum pernah
+  membandingkannya dengan titik kantor, jadi penandaan WFA saat ini berfungsi
+  untuk pelaporan — belum ada pembatasan lokasi yang dilonggarkan
 - Kelola hari libur/cuti bersama (Sabtu-Minggu otomatis bukan hari kerja)
 - Absen ditutup di akhir pekan dan hari libur terdaftar. Yang diperiksa adalah
   tanggal shift, jadi shift malam yang mulai Jumat 22:00 tetap bisa absen pulang

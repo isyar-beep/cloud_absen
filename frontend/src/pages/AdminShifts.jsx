@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import api from '../api/axios';
 import AdminHeader from '../components/AdminHeader';
 import { PlusIcon } from '../components/Icons';
+import AdminWfa from './AdminWfa';
 
 // Nilai bawaan jendela absen, sama dengan default di migration 005.
 const JENDELA_AWAL = {
@@ -35,6 +36,9 @@ function lintasHari(mulai, selesai) {
 }
 
 export default function AdminShifts() {
+  // Shift dan WFA sama-sama "penjadwalan cara kerja pegawai", jadi digabung
+  // di satu halaman sebagai tab daripada menambah menu baru di bilah navigasi.
+  const [tab, setTab] = useState('shift');
   const [shifts, setShifts] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -107,11 +111,39 @@ export default function AdminShifts() {
       <AdminHeader />
 
       <div className="max-w-4xl mx-auto px-4 py-7">
-        <div className="flex justify-between items-center mb-6 gap-3">
-          <div>
-            <h1 className="text-xl font-bold text-gray-900 tracking-tight">Kelola Shift</h1>
-            <p className="text-sm text-gray-500 mt-0.5">{shifts.length} shift terdaftar — menentukan batas jam telat dan jendela waktu absen</p>
-          </div>
+        <div className="mb-5">
+          <h1 className="text-xl font-bold text-gray-900 tracking-tight">Shift &amp; WFA</h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            {tab === 'shift'
+              ? `${shifts.length} shift terdaftar — menentukan batas jam telat dan jendela waktu absen`
+              : 'Tetapkan rentang tanggal pegawai bekerja dari luar kantor'}
+          </p>
+        </div>
+
+        <div className="flex gap-2 mb-5 border-b border-gray-200">
+          {[
+            { key: 'shift', label: 'Shift Kerja' },
+            { key: 'wfa', label: 'WFA' },
+          ].map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={`px-4 py-2.5 text-sm font-semibold border-b-2 -mb-px transition ${
+                tab === t.key
+                  ? 'border-primary-600 text-primary-700'
+                  : 'border-transparent text-gray-500 hover:text-gray-800'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {tab === 'wfa' && <AdminWfa />}
+
+        {tab === 'shift' && (
+        <>
+        <div className="flex justify-end mb-4">
           <button
             onClick={openCreateForm}
             className="flex items-center gap-1.5 text-sm bg-gradient-to-r from-primary-600 to-primary-700 text-white px-4 py-2.5 rounded-xl font-semibold shadow-glow transition hover:from-primary-500 hover:to-primary-600"
@@ -264,6 +296,8 @@ export default function AdminShifts() {
             </tbody>
           </table>
         </div>
+        </>
+        )}
       </div>
     </div>
   );

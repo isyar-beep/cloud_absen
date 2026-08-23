@@ -3,6 +3,7 @@ const { uploadFotoAbsensi } = require('../utils/uploadPhoto');
 const { todayLocal } = require('../utils/date');
 const { jendelaAbsen, shiftPegawai } = require('../utils/shiftWindow');
 const { cekHariKerja } = require('../utils/workday');
+const { wfaBerlaku } = require('./wfaController');
 const { hitungRate } = require('../utils/attendanceRate');
 
 // POST /api/attendance/check-in -- pengguna absen masuk dengan foto
@@ -55,6 +56,12 @@ async function checkIn(req, res, next) {
 
     const status = jendela.terlambat ? 'terlambat' : 'hadir';
 
+    // Mode kerja mengikuti penetapan WFA yang berlaku pada TANGGAL SHIFT.
+    // Pegawai WFA tetap absen berfoto seperti biasa; penandaan ini yang
+    // membedakannya di riwayat, galeri, dan laporan.
+    const wfa = await wfaBerlaku(userId, tanggal);
+    const modeKerja = wfa ? 'wfa' : 'wfo';
+
     // Baris "alpha" bisa sudah dibuat penanda otomatis tengah malam padahal
     // pegawai shift malam baru absen setelahnya. Baris seperti itu ditimpa,
     // bukan ditolak -- alpha hanya penanda sementara selama belum ada absen.
@@ -62,16 +69,16 @@ async function checkIn(req, res, next) {
       ? await query(
           `UPDATE attendance
            SET check_in_time = NOW(), status = $1, photo_in_url = $2,
-               latitude = $3, longitude = $4, reason = NULL
-           WHERE id = $5
-           RETURNING id, date, check_in_time, status, photo_in_url`,
-          [status, photoUrl, latitude || null, longitude || null, lama.id]
+               latitude = $3, longitude = $4, reason = NULL, work_mode = $5
+           WHERE id = $6
+           RETURNING id, date, check_in_time, status, photo_in_url, work_mode`,
+          [status, photoUrl, latitude || null, longitude || null, modeKerja, lama.id]
         )
       : await query(
-          `INSERT INTO attendance (user_id, date, check_in_time, status, photo_in_url, latitude, longitude)
-           VALUES ($1, $2, NOW(), $3, $4, $5, $6)
-           RETURNING id, date, check_in_time, status, photo_in_url`,
-          [userId, tanggal, status, photoUrl, latitude || null, longitude || null]
+          `INSERT INTO attendance (user_id, date, check_in_time, status, photo_in_url, latitude, longitude, work_mode)
+           VALUES ($1, $2, NOW(), $3, $4, $5, $6, $7)
+           RETURNING id, date, check_in_time, status, photo_in_url, work_mode`,
+          [userId, tanggal, status, photoUrl, latitude || null, longitude || null, modeKerja]
         );
 
     res.status(201).json({ message: 'Absen masuk berhasil.', attendance: result.rows[0] });
@@ -161,6 +168,10 @@ async function getTodayStatus(req, res, next) {
 
     const tanggalShift = absensi?.date || jendela.tanggal_shift_masuk;
     const hariKerja = await cekHariKerja(query, tanggalShift);
+    // Pegawai perlu tahu hari ini dia terdaftar WFA -- absennya tetap sama,
+    // tapi tanpa keterangan ini penandaan WFA di riwayat akan terasa
+    // muncul entah dari mana.
+    const wfa = await wfaBerlaku(req.user.id, tanggalShift);
 
     // Kalau kantor tutup, jendela apa pun tidak berlaku -- alasannya
     // diganti supaya pegawai tahu sebabnya bukan soal jam.
@@ -173,6 +184,7 @@ async function getTodayStatus(req, res, next) {
       tanggal_shift: tanggalShift,
       hari_ini: todayLocal(),
       hari_kerja: hariKerja,
+      wfa: wfa ? { aktif: true, catatan: wfa.note } : { aktif: false, catatan: null },
       ...jendela,
       masuk: tutup(jendela.masuk),
       pulang: tutup(jendela.pulang),
@@ -214,7 +226,7 @@ async function getMyHistory(req, res, next) {
     params.push(limit, offset);
     const result = await query(
       `SELECT a.id, a.date, a.check_in_time, a.check_out_time, a.status, a.reason,
-              a.photo_in_url, a.photo_out_url
+              a.photo_in_url, a.photo_out_url, a.work_mode
        FROM attendance a
        WHERE ${conditions.join(' AND ')}
        ORDER BY a.date DESC
@@ -302,7 +314,7 @@ async function getUserHistory(req, res, next) {
     params.push(limit, offset);
     const result = await query(
       `SELECT a.id, a.date, a.check_in_time, a.check_out_time, a.status, a.reason,
-              a.photo_in_url, a.photo_out_url
+              a.photo_in_url, a.photo_out_url, a.work_mode
        FROM attendance a
        WHERE ${conditions.join(' AND ')}
        ORDER BY a.date DESC
@@ -343,7 +355,7 @@ async function getAllHistory(req, res, next) {
     params.push(limit, offset);
     const result = await query(
       `SELECT a.id, a.date, a.check_in_time, a.check_out_time, a.status, a.reason,
-              a.photo_in_url, a.photo_out_url,
+              a.photo_in_url, a.photo_out_url, a.work_mode,
               u.id AS user_id, u.name, u.avatar_url, d.name AS department
        FROM attendance a
        JOIN users u ON a.user_id = u.id

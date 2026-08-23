@@ -3,6 +3,7 @@ import api from '../api/axios';
 import { urlFoto, useTokenFoto } from '../api/fileUrl';
 import AdminHeader from '../components/AdminHeader';
 import StatusBadge from '../components/StatusBadge';
+import WfaBadge from '../components/WfaBadge';
 import EditAbsensiModal from '../components/EditAbsensiModal';
 import { formatTanggal, formatJam } from '../utils/tanggal';
 
@@ -138,7 +139,10 @@ export default function AdminHistory() {
                   <td className="px-5 py-3.5 text-gray-600">{formatJam(item.check_in_time)}</td>
                   <td className="px-5 py-3.5 text-gray-600">{formatJam(item.check_out_time)}</td>
                   <td className="px-5 py-3.5">
-                    <StatusBadge status={item.status} />
+                    <span className="flex items-center gap-1.5">
+                      <StatusBadge status={item.status} />
+                      <WfaBadge mode={item.work_mode} />
+                    </span>
                   </td>
                   <td className="px-5 py-3.5 space-x-2 whitespace-nowrap">
                     {item.photo_in_url && (

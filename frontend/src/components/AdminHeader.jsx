@@ -9,7 +9,7 @@ const navItems = [
   { to: '/admin/gallery', label: 'Galeri Foto' },
   { to: '/admin/leaves', label: 'Pengajuan' },
   { to: '/admin/users', label: 'Pengguna' },
-  { to: '/admin/shifts', label: 'Shift' },
+  { to: '/admin/shifts', label: 'Shift & WFA' },
   { to: '/admin/holidays', label: 'Hari Libur' },
 ];
 
