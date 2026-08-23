@@ -3,6 +3,7 @@ import api from '../api/axios';
 import { urlFoto, useTokenFoto } from '../api/fileUrl';
 import AdminHeader from '../components/AdminHeader';
 import StatusBadge from '../components/StatusBadge';
+import EditAbsensiModal from '../components/EditAbsensiModal';
 import { formatTanggal, formatJam } from '../utils/tanggal';
 
 const LIMIT = 50;
@@ -13,6 +14,8 @@ export default function AdminHistory() {
   const [departments, setDepartments] = useState([]);
   const [filter, setFilter] = useState({ start_date: '', end_date: '', status: '', department_id: '' });
   const [hasMore, setHasMore] = useState(false);
+  const [edit, setEdit] = useState(null);
+  const [pesan, setPesan] = useState('');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -105,6 +108,12 @@ export default function AdminHistory() {
           </div>
         </div>
 
+        {pesan && (
+          <div className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3 mb-4 font-medium">
+            ✓ {pesan}
+          </div>
+        )}
+
         {/* Tabel riwayat */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-soft overflow-x-auto">
           <table className="w-full text-sm">
@@ -117,6 +126,7 @@ export default function AdminHistory() {
                 <th className="text-left px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Pulang</th>
                 <th className="text-left px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Status</th>
                 <th className="text-left px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Foto</th>
+                <th className="text-right px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -145,6 +155,14 @@ export default function AdminHistory() {
                       <span className="text-xs text-gray-300">—</span>
                     )}
                   </td>
+                  <td className="px-5 py-3.5 text-right">
+                    <button
+                      onClick={() => setEdit(item)}
+                      className="text-xs font-semibold text-primary-600 hover:text-primary-700 transition"
+                    >
+                      Koreksi
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -167,6 +185,18 @@ export default function AdminHistory() {
           </button>
         )}
       </div>
+
+      {edit && (
+        <EditAbsensiModal
+          baris={edit}
+          onTutup={() => setEdit(null)}
+          onSimpan={(msg) => {
+            setEdit(null);
+            setPesan(msg);
+            fetchHistory();
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -239,6 +239,15 @@ Setelah menjalankan `npm run seed` di backend:
   sekaligus jadi pintasan ke tab-nya. Rekap dihitung di server, jadi tetap
   benar walau daftarnya dipaginasi
 - Riwayat absensi admin dengan filter tanggal/status/departemen
+- Koreksi absensi. Admin bisa mengubah jam masuk/pulang dan status satu
+  catatan langsung dari menu Riwayat; alasan perubahan wajib diisi dan tiap
+  perubahan tersimpan di jejak audit (nilai lama, nilai baru, siapa, kapan,
+  alasannya) yang tampil di jendela koreksi dan tidak bisa dihapus
+- Pegawai bisa mengajukan koreksi jam dari halaman Riwayat (mis. lupa absen
+  pulang); admin menyetujui atau menolak di menu Pengajuan > Koreksi Absensi.
+  Koreksi yang disetujui langsung memperbarui absensinya, termasuk membuatkan
+  catatan untuk hari yang belum punya baris sama sekali, dan ikut tercatat di
+  jejak audit yang sama
 - Notifikasi email peringatan untuk pegawai dengan attendance rendah
   (opsional, aktif jika kredensial SMTP diisi di `.env`)
 - Notifikasi push ke mobile app (Expo Push Notifications): saat izin

@@ -7,7 +7,7 @@ const navItems = [
   { to: '/admin/stats', label: 'Statistik' },
   { to: '/admin/history', label: 'Riwayat' },
   { to: '/admin/gallery', label: 'Galeri Foto' },
-  { to: '/admin/leaves', label: 'Pengajuan Izin' },
+  { to: '/admin/leaves', label: 'Pengajuan' },
   { to: '/admin/users', label: 'Pengguna' },
   { to: '/admin/shifts', label: 'Shift' },
   { to: '/admin/holidays', label: 'Hari Libur' },

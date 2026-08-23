@@ -253,6 +253,12 @@ ke kemarin kalau tanggal tidak dikirim eksplisit):
 5 0 * * * curl -s -X POST https://api.perusahaan.com/api/attendance/mark-alpha -H "Authorization: Bearer TOKEN"
 ```
 
+Cron ini WAJIB dipasang: tombol manualnya sudah dihapus dari dashboard admin,
+karena rawan dipakai untuk tanggal yang harinya belum selesai. Endpointnya
+masih ada dan tetap bisa dipanggil manual bila diperlukan. Untuk membetulkan
+satu catatan absensi, gunakan menu Riwayat > Koreksi di web admin -- jalur itu
+mencatat jejak audit, sedangkan menjalankan ulang mark-alpha tidak.
+
 ## 9. Pembersihan Foto Lama (Masa Simpan)
 
 Foto absensi menumpuk cepat: 50 pegawai x 2 foto per hari kerja kira-kira

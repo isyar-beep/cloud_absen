@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { urlFoto, useTokenFoto } from '../api/fileUrl';
 import StatusBadge from '../components/StatusBadge';
+import AjukanKoreksiModal from '../components/AjukanKoreksiModal';
 import { ArrowLeftIcon } from '../components/Icons';
 import { formatTanggalHari, formatJam } from '../utils/tanggal';
 import {
@@ -56,6 +57,9 @@ export default function History() {
   const [modePeriode, setModePeriode] = useState('preset'); // 'preset' | 'bulan' | 'tahun' | 'khusus'
   const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [koreksi, setKoreksi] = useState(null);
+  const [pesan, setPesan] = useState('');
+  const [ajuan, setAjuan] = useState([]);
 
   // Satu sumber kebenaran rentang tanggal: apa pun cara pegawai memilihnya,
   // yang dikirim ke server selalu pasangan start_date/end_date yang sama.
@@ -98,8 +102,29 @@ export default function History() {
     }
   }, [rentang]);
 
+  // Status pengajuan koreksi milik sendiri, supaya baris yang sudah pernah
+  // diajukan tidak menawarkan tombol "Ajukan koreksi" lagi.
+  const fetchAjuan = useCallback(async () => {
+    try {
+      const res = await api.get('/corrections/me');
+      setAjuan(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  }, []);
+
   useEffect(() => { fetchHistory(); }, [fetchHistory]);
   useEffect(() => { fetchRekap(); }, [fetchRekap]);
+  useEffect(() => { fetchAjuan(); }, [fetchAjuan]);
+
+  const ajuanPerTanggal = useMemo(() => {
+    const peta = {};
+    for (const a of ajuan) {
+      // Pengajuan diurutkan terbaru dulu, jadi yang pertama ditemui menang.
+      if (!peta[a.date]) peta[a.date] = a;
+    }
+    return peta;
+  }, [ajuan]);
 
   function pilihPreset(id) {
     setModePeriode('preset');
@@ -125,6 +150,12 @@ export default function History() {
         </button>
 
         <h1 className="text-xl font-bold text-gray-900 tracking-tight mb-4">Riwayat Absensi</h1>
+
+        {pesan && (
+          <div className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3 mb-3 font-medium">
+            ✓ {pesan}
+          </div>
+        )}
 
         {/* Pilih periode */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-soft p-4 mb-3">
@@ -264,6 +295,37 @@ export default function History() {
                 )}
               </div>
               {item.reason && <p className="text-xs text-gray-400 mt-1 italic">{item.reason}</p>}
+
+              {/* Jalur resmi untuk jam yang keliru atau lupa absen pulang.
+                  Hari yang berstatus izin tidak menawarkan koreksi jam --
+                  itu ranah pengajuan izin, bukan koreksi absen. */}
+              {item.status !== 'izin' && (
+                ajuanPerTanggal[item.date] ? (
+                  <p className="text-[11px] mt-1.5">
+                    <span className={
+                      ajuanPerTanggal[item.date].status === 'pending' ? 'text-amber-600'
+                        : ajuanPerTanggal[item.date].status === 'approved' ? 'text-emerald-600'
+                        : 'text-red-500'
+                    }>
+                      Koreksi {
+                        ajuanPerTanggal[item.date].status === 'pending' ? 'menunggu keputusan admin'
+                          : ajuanPerTanggal[item.date].status === 'approved' ? 'disetujui'
+                          : 'ditolak'
+                      }
+                    </span>
+                    {ajuanPerTanggal[item.date].admin_note && (
+                      <span className="text-gray-400"> — {ajuanPerTanggal[item.date].admin_note}</span>
+                    )}
+                  </p>
+                ) : (
+                  <button
+                    onClick={() => setKoreksi(item)}
+                    className="text-[11px] font-semibold text-primary-600 hover:text-primary-700 transition mt-1.5"
+                  >
+                    Ajukan koreksi
+                  </button>
+                )
+              )}
             </div>
           ))}
 
@@ -284,6 +346,18 @@ export default function History() {
           </button>
         )}
       </div>
+
+      {koreksi && (
+        <AjukanKoreksiModal
+          baris={koreksi}
+          onTutup={() => setKoreksi(null)}
+          onKirim={(msg) => {
+            setKoreksi(null);
+            setPesan(msg);
+            fetchAjuan();
+          }}
+        />
+      )}
     </div>
   );
 }

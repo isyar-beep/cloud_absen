@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import api from '../api/axios';
 import AdminHeader from '../components/AdminHeader';
 import StatusBadge from '../components/StatusBadge';
+import AdminCorrections from './AdminCorrections';
 import { formatTanggal } from '../utils/tanggal';
 
 export default function AdminLeaves() {
@@ -37,6 +38,11 @@ export default function AdminLeaves() {
   }
 
 
+  // Izin dan koreksi sama-sama "pengajuan pegawai yang menunggu keputusan
+  // admin", jadi digabung di satu halaman sebagai tab -- lebih baik daripada
+  // menambah satu lagi menu di bilah navigasi yang sudah panjang.
+  const [tab, setTab] = useState('izin');
+
   const filters = [
     { key: 'pending', label: 'Menunggu' },
     { key: 'approved', label: 'Disetujui' },
@@ -49,10 +55,38 @@ export default function AdminLeaves() {
       <AdminHeader />
 
       <div className="max-w-4xl mx-auto px-4 py-7">
-        <div className="mb-6">
-          <h1 className="text-xl font-bold text-gray-900 tracking-tight">Pengajuan Izin</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Review pengajuan izin dari pegawai</p>
+        <div className="mb-5">
+          <h1 className="text-xl font-bold text-gray-900 tracking-tight">Pengajuan Pegawai</h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            {tab === 'izin'
+              ? 'Review pengajuan izin dari pegawai'
+              : 'Review usulan koreksi jam absen dari pegawai'}
+          </p>
         </div>
+
+        <div className="flex gap-2 mb-5 border-b border-gray-200">
+          {[
+            { key: 'izin', label: 'Izin' },
+            { key: 'koreksi', label: 'Koreksi Absensi' },
+          ].map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={`px-4 py-2.5 text-sm font-semibold border-b-2 -mb-px transition ${
+                tab === t.key
+                  ? 'border-primary-600 text-primary-700'
+                  : 'border-transparent text-gray-500 hover:text-gray-800'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {tab === 'koreksi' && <AdminCorrections />}
+
+        {tab === 'izin' && (
+        <>
 
         {error && (
           <div className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-3 mb-4">
@@ -151,6 +185,8 @@ export default function AdminLeaves() {
             </div>
           )}
         </div>
+        </>
+        )}
       </div>
     </div>
   );
