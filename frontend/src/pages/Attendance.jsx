@@ -7,9 +7,11 @@ import { formatJam, formatTanggalHari } from '../utils/tanggal';
 // Satu baris "kapan boleh absen": rentang jamnya, plus titik warna yang
 // langsung terbaca -- hijau berarti sedang dibuka, abu berarti belum/sudah
 // lewat, biru berarti absennya memang sudah selesai dilakukan.
-function JendelaBaris({ label, info, selesai }) {
+function JendelaBaris({ label, info, selesai, tutup }) {
   const warna = selesai ? 'bg-primary-500' : info?.boleh ? 'bg-emerald-500' : 'bg-gray-300';
-  const keterangan = selesai ? 'Sudah dilakukan' : info?.boleh ? 'Dibuka sekarang' : 'Belum dibuka';
+  const keterangan = tutup
+    ? 'Kantor tutup'
+    : selesai ? 'Sudah dilakukan' : info?.boleh ? 'Dibuka sekarang' : 'Belum dibuka';
 
   return (
     <div>
@@ -19,7 +21,9 @@ function JendelaBaris({ label, info, selesai }) {
       </p>
       <p className="flex items-center gap-1.5 text-[11px] text-gray-500 mt-0.5">
         <span className={`w-1.5 h-1.5 rounded-full ${warna}`} />
-        {selesai || info?.boleh ? keterangan : info?.alasan?.replace(/^Absen \w+ /, '') || keterangan}
+        {tutup || selesai || info?.boleh
+          ? keterangan
+          : info?.alasan?.replace(/^Absen \w+ /, '') || keterangan}
       </p>
     </div>
   );
@@ -162,13 +166,16 @@ export default function Attendance() {
 
   // Alasan yang ditampilkan di bawah tombol saat tombolnya mati.
   const catatanMasuk = sudahCheckIn ? null : info?.masuk?.alasan;
-  const catatanPulang = !sudahCheckIn
+  const catatanPulang = info?.hari_kerja && !info.hari_kerja.kerja
+    ? info.pulang?.alasan
+    : !sudahCheckIn
     ? 'Absen masuk dulu sebelum absen pulang.'
     : sudahCheckOut
       ? null
       : info?.pulang?.alasan;
 
   const shift = info?.shift;
+  const kantorTutup = !!info?.hari_kerja && !info.hari_kerja.kerja;
   const tanggalShiftBeda = info?.tanggal_shift && info.tanggal_shift !== info.hari_ini;
 
   return (
@@ -205,6 +212,14 @@ export default function Attendance() {
               </div>
             </div>
 
+            {info.hari_kerja && !info.hari_kerja.kerja && (
+              <p className="text-xs text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-2.5 py-1.5 mt-3">
+                {info.hari_kerja.libur
+                  ? `Hari libur: ${info.hari_kerja.libur}. Absen ditutup hari ini.`
+                  : `${info.hari_kerja.nama_hari} bukan hari kerja. Absen ditutup hari ini.`}
+              </p>
+            )}
+
             {tanggalShiftBeda && (
               <p className="text-xs text-violet-700 bg-violet-50 border border-violet-100 rounded-lg px-2.5 py-1.5 mt-3">
                 Absen ini tercatat untuk shift tanggal {formatTanggalHari(info.tanggal_shift)}.
@@ -212,8 +227,8 @@ export default function Attendance() {
             )}
 
             <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-gray-50">
-              <JendelaBaris label="Absen masuk" info={info.masuk} selesai={sudahCheckIn} />
-              <JendelaBaris label="Absen pulang" info={info.pulang} selesai={sudahCheckOut} />
+              <JendelaBaris label="Absen masuk" info={info.masuk} selesai={sudahCheckIn} tutup={kantorTutup} />
+              <JendelaBaris label="Absen pulang" info={info.pulang} selesai={sudahCheckOut} tutup={kantorTutup} />
             </div>
           </div>
         )}

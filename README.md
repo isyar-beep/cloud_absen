@@ -249,6 +249,9 @@ Setelah menjalankan `npm run seed` di backend:
   masuk pukul 22:00 dan absen pulang pukul 06:10 keesokan harinya tercatat
   sebagai satu shift yang sama
 - Kelola hari libur/cuti bersama (Sabtu-Minggu otomatis bukan hari kerja)
+- Absen ditutup di akhir pekan dan hari libur terdaftar. Yang diperiksa adalah
+  tanggal shift, jadi shift malam yang mulai Jumat 22:00 tetap bisa absen pulang
+  Sabtu pagi, sementara shift yang mulai Sabtu ditolak
 - Alpha otomatis: pegawai yang tidak absen & tidak izin di hari kerja
   ditandai otomatis (terjadwal via cron, melewati weekend & hari libur)
 - Statistik & grafik lengkap untuk admin: pilih pegawai (semua/individual),

@@ -2,6 +2,7 @@ const { query } = require('../config/db');
 const { uploadFotoAbsensi } = require('../utils/uploadPhoto');
 const { todayLocal } = require('../utils/date');
 const { jendelaAbsen, shiftPegawai } = require('../utils/shiftWindow');
+const { cekHariKerja } = require('../utils/workday');
 
 // POST /api/attendance/check-in -- pengguna absen masuk dengan foto
 async function checkIn(req, res, next) {
@@ -22,6 +23,13 @@ async function checkIn(req, res, next) {
     // pukul 22:00, absen masuk pukul 00:30 tetap tercatat di tanggal shift
     // kemarin -- satu shift = satu baris absensi.
     const tanggal = jendela.tanggal_shift_masuk;
+
+    // Akhir pekan & hari libur: kantor tutup, absen ditolak. Diperiksa
+    // pada tanggal shift, jadi shift malam Jumat->Sabtu tetap boleh.
+    const hariKerja = await cekHariKerja(query, tanggal);
+    if (!hariKerja.kerja) {
+      return res.status(403).json({ message: hariKerja.alasan, hari_kerja: hariKerja });
+    }
 
     const existing = await query(
       'SELECT id, status, check_in_time FROM attendance WHERE user_id = $1 AND date = $2',
@@ -90,6 +98,11 @@ async function checkOut(req, res, next) {
     // 21 -- tempat absen masuk pukul 22:00 tadi malam disimpan.
     const tanggal = jendela.tanggal_shift_pulang;
 
+    const hariKerja = await cekHariKerja(query, tanggal);
+    if (!hariKerja.kerja) {
+      return res.status(403).json({ message: hariKerja.alasan, hari_kerja: hariKerja });
+    }
+
     const existing = await query(
       'SELECT id, check_in_time, check_out_time FROM attendance WHERE user_id = $1 AND date = $2',
       [userId, tanggal]
@@ -145,11 +158,23 @@ async function getTodayStatus(req, res, next) {
       || hasil.rows[0]
       || null;
 
+    const tanggalShift = absensi?.date || jendela.tanggal_shift_masuk;
+    const hariKerja = await cekHariKerja(query, tanggalShift);
+
+    // Kalau kantor tutup, jendela apa pun tidak berlaku -- alasannya
+    // diganti supaya pegawai tahu sebabnya bukan soal jam.
+    const tutup = (bagian) => (hariKerja.kerja
+      ? bagian
+      : { ...bagian, boleh: false, alasan: hariKerja.alasan });
+
     res.json({
       absensi,
-      tanggal_shift: absensi?.date || jendela.tanggal_shift_masuk,
+      tanggal_shift: tanggalShift,
       hari_ini: todayLocal(),
+      hari_kerja: hariKerja,
       ...jendela,
+      masuk: tutup(jendela.masuk),
+      pulang: tutup(jendela.pulang),
     });
   } catch (err) {
     next(err);
