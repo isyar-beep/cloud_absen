@@ -12,15 +12,20 @@ const LIMIT = 50;
 export default function AdminHistory() {
   const tokenFoto = useTokenFoto();
   const [items, setItems] = useState([]);
-  const [departments, setDepartments] = useState([]);
-  const [filter, setFilter] = useState({ start_date: '', end_date: '', status: '', department_id: '' });
+  const [users, setUsers] = useState([]);
+  const [filter, setFilter] = useState({ start_date: '', end_date: '', status: '', user_id: '' });
   const [hasMore, setHasMore] = useState(false);
   const [edit, setEdit] = useState(null);
   const [pesan, setPesan] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Daftar pegawai untuk saringan. Departemen sengaja tidak dipakai:
+  // tabelnya ada, tapi belum ada pegawai yang di-assign ke departemen mana
+  // pun, sehingga saringan itu selalu mengembalikan tabel kosong.
   useEffect(() => {
-    api.get('/departments').then((res) => setDepartments(res.data)).catch(console.error);
+    api.get('/users')
+      .then((res) => setUsers(res.data.filter((u) => u.role !== 'admin')))
+      .catch(console.error);
   }, []);
 
   const fetchHistory = useCallback(async (offset = 0, append = false) => {
@@ -81,15 +86,15 @@ export default function AdminHistory() {
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">Departemen</label>
+            <label className="block text-xs font-medium text-gray-500 mb-1.5">Pegawai</label>
             <select
-              value={filter.department_id}
-              onChange={(e) => setFilter({ ...filter, department_id: e.target.value })}
+              value={filter.user_id}
+              onChange={(e) => setFilter({ ...filter, user_id: e.target.value })}
               className={inputClass}
             >
-              <option value="">Semua</option>
-              {departments.map((d) => (
-                <option key={d.id} value={d.id}>{d.name}</option>
+              <option value="">Semua pegawai</option>
+              {users.map((u) => (
+                <option key={u.id} value={u.id}>{u.name}</option>
               ))}
             </select>
           </div>
@@ -122,7 +127,6 @@ export default function AdminHistory() {
               <tr className="border-b border-gray-100">
                 <th className="text-left px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Tanggal</th>
                 <th className="text-left px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Nama</th>
-                <th className="text-left px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Departemen</th>
                 <th className="text-left px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Masuk</th>
                 <th className="text-left px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Pulang</th>
                 <th className="text-left px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Status</th>
@@ -135,7 +139,6 @@ export default function AdminHistory() {
                 <tr key={item.id} className="border-b border-gray-50 last:border-b-0 hover:bg-gray-50/60 transition">
                   <td className="px-5 py-3.5 text-gray-900 font-medium whitespace-nowrap">{formatTanggal(item.date)}</td>
                   <td className="px-5 py-3.5 text-gray-900">{item.name}</td>
-                  <td className="px-5 py-3.5 text-gray-500">{item.department || '—'}</td>
                   <td className="px-5 py-3.5 text-gray-600">{formatJam(item.check_in_time)}</td>
                   <td className="px-5 py-3.5 text-gray-600">{formatJam(item.check_out_time)}</td>
                   <td className="px-5 py-3.5">

@@ -74,6 +74,21 @@ export default function AdminCorrections() {
         </div>
       )}
 
+      {/* Fungsi tab ini tidak terbaca dari namanya saja, jadi diterangkan
+          langsung di layar daripada mengandalkan orang bertanya. */}
+      <div className="bg-blue-50/60 border border-blue-100 rounded-xl px-4 py-3 mb-5">
+        <p className="text-xs text-blue-900 leading-relaxed">
+          <span className="font-semibold">Apa ini?</span> Usulan perbaikan jam
+          absen dari pegawai &mdash; misalnya lupa absen pulang, atau jam masuk
+          tercatat keliru. Pegawai mengajukan dari menu Riwayat di aplikasinya,
+          lalu Anda memutuskan di sini. Yang disetujui langsung memperbaiki
+          catatan absensinya dan tercatat di jejak audit. Untuk memperbaiki
+          sendiri tanpa menunggu pengajuan, buka menu{' '}
+          <span className="font-semibold">Riwayat</span> lalu klik{' '}
+          <span className="font-semibold">Koreksi</span> pada barisnya.
+        </p>
+      </div>
+
       <div className="flex gap-2 mb-5 flex-wrap">
         {SARINGAN.map((f) => (
           <button
@@ -190,7 +205,7 @@ export default function AdminCorrections() {
           <div className="bg-white rounded-2xl border border-gray-100 shadow-soft px-5 py-12 text-center">
             <p className="text-sm text-gray-400">
               {saringan === 'pending'
-                ? 'Tidak ada pengajuan koreksi yang menunggu.'
+                ? 'Tidak ada pengajuan koreksi yang menunggu keputusan Anda.'
                 : 'Tidak ada pengajuan koreksi pada saringan ini.'}
             </p>
           </div>
