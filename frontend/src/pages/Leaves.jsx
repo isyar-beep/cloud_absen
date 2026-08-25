@@ -1,14 +1,30 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import StatusBadge from '../components/StatusBadge';
+import JenisBadge from '../components/JenisBadge';
 import { ArrowLeftIcon } from '../components/Icons';
-import { formatTanggal } from '../utils/tanggal';
+import { formatTanggal, tanggalLokal } from '../utils/tanggal';
+import { urlFoto, useTokenFoto } from '../api/fileUrl';
+
+const JENIS = [
+  { id: 'izin', label: 'Izin', bantu: 'Keperluan pribadi atau keluarga' },
+  { id: 'sakit', label: 'Sakit', bantu: 'Lampirkan surat dokter bila ada' },
+  { id: 'cuti', label: 'Cuti', bantu: 'Cuti beberapa hari' },
+];
+
+const MAKS_BYTE = 5 * 1024 * 1024;
+const FORMAT_DITERIMA = ['application/pdf', 'image/jpeg', 'image/png'];
+
+const FORM_KOSONG = { type: 'izin', start_date: '', end_date: '', reason: '' };
 
 export default function Leaves() {
   const navigate = useNavigate();
+  const tokenFoto = useTokenFoto();
+  const berkasRef = useRef(null);
   const [leaves, setLeaves] = useState([]);
-  const [form, setForm] = useState({ start_date: '', end_date: '', reason: '' });
+  const [form, setForm] = useState(FORM_KOSONG);
+  const [berkas, setBerkas] = useState(null);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -26,23 +42,66 @@ export default function Leaves() {
     }
   }
 
+  // Diperiksa di sini juga, bukan hanya di server: pegawai yang salah pilih
+  // berkas sebaiknya tahu sebelum menunggu unggahan 5MB selesai.
+  function pilihBerkas(e) {
+    const f = e.target.files?.[0];
+    setError('');
+    if (!f) { setBerkas(null); return; }
+    if (!FORMAT_DITERIMA.includes(f.type)) {
+      setError('Lampiran harus PDF, JPG, atau PNG.');
+      e.target.value = '';
+      setBerkas(null);
+      return;
+    }
+    if (f.size > MAKS_BYTE) {
+      setError(`Ukuran lampiran maksimal 5MB. Berkas Anda ${(f.size / 1024 / 1024).toFixed(1)}MB.`);
+      e.target.value = '';
+      setBerkas(null);
+      return;
+    }
+    setBerkas(f);
+  }
+
+  function hapusBerkas() {
+    setBerkas(null);
+    if (berkasRef.current) berkasRef.current.value = '';
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
     setMessage('');
     setLoading(true);
     try {
-      const res = await api.post('/leaves', form);
+      // Selalu multipart supaya satu jalur saja yang perlu benar, ada
+      // lampiran maupun tidak.
+      const data = new FormData();
+      Object.entries(form).forEach(([k, v]) => data.append(k, v));
+      if (berkas) data.append('document', berkas);
+
+      const res = await api.post('/leaves', data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
       setMessage(res.data.message);
-      setForm({ start_date: '', end_date: '', reason: '' });
+      setForm(FORM_KOSONG);
+      hapusBerkas();
       fetchLeaves();
     } catch (err) {
-      setError(err.response?.data?.message || 'Gagal mengirim pengajuan izin.');
+      setError(err.response?.data?.message || 'Gagal mengirim pengajuan.');
     } finally {
       setLoading(false);
     }
   }
 
+  const jenisTerpilih = JENIS.find((j) => j.id === form.type) || JENIS[0];
+
+  const jumlahHari = form.start_date && form.end_date
+    ? Math.round((tanggalLokal(form.end_date) - tanggalLokal(form.start_date)) / 86400000) + 1
+    : 0;
+
+  const inputClass =
+    'w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm transition focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/40';
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-6">
@@ -56,7 +115,7 @@ export default function Leaves() {
 
         <h1 className="text-xl font-bold text-gray-900 tracking-tight mb-1">Pengajuan Izin</h1>
         <p className="text-sm text-gray-500 mb-6">
-          Ajukan izin tidak masuk. Status akan berubah setelah direview admin.
+          Ajukan izin, sakit, atau cuti. Status berubah setelah direview admin.
         </p>
 
         {message && (
@@ -71,6 +130,27 @@ export default function Leaves() {
         )}
 
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-gray-100 shadow-soft p-5 space-y-4 mb-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Jenis pengajuan</label>
+            <div className="grid grid-cols-3 gap-2">
+              {JENIS.map((j) => (
+                <button
+                  key={j.id}
+                  type="button"
+                  onClick={() => setForm({ ...form, type: j.id })}
+                  className={`py-2 rounded-xl text-sm font-semibold border transition ${
+                    form.type === j.id
+                      ? 'bg-primary-600 text-white border-primary-600 shadow-glow'
+                      : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  {j.label}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-gray-400 mt-1.5">{jenisTerpilih.bantu}</p>
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Dari tanggal</label>
@@ -79,7 +159,7 @@ export default function Leaves() {
                 required
                 value={form.start_date}
                 onChange={(e) => setForm({ ...form, start_date: e.target.value })}
-                className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm transition focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/40"
+                className={inputClass}
               />
             </div>
             <div>
@@ -87,12 +167,19 @@ export default function Leaves() {
               <input
                 type="date"
                 required
+                min={form.start_date}
                 value={form.end_date}
                 onChange={(e) => setForm({ ...form, end_date: e.target.value })}
-                className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm transition focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/40"
+                className={inputClass}
               />
             </div>
           </div>
+          {jumlahHari > 0 && (
+            <p className="text-xs text-gray-500 -mt-2">
+              {jumlahHari} hari kalender.
+            </p>
+          )}
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Alasan</label>
             <textarea
@@ -100,16 +187,51 @@ export default function Leaves() {
               rows={3}
               value={form.reason}
               onChange={(e) => setForm({ ...form, reason: e.target.value })}
-              placeholder="Contoh: keperluan keluarga, sakit, dll."
-              className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm resize-none transition focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/40"
+              placeholder="Contoh: keperluan keluarga, kontrol ke dokter, dll."
+              className={`${inputClass} resize-none`}
             />
           </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              Lampiran <span className="text-gray-400 font-normal">(opsional)</span>
+            </label>
+            {berkas ? (
+              <div className="flex items-center justify-between gap-2 px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl">
+                <p className="text-sm text-gray-700 truncate">
+                  {berkas.name}
+                  <span className="text-xs text-gray-400 ml-1.5">
+                    {berkas.size < 1024 ? '<1' : (berkas.size / 1024).toFixed(0)} KB
+                  </span>
+                </p>
+                <button
+                  type="button"
+                  onClick={hapusBerkas}
+                  className="text-xs font-semibold text-red-500 hover:text-red-600 transition shrink-0"
+                >
+                  Hapus
+                </button>
+              </div>
+            ) : (
+              <input
+                ref={berkasRef}
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                onChange={pilihBerkas}
+                className="w-full text-sm text-gray-600 file:mr-3 file:py-2 file:px-3.5 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 file:cursor-pointer"
+              />
+            )}
+            <p className="text-xs text-gray-400 mt-1.5">
+              Surat dokter, surat tugas, atau surat cuti. PDF/JPG/PNG maks. 5MB.
+            </p>
+          </div>
+
           <button
             type="submit"
             disabled={loading}
             className="w-full bg-gradient-to-r from-primary-600 to-primary-700 text-white py-3 rounded-xl text-sm font-semibold shadow-glow transition hover:from-primary-500 hover:to-primary-600 active:scale-[0.98] disabled:opacity-50"
           >
-            {loading ? 'Mengirim...' : 'Ajukan Izin'}
+            {loading ? 'Mengirim...' : `Ajukan ${jenisTerpilih.label}`}
           </button>
         </form>
 
@@ -117,21 +239,34 @@ export default function Leaves() {
           <p className="text-sm font-semibold text-gray-900 px-5 pt-4 pb-2">Riwayat Pengajuan</p>
           {leaves.map((item) => (
             <div key={item.id} className="px-5 py-3.5 border-t border-gray-50 hover:bg-gray-50/60 transition">
-              <div className="flex justify-between items-center mb-1">
-                <p className="text-sm font-medium text-gray-900">
-                  {formatTanggal(item.start_date)}
-                  {item.start_date !== item.end_date && ` — ${formatTanggal(item.end_date)}`}
-                </p>
+              <div className="flex justify-between items-center gap-2 mb-1">
+                <div className="flex items-center gap-2 min-w-0">
+                  <JenisBadge jenis={item.type} />
+                  <p className="text-sm font-medium text-gray-900 truncate">
+                    {formatTanggal(item.start_date)}
+                    {item.start_date !== item.end_date && ` — ${formatTanggal(item.end_date)}`}
+                  </p>
+                </div>
                 <StatusBadge status={item.status} />
               </div>
               <p className="text-xs text-gray-500">{item.reason}</p>
+              {item.document_url && (
+                <a
+                  href={urlFoto(item.document_url, tokenFoto)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-block text-xs font-semibold text-primary-600 hover:underline mt-1"
+                >
+                  Lihat lampiran{item.document_name ? ` — ${item.document_name}` : ''}
+                </a>
+              )}
               {item.admin_note && (
                 <p className="text-xs text-gray-400 mt-1 italic">Catatan admin: {item.admin_note}</p>
               )}
             </div>
           ))}
           {leaves.length === 0 && (
-            <p className="text-sm text-gray-400 px-5 py-8 text-center">Belum ada pengajuan izin.</p>
+            <p className="text-sm text-gray-400 px-5 py-8 text-center">Belum ada pengajuan.</p>
           )}
         </div>
       </div>

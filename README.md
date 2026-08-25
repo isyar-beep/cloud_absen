@@ -231,8 +231,16 @@ Setelah menjalankan `npm run seed` di backend:
 - Statistik personal pegawai (attendance rate, trend, riwayat)
 - Statistik & ranking untuk admin (top performer, pegawai berisiko)
 - Export laporan bulanan ke Excel & PDF (admin, per periode/departemen)
-- Pengajuan izin oleh pegawai + persetujuan admin (approve otomatis mengisi
-  status `izin` di absensi)
+- Pengajuan izin, sakit, dan cuti oleh pegawai + persetujuan admin. Ketiganya
+  berujung pada status `izin` di absensi — yang dibedakan hanya keterangannya
+  untuk HRD, karena untuk perhitungan kehadiran ketiganya sama saja. Jenisnya
+  ikut ditulis di keterangan absensi (mis. "Cuti: liburan keluarga") supaya
+  laporan bulanan bisa membedakannya. Cuti sengaja tanpa kuota tahunan
+- Lampiran opsional pada pengajuan (surat dokter, surat tugas, surat cuti):
+  PDF/JPG/PNG maks. 5MB, disimpan di `uploads/dokumen/` dan hanya bisa dibuka
+  dengan login — pegawai hanya lampirannya sendiri, admin semua. Unggah lampiran
+  tersedia di web; aplikasi mobile bisa memilih jenis pengajuan tapi belum bisa
+  melampirkan berkas
 - Riwayat absensi pegawai: preset periode (minggu ini, bulan ini, bulan lalu,
   tahun ini, semua) plus pilih bulan/tahun tertentu atau rentang khusus, tab
   status (semua/hadir/terlambat/izin/alpha), dan rekap jumlah tiap status yang

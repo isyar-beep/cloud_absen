@@ -15,7 +15,9 @@ function errorHandler(err, req, res, next) {
   // Error dari multer saat upload file
   if (err.name === 'MulterError') {
     status = 400;
-    message = err.code === 'LIMIT_FILE_SIZE' ? 'Ukuran foto maksimal 5MB.' : 'Upload file gagal.';
+    // Pesannya netral: jalur unggah bukan cuma foto absensi, ada juga
+    // lampiran pengajuan izin/sakit/cuti dengan batas yang sama.
+    message = err.code === 'LIMIT_FILE_SIZE' ? 'Ukuran berkas maksimal 5MB.' : 'Unggah berkas gagal.';
   }
 
   // Di production, jangan bocorkan detail error internal (query, stack, path)

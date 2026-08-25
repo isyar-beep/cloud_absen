@@ -1,14 +1,27 @@
 const { pool, query } = require('../config/db');
 const { sendPushNotifications } = require('../utils/pushNotification');
+const { uploadDokumenIzin } = require('../utils/uploadPhoto');
 
-// POST /api/leaves -- pegawai mengajukan izin
+// Jenis pengajuan. Ketiganya berujung pada status absensi 'izin' -- yang
+// dibedakan hanya keterangannya untuk HRD. Mengubah daftar status absensi
+// akan merusak seluruh rumus attendance rate dan laporan yang sudah ada,
+// sementara untuk perhitungan kehadiran ketiganya memang sama saja.
+const JENIS_VALID = ['izin', 'sakit', 'cuti'];
+
+const LABEL_JENIS = { izin: 'Izin', sakit: 'Sakit', cuti: 'Cuti' };
+
+// POST /api/leaves -- pegawai mengajukan izin/sakit/cuti
 async function createLeave(req, res, next) {
   try {
     const userId = req.user.id;
     const { start_date, end_date, reason } = req.body;
+    const type = req.body.type || 'izin';
 
     if (!start_date || !end_date || !reason || !reason.trim()) {
       return res.status(400).json({ message: 'Tanggal mulai, tanggal selesai, dan alasan wajib diisi.' });
+    }
+    if (!JENIS_VALID.includes(type)) {
+      return res.status(400).json({ message: 'Jenis pengajuan harus izin, sakit, atau cuti.' });
     }
     // Validasi format supaya string tanggal rusak tidak lolos sampai ke query database
     const formatTanggalValid = /^\d{4}-\d{2}-\d{2}$/;
@@ -46,14 +59,34 @@ async function createLeave(req, res, next) {
       });
     }
 
+    // Lampiran opsional. Sengaja diunggah SETELAH semua validasi lolos --
+    // menulis berkas ke disk untuk pengajuan yang ujungnya ditolak hanya
+    // meninggalkan sampah di server.
+    let dokumenUrl = null;
+    let dokumenNama = null;
+    if (req.file) {
+      dokumenUrl = await uploadDokumenIzin(req.file.buffer, {
+        userId,
+        userName: req.user.name,
+        jenis: type,
+        mimetype: req.file.mimetype,
+      });
+      dokumenNama = req.file.originalname?.slice(0, 255) || null;
+    }
+
     const result = await query(
-      `INSERT INTO leave_requests (user_id, start_date, end_date, reason)
-       VALUES ($1, $2, $3, $4)
-       RETURNING id, start_date, end_date, reason, status, created_at`,
-      [userId, start_date, end_date, reason.trim()]
+      `INSERT INTO leave_requests (user_id, type, start_date, end_date, reason, document_url, document_name)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING id, type, to_char(start_date, 'YYYY-MM-DD') AS start_date,
+                 to_char(end_date, 'YYYY-MM-DD') AS end_date, reason, status,
+                 document_url, document_name, created_at`,
+      [userId, type, start_date, end_date, reason.trim(), dokumenUrl, dokumenNama]
     );
 
-    res.status(201).json({ message: 'Pengajuan izin berhasil dikirim. Menunggu persetujuan admin.', leave: result.rows[0] });
+    res.status(201).json({
+      message: `Pengajuan ${LABEL_JENIS[type].toLowerCase()} berhasil dikirim. Menunggu persetujuan admin.`,
+      leave: result.rows[0],
+    });
   } catch (err) {
     next(err);
   }
@@ -63,7 +96,11 @@ async function createLeave(req, res, next) {
 async function getMyLeaves(req, res, next) {
   try {
     const result = await query(
-      `SELECT l.id, l.start_date, l.end_date, l.reason, l.status, l.admin_note, l.created_at, l.reviewed_at,
+      `SELECT l.id, l.type,
+              to_char(l.start_date, 'YYYY-MM-DD') AS start_date,
+              to_char(l.end_date, 'YYYY-MM-DD') AS end_date,
+              l.reason, l.status, l.admin_note, l.created_at, l.reviewed_at,
+              l.document_url, l.document_name,
               r.name AS reviewed_by_name
        FROM leave_requests l
        LEFT JOIN users r ON l.reviewed_by = r.id
@@ -80,21 +117,31 @@ async function getMyLeaves(req, res, next) {
 // GET /api/leaves?status= -- admin lihat semua pengajuan (default: pending dulu)
 async function getAllLeaves(req, res, next) {
   try {
-    const { status } = req.query;
+    const { status, type } = req.query;
     const validStatus = ['pending', 'approved', 'rejected'];
     const filterStatus = validStatus.includes(status) ? status : null;
+    const filterJenis = JENIS_VALID.includes(type) ? type : null;
+
+    const kondisi = [];
+    const params = [];
+    if (filterStatus) { params.push(filterStatus); kondisi.push(`l.status = $${params.length}`); }
+    if (filterJenis) { params.push(filterJenis); kondisi.push(`l.type = $${params.length}`); }
 
     const result = await query(
-      `SELECT l.id, l.start_date, l.end_date, l.reason, l.status, l.admin_note, l.created_at, l.reviewed_at,
-              u.id AS user_id, u.name, d.name AS department,
+      `SELECT l.id, l.type,
+              to_char(l.start_date, 'YYYY-MM-DD') AS start_date,
+              to_char(l.end_date, 'YYYY-MM-DD') AS end_date,
+              l.reason, l.status, l.admin_note, l.created_at, l.reviewed_at,
+              l.document_url, l.document_name,
+              u.id AS user_id, u.name, u.avatar_url, d.name AS department,
               r.name AS reviewed_by_name
        FROM leave_requests l
        JOIN users u ON l.user_id = u.id
        LEFT JOIN departments d ON u.department_id = d.id
        LEFT JOIN users r ON l.reviewed_by = r.id
-       ${filterStatus ? 'WHERE l.status = $1' : ''}
+       ${kondisi.length ? `WHERE ${kondisi.join(' AND ')}` : ''}
        ORDER BY (l.status = 'pending') DESC, l.created_at DESC`,
-      filterStatus ? [filterStatus] : []
+      params
     );
     res.json(result.rows);
   } catch (err) {
@@ -120,7 +167,10 @@ async function reviewLeave(req, res, next) {
       `UPDATE leave_requests
        SET status = $1, admin_note = $2, reviewed_by = $3, reviewed_at = NOW()
        WHERE id = $4 AND status = 'pending'
-       RETURNING id, user_id, start_date, end_date, reason, status`,
+       RETURNING id, user_id, type,
+                 to_char(start_date, 'YYYY-MM-DD') AS start_date,
+                 to_char(end_date, 'YYYY-MM-DD') AS end_date,
+                 reason, status`,
       [status, admin_note || null, req.user.id, req.params.id]
     );
 
@@ -142,7 +192,9 @@ async function reviewLeave(req, res, next) {
          ON CONFLICT (user_id, date)
          DO UPDATE SET status = 'izin', reason = EXCLUDED.reason
          WHERE attendance.check_in_time IS NULL`,
-        [leave.user_id, leave.reason, leave.start_date, leave.end_date]
+        // Jenisnya ikut ditulis di keterangan absensi supaya laporan bulanan
+        // bisa membedakan sakit dari cuti tanpa perlu menggabung tabel lain.
+        [leave.user_id, `${LABEL_JENIS[leave.type]}: ${leave.reason}`, leave.start_date, leave.end_date]
       );
     }
 
@@ -153,7 +205,7 @@ async function reviewLeave(req, res, next) {
       [
         req.user.id,
         status === 'approved' ? 'approve_leave' : 'reject_leave',
-        `Pengajuan izin #${leave.id} (user ${leave.user_id}, ${leave.start_date} s/d ${leave.end_date})`,
+        `Pengajuan ${leave.type} #${leave.id} (user ${leave.user_id}, ${leave.start_date} s/d ${leave.end_date})`,
       ]
     );
 
@@ -167,11 +219,13 @@ async function reviewLeave(req, res, next) {
         await sendPushNotifications([
           {
             to: pushToken,
-            title: status === 'approved' ? 'Pengajuan Izin Disetujui' : 'Pengajuan Izin Ditolak',
+            title: status === 'approved'
+              ? `Pengajuan ${LABEL_JENIS[leave.type]} Disetujui`
+              : `Pengajuan ${LABEL_JENIS[leave.type]} Ditolak`,
             body:
               status === 'approved'
-                ? `Izin Anda (${leave.start_date} s/d ${leave.end_date}) telah disetujui.`
-                : `Izin Anda (${leave.start_date} s/d ${leave.end_date}) ditolak.${admin_note ? ` Catatan: ${admin_note}` : ''}`,
+                ? `${LABEL_JENIS[leave.type]} Anda (${leave.start_date} s/d ${leave.end_date}) telah disetujui.`
+                : `${LABEL_JENIS[leave.type]} Anda (${leave.start_date} s/d ${leave.end_date}) ditolak.${admin_note ? ` Catatan: ${admin_note}` : ''}`,
             data: { type: 'leave_review', leaveId: leave.id, status },
           },
         ]);
@@ -181,7 +235,9 @@ async function reviewLeave(req, res, next) {
     }
 
     res.json({
-      message: status === 'approved' ? 'Pengajuan izin disetujui.' : 'Pengajuan izin ditolak.',
+      message: status === 'approved'
+        ? `Pengajuan ${LABEL_JENIS[leave.type].toLowerCase()} disetujui.`
+        : `Pengajuan ${LABEL_JENIS[leave.type].toLowerCase()} ditolak.`,
       leave,
     });
   } catch (err) {

@@ -2,23 +2,37 @@ import { useEffect, useState } from 'react';
 import api from '../api/axios';
 import AdminHeader from '../components/AdminHeader';
 import StatusBadge from '../components/StatusBadge';
+import JenisBadge from '../components/JenisBadge';
+import Avatar from '../components/Avatar';
+import { urlFoto, useTokenFoto } from '../api/fileUrl';
 import AdminCorrections from './AdminCorrections';
 import { formatTanggal } from '../utils/tanggal';
 
 export default function AdminLeaves() {
   const [leaves, setLeaves] = useState([]);
   const [filter, setFilter] = useState('pending');
+  // Saringan jenis pengajuan (izin/sakit/cuti). Harus dideklarasikan di sini,
+  // bukan di bawah: dependency array useEffect membacanya saat render.
+  const [jenis, setJenis] = useState('');
+  // Izin dan koreksi sama-sama "pengajuan pegawai yang menunggu keputusan
+  // admin", jadi digabung di satu halaman sebagai tab -- lebih baik daripada
+  // menambah satu lagi menu di bilah navigasi yang sudah panjang.
+  const [tab, setTab] = useState('izin');
+  const tokenFoto = useTokenFoto();
   const [reviewingId, setReviewingId] = useState(null);
   const [note, setNote] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
     fetchLeaves();
-  }, [filter]);
+  }, [filter, jenis]);
 
   async function fetchLeaves() {
     try {
-      const res = await api.get('/leaves', { params: filter === 'all' ? {} : { status: filter } });
+      const params = {};
+      if (filter !== 'all') params.status = filter;
+      if (jenis) params.type = jenis;
+      const res = await api.get('/leaves', { params });
       setLeaves(res.data);
     } catch (err) {
       console.error(err);
@@ -38,11 +52,6 @@ export default function AdminLeaves() {
   }
 
 
-  // Izin dan koreksi sama-sama "pengajuan pegawai yang menunggu keputusan
-  // admin", jadi digabung di satu halaman sebagai tab -- lebih baik daripada
-  // menambah satu lagi menu di bilah navigasi yang sudah panjang.
-  const [tab, setTab] = useState('izin');
-
   const filters = [
     { key: 'pending', label: 'Menunggu' },
     { key: 'approved', label: 'Disetujui' },
@@ -59,14 +68,14 @@ export default function AdminLeaves() {
           <h1 className="text-xl font-bold text-gray-900 tracking-tight">Pengajuan Pegawai</h1>
           <p className="text-sm text-gray-500 mt-0.5">
             {tab === 'izin'
-              ? 'Review pengajuan izin dari pegawai'
+              ? 'Review pengajuan izin, sakit, dan cuti dari pegawai'
               : 'Review usulan koreksi jam absen dari pegawai'}
           </p>
         </div>
 
         <div className="flex gap-2 mb-5 border-b border-gray-200">
           {[
-            { key: 'izin', label: 'Izin' },
+            { key: 'izin', label: 'Izin, Sakit & Cuti' },
             { key: 'koreksi', label: 'Koreksi Absensi' },
           ].map((t) => (
             <button
@@ -109,17 +118,44 @@ export default function AdminLeaves() {
               {f.label}
             </button>
           ))}
+
+          <span className="w-px bg-gray-200 mx-1 self-stretch" />
+
+          {[
+            { key: '', label: 'Semua jenis' },
+            { key: 'izin', label: 'Izin' },
+            { key: 'sakit', label: 'Sakit' },
+            { key: 'cuti', label: 'Cuti' },
+          ].map((j) => (
+            <button
+              key={j.key || 'semua'}
+              onClick={() => setJenis(j.key)}
+              className={`text-sm px-4 py-2 rounded-full font-medium transition ${
+                jenis === j.key
+                  ? 'bg-gray-900 text-white'
+                  : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-300 hover:text-gray-900'
+              }`}
+            >
+              {j.label}
+            </button>
+          ))}
         </div>
 
         <div className="space-y-3">
           {leaves.map((item) => (
             <div key={item.id} className="bg-white rounded-2xl border border-gray-100 shadow-soft p-5">
-              <div className="flex justify-between items-start mb-3">
-                <div>
-                  <p className="text-sm font-semibold text-gray-900">{item.name}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{item.department || '—'}</p>
+              <div className="flex justify-between items-start gap-3 mb-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <Avatar name={item.name} src={item.avatar_url} size={34} />
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 truncate">{item.name}</p>
+                    <p className="text-xs text-gray-400">{item.department || '—'}</p>
+                  </div>
                 </div>
-                <StatusBadge status={item.status} />
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <JenisBadge jenis={item.type} />
+                  <StatusBadge status={item.status} />
+                </div>
               </div>
 
               <div className="bg-gray-50 rounded-xl px-4 py-3 mb-3">
@@ -128,6 +164,16 @@ export default function AdminLeaves() {
                   {item.start_date !== item.end_date && ` — ${formatTanggal(item.end_date)}`}
                 </p>
                 <p className="text-sm text-gray-500 mt-1">{item.reason}</p>
+                {item.document_url && (
+                  <a
+                    href={urlFoto(item.document_url, tokenFoto)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-block text-xs font-semibold text-primary-600 hover:underline mt-2"
+                  >
+                    Buka lampiran{item.document_name ? ` — ${item.document_name}` : ''}
+                  </a>
+                )}
               </div>
 
               {item.status === 'pending' && reviewingId !== item.id && (

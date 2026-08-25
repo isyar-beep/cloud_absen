@@ -45,6 +45,22 @@ function namaBerkasAbsensi({ userId, userName, jenis, waktu = new Date() }) {
   };
 }
 
+// Nama berkas lampiran pengajuan izin/sakit/cuti, contoh:
+//   2026-08-23_id02_budi-pegawai_sakit_a7f3.pdf
+// Polanya sengaja memuat _idNN_ seperti foto absensi, karena pemeriksaan
+// kepemilikan di photoController membaca ID pegawai dari nama berkas.
+function namaBerkasDokumen({ userId, userName, jenis, ekstensi, waktu = new Date() }) {
+  const y = waktu.getFullYear();
+  const m = String(waktu.getMonth() + 1).padStart(2, '0');
+  const d = String(waktu.getDate()).padStart(2, '0');
+  const acak = crypto.randomBytes(2).toString('hex');
+
+  return {
+    folder: `dokumen/${y}-${m}`,
+    nama: `${y}-${m}-${d}_id${String(userId).padStart(2, '0')}_${slug(userName)}_${jenis}_${acak}.${ekstensi}`,
+  };
+}
+
 function namaBerkasAvatar({ userId, userName, waktu = new Date() }) {
   const y = waktu.getFullYear();
   const m = String(waktu.getMonth() + 1).padStart(2, '0');
@@ -78,6 +94,19 @@ async function uploadFotoProfil(fileBuffer, { userId, userName }) {
   return simpanFoto(fileBuffer, namaBerkasAvatar({ userId, userName }));
 }
 
+// Lampiran pengajuan izin/sakit/cuti (PDF atau gambar)
+const EKSTENSI_DOKUMEN = {
+  'application/pdf': 'pdf',
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+};
+
+async function uploadDokumenIzin(fileBuffer, { userId, userName, jenis, mimetype }) {
+  const ekstensi = EKSTENSI_DOKUMEN[mimetype];
+  if (!ekstensi) throw Object.assign(new Error('Format dokumen tidak didukung.'), { statusCode: 400 });
+  return simpanFoto(fileBuffer, namaBerkasDokumen({ userId, userName, jenis, ekstensi }));
+}
+
 // Ubah path relatif dari database jadi lokasi berkas di disk.
 // Mengembalikan null kalau path mencurigakan (mis. mencoba keluar folder uploads).
 function lokasiBerkas(relatif) {
@@ -102,6 +131,7 @@ async function hapusFotoLama(url) {
 module.exports = {
   uploadFotoAbsensi,
   uploadFotoProfil,
+  uploadDokumenIzin,
   hapusFotoLama,
   lokasiBerkas,
   uploadDir,
