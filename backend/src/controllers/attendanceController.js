@@ -395,31 +395,14 @@ async function getAllHistory(req, res, next) {
   }
 }
 
-// PUT /api/attendance/:id/status -- admin ubah status manual (misal set izin/alpha)
-async function updateStatus(req, res, next) {
-  try {
-    const { status, reason } = req.body;
-    const validStatus = ['hadir', 'terlambat', 'izin', 'alpha'];
-
-    if (!validStatus.includes(status)) {
-      return res.status(400).json({ message: 'Status tidak valid.' });
-    }
-
-    const result = await query(
-      `UPDATE attendance SET status = $1, reason = $2 WHERE id = $3 RETURNING *`,
-      [status, reason || null, req.params.id]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: 'Data absensi tidak ditemukan.' });
-    }
-
-    res.json({ message: 'Status absensi berhasil diperbarui.', attendance: result.rows[0] });
-  } catch (err) {
-    next(err);
-  }
-}
-
+// Catatan: endpoint lama PUT /:id/status sudah dihapus.
+//
+// Endpoint itu mengubah status absensi TANPA menulis jejak audit, sementara
+// PUT /:id/edit -- yang menggantikannya sejak tahap 5 -- mewajibkan alasan
+// dan mencatat tiap perubahan. Membiarkan keduanya hidup berarti ada satu
+// pintu yang bisa mengubah data kehadiran tanpa meninggalkan bekas, dan itu
+// meruntuhkan gunanya jejak audit. Tidak ada frontend yang memakainya.
+//
 // POST /api/attendance/mark-alpha -- tandai pegawai yang tidak absen & tidak izin
 // sebagai "alpha" untuk satu tanggal (default: kemarin). Melewati weekend & hari
 // libur otomatis. Dipanggil admin manual, atau terjadwal dari cron VPS tiap malam:
@@ -434,6 +417,19 @@ async function markAlpha(req, res, next) {
     const m = String(kemarin.getMonth() + 1).padStart(2, '0');
     const d = String(kemarin.getDate()).padStart(2, '0');
     const targetDate = req.body?.date || `${y}-${m}-${d}`;
+
+    // Tanggal dari body dipakai apa adanya sebelumnya -- tanpa pemeriksaan
+    // bentuk maupun batas. Salah ketik di cron cukup untuk menandai seluruh
+    // pegawai alpha di tanggal yang belum terjadi, dan bentuk yang bukan
+    // tanggal membuat cast di SQL melempar galat 500.
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(targetDate)) {
+      return res.status(400).json({ message: 'Format tanggal harus YYYY-MM-DD.' });
+    }
+    if (targetDate > todayLocal()) {
+      return res.status(400).json({
+        message: 'Tidak bisa menandai alpha untuk tanggal yang belum terjadi.',
+      });
+    }
 
     const result = await query(
       `INSERT INTO attendance (user_id, date, status)
@@ -465,6 +461,5 @@ module.exports = {
   getTodayAll,
   getUserHistory,
   getAllHistory,
-  updateStatus,
   markAlpha,
 };

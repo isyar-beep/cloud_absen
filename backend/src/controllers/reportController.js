@@ -40,7 +40,7 @@ async function ambilDataLaporan(month, year, departmentId) {
      LEFT JOIN departments d ON u.department_id = d.id
      WHERE EXTRACT(MONTH FROM a.date) = $1
        AND EXTRACT(YEAR FROM a.date) = $2
-       AND u.role != 'admin' ${filterDepartemen}
+       AND u.role != 'admin' AND u.is_active = TRUE ${filterDepartemen}
      ORDER BY a.date ASC, u.name ASC`,
     params
   );

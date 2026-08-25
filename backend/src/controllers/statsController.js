@@ -1,6 +1,7 @@
 const { query } = require('../config/db');
 const { todayLocal } = require('../utils/date');
 const { hitungRate } = require('../utils/attendanceRate');
+const { jendelaSemuaPegawai } = require('../utils/shiftWindow');
 
 // GET /api/stats/me -- statistik personal pengguna (bulan berjalan)
 async function getMyStats(req, res, next) {
@@ -52,7 +53,13 @@ async function getMyTrend(req, res, next) {
       `SELECT date, status,
               EXTRACT(EPOCH FROM (check_out_time - check_in_time)) / 3600 AS work_hours
        FROM attendance
-       WHERE user_id = $1 AND date >= CURRENT_DATE - INTERVAL '30 days'
+       WHERE user_id = $1
+         AND date >= CURRENT_DATE - INTERVAL '30 days'
+         -- Batas depan WAJIB ada. Izin yang disetujui menulis baris absensi
+         -- di tanggal yang belum terjadi (memang harus, supaya penanda alpha
+         -- tidak mencap pegawainya bolos). Tanpa batas ini, grafik berjudul
+         -- "30 hari terakhir" ikut menggambar titik di tanggal depan.
+         AND date <= CURRENT_DATE
        ORDER BY date ASC`,
       [req.user.id]
     );
@@ -71,15 +78,31 @@ async function getOverview(req, res, next) {
       `SELECT COUNT(*) FROM users WHERE role != 'admin' AND is_active = TRUE`
     );
 
-    const todayStats = await query(
-      `SELECT
-         COUNT(*) FILTER (WHERE status IN ('hadir','terlambat')) AS hadir,
-         COUNT(*) FILTER (WHERE status = 'terlambat') AS terlambat,
-         COUNT(*) FILTER (WHERE status = 'alpha') AS alpha,
-         COUNT(*) FILTER (WHERE status = 'izin') AS izin
-       FROM attendance WHERE date = $1`,
-      [today]
-    );
+    // Dihitung per TANGGAL SHIFT tiap pegawai, bukan tanggal kalender.
+    // Pegawai shift malam yang masuk pukul 22:00 tadi malam tercatat di
+    // tanggal kemarin; dengan `date = hari ini` ia hilang dari hitungan
+    // "Hadir Hari Ini" padahal sedang bekerja.
+    //
+    // Baris absensi juga harus disaring lewat daftar pegawai aktif. Query
+    // lama menghitung langsung dari tabel attendance tanpa menoleh ke tabel
+    // users, sehingga catatan milik pegawai yang sudah dinonaktifkan tetap
+    // ikut menambah angka KPI.
+    const daftar = await jendelaSemuaPegawai(query);
+    const ids = daftar.map((d) => d.pegawai.id);
+    const tanggalShift = daftar.map((d) => d.jendela.tanggal_shift_pulang);
+
+    const todayStats = ids.length === 0
+      ? { rows: [{ hadir: 0, terlambat: 0, alpha: 0, izin: 0 }] }
+      : await query(
+          `SELECT
+             COUNT(a.*) FILTER (WHERE a.status IN ('hadir','terlambat')) AS hadir,
+             COUNT(a.*) FILTER (WHERE a.status = 'terlambat') AS terlambat,
+             COUNT(a.*) FILTER (WHERE a.status = 'alpha') AS alpha,
+             COUNT(a.*) FILTER (WHERE a.status = 'izin') AS izin
+           FROM unnest($1::int[], $2::date[]) AS p(uid, tanggal)
+           JOIN attendance a ON a.user_id = p.uid AND a.date = p.tanggal`,
+          [ids, tanggalShift]
+        );
 
     res.json({
       total_pegawai: Number(totalPegawai.rows[0].count),
@@ -106,7 +129,7 @@ async function getDepartmentStats(req, res, next) {
               COUNT(a.*) FILTER (WHERE a.status = 'terlambat') AS terlambat,
               COUNT(a.*) FILTER (WHERE a.status = 'alpha') AS alpha
        FROM departments d
-       LEFT JOIN users u ON u.department_id = d.id AND u.role != 'admin'
+       LEFT JOIN users u ON u.department_id = d.id AND u.role != 'admin' AND u.is_active = TRUE
        LEFT JOIN attendance a ON a.user_id = u.id
          AND EXTRACT(MONTH FROM a.date) = $1
          AND EXTRACT(YEAR FROM a.date) = $2
@@ -181,8 +204,15 @@ async function getBreakdown(req, res, next) {
     const params = [];
 
     if (user_id) {
+      // Admin memilih satu orang secara sadar -- termasuk kalau orang itu
+      // sudah dinonaktifkan. Jangan disaring, nanti layarnya kosong tanpa
+      // penjelasan.
       params.push(user_id);
       conditions.push(`u.id = $${params.length}`);
+    } else {
+      // Tanpa pilihan orang, angkanya harus sama cakupannya dengan ranking,
+      // KPI, dan laporan bulanan: pegawai aktif saja.
+      conditions.push('u.is_active = TRUE');
     }
     if (month && year) {
       params.push(month);
@@ -230,8 +260,15 @@ async function getMonthlySeries(req, res, next) {
     const params = [];
 
     if (user_id) {
+      // Admin memilih satu orang secara sadar -- termasuk kalau orang itu
+      // sudah dinonaktifkan. Jangan disaring, nanti layarnya kosong tanpa
+      // penjelasan.
       params.push(user_id);
       conditions.push(`u.id = $${params.length}`);
+    } else {
+      // Tanpa pilihan orang, angkanya harus sama cakupannya dengan ranking,
+      // KPI, dan laporan bulanan: pegawai aktif saja.
+      conditions.push('u.is_active = TRUE');
     }
 
     const result = await query(

@@ -9,7 +9,6 @@ const {
   getTodayAll,
   getUserHistory,
   getAllHistory,
-  updateStatus,
   markAlpha,
 } = require('../controllers/attendanceController');
 const { adminEditAbsensi, getRiwayatEdit } = require('../controllers/correctionController');
@@ -27,7 +26,6 @@ router.get('/history/summary', authenticate, getMyHistorySummary);
 router.get('/today-all', authenticate, authorize('admin'), getTodayAll);
 router.get('/all', authenticate, authorize('admin'), getAllHistory);
 router.get('/user/:userId', authenticate, authorize('admin'), getUserHistory);
-router.put('/:id/status', authenticate, authorize('admin'), updateStatus);
 router.put('/:id/edit', authenticate, authorize('admin'), adminEditAbsensi);
 router.get('/:id/edits', authenticate, authorize('admin'), getRiwayatEdit);
 router.post('/mark-alpha', authenticate, authorize('admin'), markAlpha);

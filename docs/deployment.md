@@ -258,6 +258,10 @@ ke kemarin kalau tanggal tidak dikirim eksplisit):
 5 0 * * * curl -s -X POST https://api.perusahaan.com/api/attendance/mark-alpha -H "Authorization: Bearer TOKEN"
 ```
 
+Endpoint ini menolak tanggal yang belum terjadi dan tanggal yang bentuknya
+bukan `YYYY-MM-DD`, jadi salah ketik di crontab akan gagal terang-terangan
+alih-alih menandai seluruh pegawai alpha di tanggal yang salah.
+
 Cron ini WAJIB dipasang: tombol manualnya sudah dihapus dari dashboard admin,
 karena rawan dipakai untuk tanggal yang harinya belum selesai. Endpointnya
 masih ada dan tetap bisa dipanggil manual bila diperlukan. Untuk membetulkan
