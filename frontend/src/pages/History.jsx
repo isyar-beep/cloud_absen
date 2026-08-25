@@ -24,7 +24,6 @@ const TAB = [
 const PRESET = [
   { id: 'minggu_ini', label: 'Minggu ini' },
   { id: 'bulan_ini', label: 'Bulan ini' },
-  { id: 'bulan_lalu', label: 'Bulan lalu' },
   { id: 'tahun_ini', label: 'Tahun ini' },
   { id: 'semua', label: 'Semua' },
 ];

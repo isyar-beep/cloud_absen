@@ -99,7 +99,8 @@ export default function PengingatAbsen() {
 
       {!memuat && daftar.length === 0 && (
         <p className="text-xs text-emerald-600 mt-3">
-          Semua pegawai sudah absen masuk hari ini.
+          Tidak ada yang perlu diingatkan. Pegawai yang jam kerjanya belum
+          dibuka tidak ikut didaftar di sini.
         </p>
       )}
 
@@ -107,7 +108,7 @@ export default function PengingatAbsen() {
         <>
           <div className="flex items-center justify-between gap-2 mt-3 mb-2">
             <p className="text-xs text-gray-500">
-              {daftar.length} pegawai belum absen masuk
+              {daftar.length} pegawai belum absen &mdash; jam kerjanya sudah dibuka
             </p>
             {bisaDikirimi.length > 0 && (
               <button

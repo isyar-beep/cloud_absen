@@ -41,14 +41,6 @@ export function rentangPreset(preset, acuan = new Date()) {
         end_date: keTanggal(kini),
       };
 
-    case 'bulan_lalu': {
-      const mulai = new Date(kini.getFullYear(), kini.getMonth() - 1, 1);
-      // Tanggal 0 bulan berikutnya = hari terakhir bulan ini. Cara ini
-      // otomatis benar untuk Februari maupun tahun kabisat.
-      const selesai = new Date(kini.getFullYear(), kini.getMonth(), 0);
-      return { start_date: keTanggal(mulai), end_date: keTanggal(selesai) };
-    }
-
     case 'tahun_ini':
       return {
         start_date: keTanggal(new Date(kini.getFullYear(), 0, 1)),

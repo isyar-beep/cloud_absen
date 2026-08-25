@@ -177,8 +177,38 @@ async function shiftPegawai(query, userId) {
   return baris && baris.start_time ? baris : null;
 }
 
+// Jendela absen SELURUH pegawai aktif sekaligus, untuk papan pantau admin
+// dan daftar pengingat.
+//
+// Dipakai supaya dua layar itu memakai aturan yang sama persis dengan
+// controller absen. Sebelumnya keduanya memakai `date = hari ini` begitu
+// saja, sehingga pegawai shift malam yang sedang bekerja sejak pukul 22:00
+// tadi malam tampil "belum absen" -- catatannya ada, tapi di tanggal shift
+// kemarin. Jumlah pegawai selalu kecil (puluhan sampai ratusan), jadi
+// menghitung di JavaScript jauh lebih murah daripada menduplikasi aturan
+// shift ke dalam SQL.
+async function jendelaSemuaPegawai(query, sekarang = new Date()) {
+  const hasil = await query(
+    `SELECT u.id, u.name, u.avatar_url, u.push_token, d.name AS department,
+            s.name AS shift_nama, s.start_time, s.end_time,
+            s.checkin_open_minutes, s.checkin_close_minutes,
+            s.checkout_open_minutes, s.checkout_close_minutes
+     FROM users u
+     LEFT JOIN shifts s ON u.shift_id = s.id
+     LEFT JOIN departments d ON u.department_id = d.id
+     WHERE u.is_active = TRUE AND u.role != 'admin'
+     ORDER BY u.name ASC`
+  );
+
+  return hasil.rows.map((baris) => {
+    const shift = baris.start_time ? { ...baris, name: baris.shift_nama } : null;
+    return { pegawai: baris, jendela: jendelaAbsen(shift, sekarang) };
+  });
+}
+
 module.exports = {
   jendelaAbsen,
+  jendelaSemuaPegawai,
   shiftPegawai,
   lintasTengahMalam,
   durasiMenit,

@@ -21,7 +21,6 @@ const statusInfo = {
 const periodeOptions = [
   { key: 'minggu_ini', label: 'Minggu ini' },
   { key: 'bulan_ini', label: 'Bulan ini' },
-  { key: 'bulan_lalu', label: 'Bulan lalu' },
   { key: 'tahun_ini', label: 'Tahun ini' },
   { key: 'semua', label: 'Semua' },
 ];

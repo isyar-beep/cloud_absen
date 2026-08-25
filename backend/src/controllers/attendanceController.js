@@ -1,7 +1,7 @@
 const { query } = require('../config/db');
 const { uploadFotoAbsensi } = require('../utils/uploadPhoto');
 const { todayLocal } = require('../utils/date');
-const { jendelaAbsen, shiftPegawai } = require('../utils/shiftWindow');
+const { jendelaAbsen, jendelaSemuaPegawai, shiftPegawai } = require('../utils/shiftWindow');
 const { cekHariKerja } = require('../utils/workday');
 const { wfaBerlaku } = require('./wfaController');
 const { hitungRate } = require('../utils/attendanceRate');
@@ -285,19 +285,43 @@ async function getMyHistorySummary(req, res, next) {
 // GET /api/attendance/today-all -- admin lihat semua absensi hari ini (real-time board)
 async function getTodayAll(req, res, next) {
   try {
-    const today = todayLocal();
+    // Tiap pegawai dicari di TANGGAL SHIFT-nya masing-masing, bukan di
+    // tanggal kalender hari ini. Untuk pegawai shift pagi keduanya sama;
+    // untuk shift malam yang mulai pukul 22:00 tadi malam, catatannya ada
+    // di tanggal kemarin dan tanpa ini ia tampil "belum absen" padahal
+    // sedang bekerja.
+    const daftar = await jendelaSemuaPegawai(query);
+    if (daftar.length === 0) return res.json([]);
+
+    const ids = daftar.map((d) => d.pegawai.id);
+    const tanggal = daftar.map((d) => d.jendela.tanggal_shift_pulang);
+
     const result = await query(
-      `SELECT a.id, a.check_in_time, a.check_out_time, a.status,
+      `SELECT a.id, a.check_in_time, a.check_out_time, a.status, a.work_mode,
+              to_char(p.tanggal, 'YYYY-MM-DD') AS tanggal_shift,
               u.id AS user_id, u.name, u.avatar_url,
               d.name AS department
-       FROM users u
-       LEFT JOIN attendance a ON a.user_id = u.id AND a.date = $1
+       FROM unnest($1::int[], $2::date[]) AS p(uid, tanggal)
+       JOIN users u ON u.id = p.uid
+       LEFT JOIN attendance a ON a.user_id = u.id AND a.date = p.tanggal
        LEFT JOIN departments d ON u.department_id = d.id
-       WHERE u.is_active = TRUE AND u.role != 'admin'
-       ORDER BY a.check_in_time ASC NULLS LAST`,
-      [today]
+       ORDER BY a.check_in_time ASC NULLS LAST, u.name ASC`,
+      [ids, tanggal]
     );
-    res.json(result.rows);
+
+    // Info shift disertakan supaya papan pantau bisa menerangkan kenapa
+    // seseorang belum absen: jam kerjanya memang belum dimulai.
+    const infoShift = new Map(daftar.map((d) => [d.pegawai.id, d.jendela]));
+    res.json(result.rows.map((r) => {
+      const j = infoShift.get(r.user_id);
+      return {
+        ...r,
+        shift_nama: j?.shift?.nama || null,
+        shift_mulai: j?.shift?.mulai || null,
+        shift_selesai: j?.shift?.selesai || null,
+        masuk_dibuka: j?.masuk?.boleh ?? false,
+      };
+    }));
   } catch (err) {
     next(err);
   }

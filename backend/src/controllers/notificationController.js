@@ -2,6 +2,9 @@ const { query } = require('../config/db');
 const { transporter, fromAddress } = require('../config/mailer');
 const { sendPushNotifications } = require('../utils/pushNotification');
 const { todayLocal } = require('../utils/date');
+const { jendelaSemuaPegawai } = require('../utils/shiftWindow');
+const { hitungRate } = require('../utils/attendanceRate');
+const { cekHariKerja } = require('../utils/workday');
 
 const NAMA_BULAN = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -25,19 +28,29 @@ async function sendLowAttendanceWarning(req, res, next) {
     const month = Number(req.body?.month) || new Date().getMonth() + 1;
     const year = Number(req.body?.year) || new Date().getFullYear();
 
-    // Pegawai aktif dengan attendance rate di bawah ambang (minimal punya 1 record)
+    // Pegawai aktif dengan attendance rate di bawah ambang.
+    //
+    // Rumusnya HARUS sama dengan yang dipakai dashboard, statistik, dan
+    // laporan: (hadir + terlambat) / (hadir + terlambat + alpha). Izin tidak
+    // ikut menghitung -- izin yang disetujui bukan pelanggaran kehadiran.
+    // Sebelumnya bagian ini memakai rumusnya sendiri dengan pembagi seluruh
+    // catatan, sehingga pegawai yang banyak mengambil izin sah bisa ikut
+    // dikirimi surat peringatan, dan angka di email berbeda dari angka yang
+    // dilihat pegawai di aplikasinya.
     const result = await query(
       `SELECT u.id, u.name, u.email, u.push_token,
-              COUNT(a.*) FILTER (WHERE a.status IN ('hadir','terlambat')) AS hadir,
-              COUNT(a.*) AS total_record
+              COUNT(a.*) FILTER (WHERE a.status = 'hadir')     AS hadir,
+              COUNT(a.*) FILTER (WHERE a.status = 'terlambat') AS terlambat,
+              COUNT(a.*) FILTER (WHERE a.status = 'alpha')     AS alpha
        FROM users u
        LEFT JOIN attendance a ON a.user_id = u.id
          AND EXTRACT(MONTH FROM a.date) = $1
          AND EXTRACT(YEAR FROM a.date) = $2
        WHERE u.role != 'admin' AND u.is_active = TRUE
        GROUP BY u.id, u.name, u.email
-       HAVING COUNT(a.*) > 0
-          AND (COUNT(a.*) FILTER (WHERE a.status IN ('hadir','terlambat'))::float / COUNT(a.*)) * 100 < $3`,
+       HAVING COUNT(a.*) FILTER (WHERE a.status IN ('hadir','terlambat','alpha')) > 0
+          AND (COUNT(a.*) FILTER (WHERE a.status IN ('hadir','terlambat'))::float
+               / COUNT(a.*) FILTER (WHERE a.status IN ('hadir','terlambat','alpha'))) * 100 < $3`,
       [month, year, threshold]
     );
 
@@ -46,7 +59,7 @@ async function sendLowAttendanceWarning(req, res, next) {
     const gagal = [];
 
     for (const row of result.rows) {
-      const rate = ((row.hadir / row.total_record) * 100).toFixed(1);
+      const rate = hitungRate(row);
       try {
         await transporter.sendMail({
           from: fromAddress,
@@ -103,24 +116,68 @@ async function sendLowAttendanceWarning(req, res, next) {
 // admin untuk memilih siapa yang mau diingatkan, bukan menembak semuanya.
 async function getBelumCheckin(req, res, next) {
   try {
-    const today = todayLocal();
-    const hasil = await query(
-      `SELECT u.id, u.name, u.avatar_url, d.name AS department,
-              (u.push_token IS NOT NULL) AS bisa_dikirimi,
-              s.name AS shift_name, s.start_time AS shift_start
-       FROM users u
-       LEFT JOIN attendance a ON a.user_id = u.id AND a.date = $1
-       LEFT JOIN departments d ON u.department_id = d.id
-       LEFT JOIN shifts s ON u.shift_id = s.id
-       WHERE u.role != 'admin' AND u.is_active = TRUE
-         AND (a.id IS NULL OR a.check_in_time IS NULL)
-       ORDER BY u.name ASC`,
-      [today]
-    );
-    res.json(hasil.rows);
+    res.json(await daftarBelumCheckin());
   } catch (err) {
     next(err);
   }
+}
+
+// Siapa yang PANTAS diingatkan sekarang.
+//
+// Bukan sekadar "belum ada absen hari ini". Dua penyaringan penting:
+//
+//   1. Tanggal yang diperiksa adalah TANGGAL SHIFT pegawai itu, bukan
+//      tanggal kalender. Pegawai shift malam yang masuk pukul 22:00 tadi
+//      malam sudah absen -- catatannya hanya ada di tanggal kemarin.
+//
+//   2. Pegawai yang jendela absen masuknya BELUM dibuka tidak ikut
+//      didaftar. Tanpa ini, cron pukul 08:00 akan menagih pegawai shift
+//      malam yang jam kerjanya baru mulai pukul 22:00 nanti.
+//
+// Hari libur dan akhir pekan juga dilewati -- absennya memang ditutup,
+// jadi tidak ada yang perlu diingatkan.
+async function daftarBelumCheckin(idTerpilih = null) {
+  const daftar = await jendelaSemuaPegawai(query);
+  if (daftar.length === 0) return [];
+
+  const relevan = daftar.filter((d) => idTerpilih === null || idTerpilih.includes(d.pegawai.id));
+  if (relevan.length === 0) return [];
+
+  const ids = relevan.map((d) => d.pegawai.id);
+  const tanggal = relevan.map((d) => d.jendela.tanggal_shift_masuk);
+
+  const absen = await query(
+    `SELECT p.uid, a.check_in_time
+     FROM unnest($1::int[], $2::date[]) AS p(uid, tanggal)
+     LEFT JOIN attendance a ON a.user_id = p.uid AND a.date = p.tanggal`,
+    [ids, tanggal]
+  );
+  const sudahMasuk = new Map(absen.rows.map((r) => [r.uid, !!r.check_in_time]));
+
+  const hasil = [];
+  for (const d of relevan) {
+    if (sudahMasuk.get(d.pegawai.id)) continue;
+
+    // Admin yang memilih orang tertentu tetap dihormati walau jendelanya
+    // belum dibuka -- mungkin ia memang ingin mengingatkan lebih awal.
+    if (!idTerpilih && !d.jendela.masuk.boleh) continue;
+
+    const hariKerja = await cekHariKerja(query, d.jendela.tanggal_shift_masuk);
+    if (!hariKerja.kerja) continue;
+
+    hasil.push({
+      id: d.pegawai.id,
+      name: d.pegawai.name,
+      avatar_url: d.pegawai.avatar_url,
+      department: d.pegawai.department,
+      push_token: d.pegawai.push_token,
+      bisa_dikirimi: !!d.pegawai.push_token,
+      shift_name: d.jendela.shift.nama,
+      shift_start: d.jendela.shift.mulai,
+      tanggal_shift: d.jendela.tanggal_shift_masuk,
+    });
+  }
+  return hasil;
 }
 
 // POST /api/notifications/checkin-reminder -- admin kirim push reminder ke
@@ -151,36 +208,19 @@ async function sendCheckinReminder(req, res, next) {
       return res.status(400).json({ message: 'Pesan pengingat maksimal 300 karakter.' });
     }
 
-    // Sengaja TIDAK memfilter push_token di SQL: pegawai yang belum absen tapi
-    // belum pernah login di mobile app tetap perlu dilaporkan ke admin, supaya
-    // "tidak ada yang perlu diingatkan" tidak rancu dengan "tidak ada yang bisa dikirimi".
-    //
-    // Penyaringan id juga dilakukan di SQL, bukan di JavaScript: admin yang
-    // mengirim id pegawai yang ternyata sudah absen tidak boleh membuat
-    // pegawai itu ikut diingatkan.
-    const params = [today];
-    let filterId = '';
-    if (idTerpilih) {
-      params.push(idTerpilih);
-      filterId = `AND u.id = ANY($${params.length}::int[])`;
-    }
-
-    const result = await query(
-      `SELECT u.id, u.name, u.push_token
-       FROM users u
-       LEFT JOIN attendance a ON a.user_id = u.id AND a.date = $1
-       WHERE u.role != 'admin' AND u.is_active = TRUE
-         AND (a.id IS NULL OR a.check_in_time IS NULL)
-         ${filterId}`,
-      params
-    );
-
-    const belumAbsen = result.rows;
+    // Daftar yang sama dengan yang dilihat admin di layar, supaya tidak ada
+    // selisih antara "yang tampil" dan "yang dikirimi". Pegawai tanpa
+    // push_token tetap ikut didaftar: "tidak ada yang perlu diingatkan"
+    // harus bisa dibedakan dari "tidak ada yang bisa dikirimi".
+    const belumAbsen = await daftarBelumCheckin(idTerpilih);
     if (belumAbsen.length === 0) {
+      // Daftar kosong bisa berarti dua hal berbeda, dan admin perlu tahu
+      // yang mana: semua sudah absen, atau memang belum ada yang jam
+      // kerjanya dimulai.
       return res.json({
         message: idTerpilih
-          ? 'Pegawai yang dipilih ternyata sudah absen masuk hari ini.'
-          : 'Semua pegawai sudah absen masuk hari ini.',
+          ? 'Pegawai yang dipilih ternyata sudah absen untuk shift-nya.'
+          : 'Tidak ada yang perlu diingatkan: semua yang jam kerjanya sudah dibuka telah absen masuk.',
         data: { belum_absen: 0, terkirim: 0 },
       });
     }

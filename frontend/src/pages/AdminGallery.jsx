@@ -323,17 +323,20 @@ export default function AdminGallery() {
                 </div>
                 <div className="flex items-center justify-between gap-2 mt-2">
                   <span className="text-[11.5px] text-gray-400 shrink-0">{formatTanggalHari(r.date)}</span>
-                  {r.photo_in_url && !r.photo_out_url && !hanyaSatuJenis ? (
-                    <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20 shrink-0">
-                      <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                      Pulang kosong
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-1.5">
-                      <WfaBadge mode={r.work_mode} />
+                  {/* WFA di luar percabangan: hari yang absen pulangnya kosong
+                      tetap perlu terlihat WFA-nya, karena justru hari seperti
+                      itulah yang biasanya ditelusuri admin. */}
+                  <span className="flex items-center gap-1.5 shrink-0">
+                    <WfaBadge mode={r.work_mode} />
+                    {r.photo_in_url && !r.photo_out_url && !hanyaSatuJenis ? (
+                      <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20">
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                        Pulang kosong
+                      </span>
+                    ) : (
                       <StatusBadge status={r.status} />
-                    </span>
-                  )}
+                    )}
+                  </span>
                 </div>
               </div>
 
