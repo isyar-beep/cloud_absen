@@ -46,10 +46,18 @@ export default function LoginScreen({ navigation }) {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
+      {/* Pemilih tema mengambang di pojok kanan atas, di luar alur baca.
+          Sebelumnya ia berupa tiga tombol berteks di bawah tombol Masuk --
+          membuat halaman terasa ramai padahal yang dicari orang saat
+          membuka aplikasi hanyalah kolom email. */}
+      <View style={[styles.temaPojok, { top: insets.top + 8 }]}>
+        <PilihTema />
+      </View>
+
       <ScrollView
         contentContainerStyle={[
           styles.isi,
-          { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 },
+          { paddingTop: insets.top + 72, paddingBottom: insets.bottom + 24 },
         ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
@@ -94,10 +102,6 @@ export default function LoginScreen({ navigation }) {
           <Text style={styles.buttonText}>{loading ? 'Memproses...' : 'Masuk'}</Text>
         </TouchableOpacity>
 
-        <View style={styles.temaWadah}>
-          <Text style={styles.temaLabel}>Tampilan</Text>
-          <PilihTema />
-        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -130,6 +134,7 @@ const buatGaya = (w) => StyleSheet.create({
   buttonMati: { opacity: 0.6 },
   buttonText: { color: w.teksDiWarna, fontWeight: '700', fontSize: 15 },
 
-  temaWadah: { marginTop: 32, alignItems: 'center', gap: 8 },
-  temaLabel: { fontSize: 11, color: w.teksSamar, fontWeight: '600' },
+  // zIndex: ScrollView digambar setelahnya, jadi tanpa ini tombol tertimpa
+  // dan ketukan jatuh ke daftar di belakangnya.
+  temaPojok: { position: 'absolute', right: 20, zIndex: 10 },
 });

@@ -11,6 +11,16 @@ export const useAuthStore = create((set) => ({
     set({ user, token });
   },
 
+  // Perbarui sebagian data pengguna yang tersimpan, mis. setelah foto
+  // profil diganti. Tanpa ini, avatar di dashboard baru ikut berubah
+  // setelah pegawai keluar lalu masuk lagi.
+  perbaruiUser: async (sebagian) => {
+    const sekarang = useAuthStore.getState().user || {};
+    const baru = { ...sekarang, ...sebagian };
+    await AsyncStorage.setItem('user', JSON.stringify(baru));
+    set({ user: baru });
+  },
+
   restoreSession: async () => {
     const userStr = await AsyncStorage.getItem('user');
     const token = await AsyncStorage.getItem('token');

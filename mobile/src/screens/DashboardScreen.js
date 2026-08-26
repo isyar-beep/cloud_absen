@@ -4,11 +4,10 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useWarna } from '../theme';
-import PilihTema from '../components/PilihTema';
+import Avatar from '../components/Avatar';
+import { useTokenFoto } from '../services/fotoUrl';
 import api from '../services/api';
 import { useAuthStore } from '../store/authStore';
-import { unregisterPushToken } from '../services/notifications';
-import UbahPasswordModal from '../components/UbahPasswordModal';
 import { formatJam, formatTanggalHari, tanggalLokal } from '../utils/tanggal';
 
 const LABEL_STATUS = {
@@ -54,16 +53,15 @@ function KartuAngka({ label, nilai, warna, styles }) {
 }
 
 export default function DashboardScreen({ navigation }) {
-  const { user, logout } = useAuthStore();
+  const { user } = useAuthStore();
   const [info, setInfo] = useState(null);
   const [stats, setStats] = useState(null);
   const [history, setHistory] = useState([]);
   const [error, setError] = useState('');
   const [memuat, setMemuat] = useState(false);
-  const [ubahPassword, setUbahPassword] = useState(false);
-  const [pesan, setPesan] = useState('');
   const w = useWarna();
   const insets = useSafeAreaInsets();
+  const tokenFoto = useTokenFoto();
   const styles = useMemo(() => buatGaya(w), [w]);
 
   // Ketiga permintaan dijalankan terpisah dengan allSettled, bukan
@@ -105,12 +103,6 @@ export default function DashboardScreen({ navigation }) {
     };
   }, [navigation, ambilData]);
 
-  async function handleLogout() {
-    await unregisterPushToken(); // sebelum token JWT dihapus, supaya request masih terautentikasi
-    await logout();
-    navigation.replace('Login');
-  }
-
   const absensi = info?.absensi;
   const sudahCheckIn = !!absensi?.check_in_time;
   const sudahCheckOut = !!absensi?.check_out_time;
@@ -147,14 +139,14 @@ export default function DashboardScreen({ navigation }) {
     >
       {/* Kepala berwarna, sejajar dengan tampilan web.
           paddingTop mengikuti tinggi bilah status HP. Tanpa itu isinya
-          menyelinap ke bawah jam dan ikon sinyal, dan tombol Keluar
+          menyelinap ke bawah jam dan ikon sinyal, dan tombol di pojok
           berhimpitan dengan area tarik-turun notifikasi -- menekannya
           justru membuka panel notifikasi HP. */}
-      <View style={[styles.hero, { paddingTop: insets.top + 16 }]}>
+      <View style={[styles.hero, { paddingTop: insets.top + 14 }]}>
         <View style={styles.heroRow}>
           <View style={styles.heroTeks}>
             <Text style={styles.heroTanggal}>{tanggalHariIni}</Text>
-            <Text style={styles.heroNama}>Halo, {user?.name} 👋</Text>
+            <Text style={styles.heroNama} numberOfLines={1}>Halo, {user?.name} 👋</Text>
             {shift ? (
               <Text style={styles.heroShift}>
                 {shift.nama} · {shift.mulai}–{shift.selesai}
@@ -162,19 +154,23 @@ export default function DashboardScreen({ navigation }) {
               </Text>
             ) : null}
           </View>
-        </View>
 
-        <View style={styles.heroAksi}>
-          <PilihTema diAtasWarna />
-          <TouchableOpacity style={styles.logoutTombol} onPress={handleLogout}>
-            <Text style={styles.logout}>Keluar</Text>
+          {/* Satu pintu ke seluruh pengaturan akun: foto profil, tema,
+              ubah password, keluar. Avatar dipilih daripada ikon roda gigi
+              karena sekaligus memberi tahu pegawai sedang masuk sebagai
+              siapa -- penting di HP yang kadang dipakai bergantian. */}
+          <TouchableOpacity
+            style={styles.tombolProfil}
+            onPress={() => navigation.navigate('Profil')}
+            accessibilityLabel="Profil dan pengaturan"
+          >
+            <Avatar nama={user?.name} url={user?.avatar_url} token={tokenFoto} ukuran={40} />
           </TouchableOpacity>
         </View>
       </View>
 
       <View style={styles.isi}>
         {error ? <Text style={styles.error}>{error}</Text> : null}
-        {pesan ? <Text style={styles.pesan}>✓ {pesan}</Text> : null}
 
         {/* Kartu shift: jam kerja dan kapan absen dibuka, sebelum menekan
             tombol apa pun. */}
@@ -331,23 +327,8 @@ export default function DashboardScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity
-          style={[styles.menuButton, { marginTop: 10 }]}
-          onPress={() => setUbahPassword(true)}
-        >
-          <Text style={styles.menuButtonText}>Ubah Password</Text>
-        </TouchableOpacity>
-      </View>
 
-      {ubahPassword ? (
-        <UbahPasswordModal
-          onTutup={() => setUbahPassword(false)}
-          onSelesai={(msg) => {
-            setUbahPassword(false);
-            setPesan(msg);
-          }}
-        />
-      ) : null}
+      </View>
     </ScrollView>
   );
 }
@@ -356,26 +337,18 @@ const buatGaya = (w) => StyleSheet.create({
   container: { flex: 1, backgroundColor: w.latar },
 
   hero: { backgroundColor: w.utama, paddingBottom: 56, paddingHorizontal: 16 },
-  heroRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  heroRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
   heroTeks: { flex: 1 },
   heroTanggal: { fontSize: 12, color: 'rgba(255,255,255,0.85)' },
   heroNama: { fontSize: 19, fontWeight: '700', color: w.teksDiWarna, marginTop: 2 },
   heroShift: { fontSize: 12, color: 'rgba(255,255,255,0.85)', marginTop: 4 },
 
-  // Tombol keluar dan pemilih tema turun ke barisnya sendiri, jauh dari
-  // sudut layar. Di sudut kanan atas, ibu jari yang meleset sedikit saja
-  // menarik panel notifikasi HP alih-alih menekan tombolnya.
-  heroAksi: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    marginTop: 16,
+  // Avatar diberi cincin putih tipis supaya tetap terlihat sebagai tombol
+  // di atas hero biru, termasuk saat fotonya kebetulan berwarna serupa.
+  tombolProfil: {
+    borderRadius: 24, padding: 2,
+    borderWidth: 2, borderColor: 'rgba(255,255,255,0.55)',
   },
-  logoutTombol: {
-    minHeight: 40, justifyContent: 'center', paddingHorizontal: 16,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)',
-  },
-  logout: { fontSize: 13, color: w.teksDiWarna, fontWeight: '700' },
 
   isi: { paddingHorizontal: 16, marginTop: -42 },
   pesan: {

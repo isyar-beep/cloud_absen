@@ -13,7 +13,7 @@ async function login(req, res, next) {
     }
 
     const result = await query(
-      'SELECT id, name, email, password_hash, role, is_active FROM users WHERE email = $1',
+      'SELECT id, name, email, password_hash, role, is_active, avatar_url FROM users WHERE email = $1',
       [email]
     );
 
@@ -38,6 +38,9 @@ async function login(req, res, next) {
         name: user.name,
         email: user.email,
         role: user.role,
+        // Ikut dikirim supaya aplikasi bisa menampilkan foto profil sejak
+        // layar pertama, tanpa memanggil /auth/me lebih dulu.
+        avatar_url: user.avatar_url,
       },
     });
   } catch (err) {
