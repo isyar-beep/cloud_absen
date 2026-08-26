@@ -75,6 +75,28 @@ hari sengaja tanpa absen pulang, meniru pegawai yang lupa absen keluar.
 Sengaja dipisah dari `npm run seed` supaya **tidak pernah tereksekusi di server
 produksi** — perintah ini menghapus lalu menulis ulang absensi pada rentang tersebut.
 
+**Kosongkan data untuk uji coba dari nol:**
+```bash
+npm run reset:data
+```
+Menghapus seluruh akun pegawai berikut absensi, izin, koreksi, penetapan WFA,
+catatan aktivitas admin, dan semua berkas foto di `uploads/`. Yang **tetap**:
+akun admin, shift berikut jam dan hari kerjanya, hari libur, dan departemen.
+
+Berguna sebelum uji coba internal: data contoh menyembunyikan hal-hal yang
+justru perlu dilihat — tampilan saat belum ada catatan, dan bagaimana rasanya
+jadi pegawai baru yang absen pertama kali.
+
+Tiga pengaman: script menolak berjalan kalau `NODE_ENV=production`, menolak
+kalau tidak ada akun admin yang akan bertahan (kalau tidak, pemiliknya terkunci
+di luar aplikasinya sendiri), dan menampilkan dulu apa saja yang akan dihapus
+sebelum meminta Anda mengetik `HAPUS`.
+
+Berkas dihapus **sebelum** barisnya, karena daftar berkas mana yang harus
+dihapus hanya ada di database. Folder unggahan juga disapu bersih seluruhnya —
+termasuk folder dari versi aplikasi yang lebih lama — supaya tidak menyisakan
+foto yatim yang tidak lagi ditunjuk siapa pun.
+
 **Jalankan server:**
 ```bash
 npm run dev
