@@ -1,8 +1,28 @@
 import { Platform } from 'react-native';
-import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import api from './api';
+
+// ============================================================
+// Push notification.
+//
+// PENTING: `expo-notifications` sengaja TIDAK di-import di puncak berkas.
+//
+// Sejak SDK 53, kemampuan push jarak jauh dicabut dari Expo Go, dan paket
+// itu memasang peringatannya sendiri saat modulnya dimuat -- bukan saat
+// fungsinya dipanggil. Selama import-nya ada di puncak, peringatan itu
+// muncul sebagai kotak merah "Console Error" begitu aplikasi dibuka,
+// sebelum satu baris pun kode kita berjalan. Menambahkan pemeriksaan di
+// dalam fungsi tidak menolong: peringatannya sudah terlanjur keluar.
+//
+// Karena itu modulnya dimuat lewat require() di dalam fungsi, setelah
+// dipastikan kita TIDAK sedang berjalan di Expo Go. Di APK hasil build,
+// jalurnya sama seperti biasa dan push tetap berfungsi penuh.
+// ============================================================
+
+function diExpoGo() {
+  return Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+}
 
 // Notifikasi tetap tampil (banner + suara) walau app sedang dibuka.
 //
@@ -10,34 +30,34 @@ import api from './api';
 // sudah usang sejak expo-notifications 0.29 -- keduanya wajib diisi,
 // karena sekarang banner (muncul sekilas di atas) dan daftar notifikasi
 // dikendalikan terpisah.
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
+function pasangPenangan(Notifications) {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowBanner: true,
+      shouldShowList: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+    }),
+  });
+}
 
 // Minta izin notifikasi, ambil Expo push token, lalu simpan ke backend.
 // Dipanggil sekali setelah login berhasil. Gagal diam-diam (mis. di emulator
 // tanpa Google Play Services) supaya tidak mengganggu alur login utama.
 export async function registerForPushNotifications() {
   try {
+    if (diExpoGo()) {
+      console.log('Berjalan di Expo Go — push notification dilewati. Aktif di APK hasil build.');
+      return;
+    }
     if (!Device.isDevice) {
       console.log('Push notification butuh perangkat fisik, dilewati di emulator/simulator.');
       return;
     }
 
-    // Expo Go tidak lagi bisa menerima push sejak SDK 53 -- modul nativenya
-    // dicabut dari aplikasi itu. Tanpa pemeriksaan ini, tiap kali aplikasi
-    // dibuka lewat Expo Go muncul dua kotak merah "ERROR" di layar yang
-    // terlihat seperti aplikasinya rusak, padahal hanya fitur yang memang
-    // tidak tersedia di sana. Di APK hasil build, push tetap berjalan.
-    if (Constants.executionEnvironment === ExecutionEnvironment.StoreClient) {
-      console.log('Berjalan di Expo Go -- push notification dilewati. Aktif di APK hasil build.');
-      return;
-    }
+    // eslint-disable-next-line global-require
+    const Notifications = require('expo-notifications');
+    pasangPenangan(Notifications);
 
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
@@ -75,7 +95,9 @@ export async function registerForPushNotifications() {
   }
 }
 
-// Dipanggil saat logout supaya user yang sudah keluar tidak lagi menerima notifikasi.
+// Dipanggil saat logout supaya user yang sudah keluar tidak lagi menerima
+// notifikasi. Tidak menyentuh expo-notifications sama sekali -- hanya
+// mengosongkan token di server, jadi aman dipanggil di Expo Go.
 export async function unregisterPushToken() {
   try {
     await api.put('/auth/push-token', { push_token: null });
