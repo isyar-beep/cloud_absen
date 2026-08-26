@@ -36,6 +36,15 @@ export function formatTanggalHari(nilai) {
   });
 }
 
+// "Kam, 27 Agu" -- untuk penanda kecil yang menempel di tempat sempit,
+// tempat tahunnya sudah jelas dari kalimat di sekitarnya.
+export function formatTanggalSingkat(nilai) {
+  if (!nilai) return '—';
+  return tanggalLokal(nilai).toLocaleDateString('id-ID', {
+    weekday: 'short', day: 'numeric', month: 'short',
+  });
+}
+
 // "21/08/2026"
 export function formatTanggalPendek(nilai) {
   if (!nilai) return '—';

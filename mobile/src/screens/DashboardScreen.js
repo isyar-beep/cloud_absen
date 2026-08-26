@@ -8,7 +8,7 @@ import Avatar from '../components/Avatar';
 import { useTokenFoto } from '../services/fotoUrl';
 import api from '../services/api';
 import { useAuthStore } from '../store/authStore';
-import { formatJam, formatTanggalHari, tanggalLokal } from '../utils/tanggal';
+import { formatJam, formatTanggalHari, formatTanggalSingkat, tanggalLokal } from '../utils/tanggal';
 
 const LABEL_STATUS = {
   hadir: 'Hadir',
@@ -21,15 +21,25 @@ const LABEL_STATUS = {
 // hijau berarti sedang dibuka, abu berarti belum atau sudah lewat, biru
 // berarti absennya memang sudah dilakukan. Kembaran JendelaBaris di
 // frontend/src/pages/Attendance.jsx.
-function JendelaBaris({ label, info, selesai, tutup, styles, w }) {
+//
+// `tanggal` diberi penanda hanya kalau bukan hari ini. Kedua jendela bisa
+// jatuh pada tanggal yang BERBEDA -- misalnya pada malam hari setelah jam
+// kerja usai, absen pulang masih menunjuk shift hari ini yang sudah
+// ditutup sementara absen masuk sudah bergeser ke shift besok pagi. Tanpa
+// penanda ini keduanya terbaca seolah milik satu tanggal yang sama.
+function JendelaBaris({ label, info, tanggal, hariIni, selesai, tutup, styles, w }) {
   const warna = selesai ? w.titikSelesai : info?.boleh ? w.titikHidup : w.titikMati;
   const keterangan = tutup
     ? 'Kantor tutup'
     : selesai ? 'Sudah dilakukan' : info?.boleh ? 'Dibuka sekarang' : 'Belum dibuka';
+  const bedaTanggal = tanggal && hariIni && tanggal !== hariIni;
 
   return (
     <View style={styles.jendelaKolom}>
       <Text style={styles.jendelaLabel}>{label}</Text>
+      {bedaTanggal ? (
+        <Text style={styles.jendelaTanggal}>{formatTanggalSingkat(tanggal)}</Text>
+      ) : null}
       <Text style={styles.jendelaJam}>{info ? `${info.buka}–${info.tutup}` : '—'}</Text>
       <View style={styles.jendelaStatusRow}>
         <View style={[styles.titik, { backgroundColor: warna }]} />
@@ -108,10 +118,17 @@ export default function DashboardScreen({ navigation }) {
   const sudahCheckOut = !!absensi?.check_out_time;
   const shift = info?.shift;
   const kantorTutup = !!info?.hari_kerja && !info.hari_kerja.kerja;
-  // tanggal_shift, bukan tanggal_shift_masuk: yang pertama sudah mengikuti
-  // baris absensi yang sedang berjalan, jadi pegawai shift malam melihat
-  // tanggal yang sama dengan yang dipakai server saat menyimpan.
-  const tanggalShiftBeda = info?.tanggal_shift && info.tanggal_shift !== info.hari_ini;
+  // Catatan tunggal "tercatat untuk tanggal X" hanya jujur kalau KEDUA
+  // jendela memang menunjuk tanggal shift yang sama -- misalnya shift
+  // malam yang sedang berjalan, tempat absen masuk tadi malam dan absen
+  // pulang pagi ini sama-sama milik tanggal kemarin.
+  //
+  // Kalau keduanya berbeda tanggal, satu kalimat tidak bisa mewakili
+  // keduanya; yang menjelaskan adalah penanda tanggal di tiap jendela.
+  const tanggalSatu = info?.tanggal_shift_masuk === info?.tanggal_shift_pulang
+    ? info?.tanggal_shift_masuk
+    : null;
+  const tanggalShiftBeda = tanggalSatu && tanggalSatu !== info.hari_ini;
 
   // Salinan aturan server, supaya pegawai tahu duluan tanpa harus memotret
   // dulu lalu ditolak. Server tetap yang memutuskan.
@@ -211,13 +228,21 @@ export default function DashboardScreen({ navigation }) {
 
             {tanggalShiftBeda ? (
               <Text style={[styles.catatan, styles.catatanUngu]}>
-                Absen ini tercatat untuk shift tanggal {formatTanggalHari(info.tanggal_shift)}.
+                Absen ini tercatat untuk shift tanggal {formatTanggalHari(tanggalSatu)}.
               </Text>
             ) : null}
 
             <View style={styles.jendelaRow}>
-              <JendelaBaris label="Absen masuk" info={info.masuk} selesai={sudahCheckIn} tutup={kantorTutup} styles={styles} w={w} />
-              <JendelaBaris label="Absen pulang" info={info.pulang} selesai={sudahCheckOut} tutup={kantorTutup} styles={styles} w={w} />
+              <JendelaBaris
+                label="Absen masuk" info={info.masuk}
+                tanggal={info.tanggal_shift_masuk} hariIni={info.hari_ini}
+                selesai={sudahCheckIn} tutup={kantorTutup} styles={styles} w={w}
+              />
+              <JendelaBaris
+                label="Absen pulang" info={info.pulang}
+                tanggal={info.tanggal_shift_pulang} hariIni={info.hari_ini}
+                selesai={sudahCheckOut} tutup={kantorTutup} styles={styles} w={w}
+              />
             </View>
           </View>
         ) : null}
@@ -267,7 +292,7 @@ export default function DashboardScreen({ navigation }) {
         {stats ? (
           <View style={styles.statGrid}>
             <KartuAngka label="Total Hadir" nilai={`${stats.total_hadir} hari`} warna={w.status.hadir.teks} styles={styles} />
-            <KartuAngka label="Attendance Rate" nilai={`${stats.attendance_rate}%`} warna={w.aksen.biru} styles={styles} />
+            <KartuAngka label="Tingkat Kehadiran" nilai={`${stats.attendance_rate}%`} warna={w.aksen.biru} styles={styles} />
             <KartuAngka label="Terlambat" nilai={`${stats.total_terlambat} kali`} warna={w.status.terlambat.teks} styles={styles} />
             <KartuAngka label="Rata-rata Kerja" nilai={`${stats.avg_work_hours} jam`} warna={w.aksen.ungu} styles={styles} />
           </View>
@@ -386,6 +411,7 @@ const buatGaya = (w) => StyleSheet.create({
   },
   jendelaKolom: { flex: 1 },
   jendelaLabel: { fontSize: 11, color: w.teksSamar },
+  jendelaTanggal: { fontSize: 11, fontWeight: '600', color: w.aksen.ungu, marginTop: 1 },
   jendelaJam: { fontSize: 13, fontWeight: '600', color: w.teks, marginTop: 1 },
   jendelaStatusRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 2 },
   titik: { width: 6, height: 6, borderRadius: 3 },

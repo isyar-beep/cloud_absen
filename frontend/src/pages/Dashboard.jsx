@@ -64,7 +64,7 @@ export default function Dashboard() {
   const statCards = stats
     ? [
         { label: 'Total Hadir', value: `${stats.total_hadir} hari`, icon: CheckBadgeIcon, chip: 'bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' },
-        { label: 'Attendance Rate', value: `${stats.attendance_rate}%`, icon: ChartIcon, chip: 'bg-primary-50 dark:bg-primary-500/15 text-primary-600 dark:text-primary-400' },
+        { label: 'Tingkat Kehadiran', value: `${stats.attendance_rate}%`, icon: ChartIcon, chip: 'bg-primary-50 dark:bg-primary-500/15 text-primary-600 dark:text-primary-400' },
         { label: 'Terlambat', value: `${stats.total_terlambat} kali`, icon: ClockIcon, chip: 'bg-amber-50 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400' },
         { label: 'Rata-rata Kerja', value: `${stats.avg_work_hours} jam`, icon: CalendarIcon, chip: 'bg-violet-50 dark:bg-violet-500/15 text-violet-600 dark:text-violet-400' },
       ]

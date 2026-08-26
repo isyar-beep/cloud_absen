@@ -245,7 +245,7 @@ export default function AdminStats() {
                 </div>
               ))}
               <div className="bg-surface/75 backdrop-blur-xl px-4 py-3 col-span-2 sm:col-span-1">
-                <p className="text-xs text-muted">Attendance Rate</p>
+                <p className="text-xs text-muted">Tingkat Kehadiran</p>
                 <p className="text-lg font-bold text-primary-600 dark:text-primary-400 mt-0.5 tabular-nums">{ringkasan.attendance_rate}%</p>
               </div>
             </div>
@@ -388,7 +388,7 @@ export default function AdminStats() {
                       <td className="px-4 py-3" />
                     </tr>
                     <tr>
-                      <td className="px-4 py-3 font-semibold text-strong">Attendance Rate</td>
+                      <td className="px-4 py-3 font-semibold text-strong">Tingkat Kehadiran</td>
                       <td className="px-4 py-3 text-right font-semibold text-primary-600 dark:text-primary-400 tabular-nums">{breakdown.attendance_rate}%</td>
                       <td className="px-4 py-3" />
                     </tr>

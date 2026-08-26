@@ -2,20 +2,31 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { ArrowLeftIcon, CameraIcon, ClockIcon } from '../components/Icons';
-import { formatJam, formatTanggalHari } from '../utils/tanggal';
+import { formatJam, formatTanggalHari, formatTanggalSingkat } from '../utils/tanggal';
 
 // Satu baris "kapan boleh absen": rentang jamnya, plus titik warna yang
 // langsung terbaca -- hijau berarti sedang dibuka, abu berarti belum/sudah
 // lewat, biru berarti absennya memang sudah selesai dilakukan.
-function JendelaBaris({ label, info, selesai, tutup }) {
+// `tanggal` diberi penanda hanya kalau bukan hari ini. Kedua jendela bisa
+// jatuh pada tanggal yang BERBEDA -- misalnya pada malam hari setelah jam
+// kerja usai, absen pulang masih menunjuk shift hari ini yang sudah
+// ditutup sementara absen masuk sudah bergeser ke shift besok pagi. Tanpa
+// penanda ini keduanya terbaca seolah milik satu tanggal yang sama.
+function JendelaBaris({ label, info, tanggal, hariIni, selesai, tutup }) {
   const warna = selesai ? 'bg-primary-500' : info?.boleh ? 'bg-emerald-500' : 'bg-line-strong';
   const keterangan = tutup
     ? 'Kantor tutup'
     : selesai ? 'Sudah dilakukan' : info?.boleh ? 'Dibuka sekarang' : 'Belum dibuka';
+  const bedaTanggal = tanggal && hariIni && tanggal !== hariIni;
 
   return (
     <div>
       <p className="text-[11px] text-faint">{label}</p>
+      {bedaTanggal && (
+        <p className="text-[11px] font-semibold text-violet-600 dark:text-violet-300">
+          {formatTanggalSingkat(tanggal)}
+        </p>
+      )}
       <p className="text-sm font-semibold text-strong">
         {info ? `${info.buka}–${info.tutup}` : '—'}
       </p>
@@ -176,7 +187,17 @@ export default function Attendance() {
 
   const shift = info?.shift;
   const kantorTutup = !!info?.hari_kerja && !info.hari_kerja.kerja;
-  const tanggalShiftBeda = info?.tanggal_shift && info.tanggal_shift !== info.hari_ini;
+  // Catatan tunggal "tercatat untuk tanggal X" hanya jujur kalau KEDUA
+  // jendela memang menunjuk tanggal shift yang sama -- misalnya shift
+  // malam yang sedang berjalan, tempat absen masuk tadi malam dan absen
+  // pulang pagi ini sama-sama milik tanggal kemarin.
+  //
+  // Kalau keduanya berbeda tanggal, satu kalimat tidak bisa mewakili
+  // keduanya; yang menjelaskan adalah penanda tanggal di tiap jendela.
+  const tanggalSatu = info?.tanggal_shift_masuk === info?.tanggal_shift_pulang
+    ? info?.tanggal_shift_masuk
+    : null;
+  const tanggalShiftBeda = tanggalSatu && tanggalSatu !== info.hari_ini;
 
   return (
     <div className="min-h-screen px-4 py-6">
@@ -235,13 +256,21 @@ export default function Attendance() {
 
             {tanggalShiftBeda && (
               <p className="text-xs text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-500/15 border border-violet-100 dark:border-violet-500/30 rounded-lg px-2.5 py-1.5 mt-3">
-                Absen ini tercatat untuk shift tanggal {formatTanggalHari(info.tanggal_shift)}.
+                Absen ini tercatat untuk shift tanggal {formatTanggalHari(tanggalSatu)}.
               </p>
             )}
 
             <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-line">
-              <JendelaBaris label="Absen masuk" info={info.masuk} selesai={sudahCheckIn} tutup={kantorTutup} />
-              <JendelaBaris label="Absen pulang" info={info.pulang} selesai={sudahCheckOut} tutup={kantorTutup} />
+              <JendelaBaris
+                label="Absen masuk" info={info.masuk}
+                tanggal={info.tanggal_shift_masuk} hariIni={info.hari_ini}
+                selesai={sudahCheckIn} tutup={kantorTutup}
+              />
+              <JendelaBaris
+                label="Absen pulang" info={info.pulang}
+                tanggal={info.tanggal_shift_pulang} hariIni={info.hari_ini}
+                selesai={sudahCheckOut} tutup={kantorTutup}
+              />
             </div>
           </div>
         )}

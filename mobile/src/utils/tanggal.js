@@ -34,6 +34,15 @@ export function formatTanggalHari(nilai) {
   });
 }
 
+// "Kam, 27 Agu" -- untuk penanda kecil yang menempel di tempat sempit,
+// tempat tahunnya sudah jelas dari kalimat di sekitarnya.
+export function formatTanggalSingkat(nilai) {
+  if (!nilai) return '-';
+  return tanggalLokal(nilai).toLocaleDateString('id-ID', {
+    weekday: 'short', day: 'numeric', month: 'short',
+  });
+}
+
 // Ubah "2026-08-21 07:39:12" (jam dinding kantor, tanpa zona waktu) jadi
 // Date lokal. Sama seperti tanggal: jangan pernah dikonversi zona waktu,
 // karena jam absen adalah jam yang tertera di kantor, bukan titik waktu

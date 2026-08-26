@@ -87,7 +87,7 @@ async function exportExcel(req, res, next) {
     sheetRekap.getRow(1).font = { bold: true, size: 14 };
     sheetRekap.addRow([]);
     const headerRekap = sheetRekap.addRow([
-      'No', 'Nama', 'Departemen', 'Hadir', 'Terlambat', 'Izin', 'Alpha', 'Attendance Rate (%)',
+      'No', 'Nama', 'Departemen', 'Hadir', 'Terlambat', 'Izin', 'Alpha', 'Tingkat Kehadiran (%)',
     ]);
     headerRekap.font = { bold: true };
 
