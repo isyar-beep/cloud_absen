@@ -259,10 +259,10 @@ export default function DashboardScreen({ navigation }) {
         <Text style={styles.judulBagian}>Statistik Bulan Ini</Text>
         {stats ? (
           <View style={styles.statGrid}>
-            <KartuAngka label="Total Hadir" nilai={`${stats.total_hadir} hari`} warna={w.status.hadir.teks} />
-            <KartuAngka label="Attendance Rate" nilai={`${stats.attendance_rate}%`} warna={w.aksen.biru} />
-            <KartuAngka label="Terlambat" nilai={`${stats.total_terlambat} kali`} warna={w.status.terlambat.teks} />
-            <KartuAngka label="Rata-rata Kerja" nilai={`${stats.avg_work_hours} jam`} warna={w.aksen.ungu} />
+            <KartuAngka label="Total Hadir" nilai={`${stats.total_hadir} hari`} warna={w.status.hadir.teks} styles={styles} />
+            <KartuAngka label="Attendance Rate" nilai={`${stats.attendance_rate}%`} warna={w.aksen.biru} styles={styles} />
+            <KartuAngka label="Terlambat" nilai={`${stats.total_terlambat} kali`} warna={w.status.terlambat.teks} styles={styles} />
+            <KartuAngka label="Rata-rata Kerja" nilai={`${stats.avg_work_hours} jam`} warna={w.aksen.ungu} styles={styles} />
           </View>
         ) : (
           // Kalau statistik gagal dimuat, katakan begitu. Sebelumnya blok

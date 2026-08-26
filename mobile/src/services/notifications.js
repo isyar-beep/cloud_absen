@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
-import Constants from 'expo-constants';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import api from './api';
 
 // Notifikasi tetap tampil (banner + suara) walau app sedang dibuka.
@@ -26,6 +26,16 @@ export async function registerForPushNotifications() {
   try {
     if (!Device.isDevice) {
       console.log('Push notification butuh perangkat fisik, dilewati di emulator/simulator.');
+      return;
+    }
+
+    // Expo Go tidak lagi bisa menerima push sejak SDK 53 -- modul nativenya
+    // dicabut dari aplikasi itu. Tanpa pemeriksaan ini, tiap kali aplikasi
+    // dibuka lewat Expo Go muncul dua kotak merah "ERROR" di layar yang
+    // terlihat seperti aplikasinya rusak, padahal hanya fitur yang memang
+    // tidak tersedia di sana. Di APK hasil build, push tetap berjalan.
+    if (Constants.executionEnvironment === ExecutionEnvironment.StoreClient) {
+      console.log('Berjalan di Expo Go -- push notification dilewati. Aktif di APK hasil build.');
       return;
     }
 
