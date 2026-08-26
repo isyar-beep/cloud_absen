@@ -10,6 +10,7 @@ import {
   SunIcon, MoonIcon,
 } from '../components/Icons';
 import { useThemeStore } from '../store/themeStore';
+import UbahPasswordModal from '../components/UbahPasswordModal';
 import { tanggalLokal, formatJam } from '../utils/tanggal';
 import { useGrafikTema } from '../utils/grafik';
 
@@ -22,6 +23,8 @@ export default function Dashboard() {
   const [trend, setTrend] = useState([]);
   const [history, setHistory] = useState([]);
   const [profile, setProfile] = useState(null);
+  const [ubahPassword, setUbahPassword] = useState(false);
+  const [pesan, setPesan] = useState('');
 
   useEffect(() => {
     fetchData();
@@ -136,7 +139,19 @@ export default function Dashboard() {
           >
             Riwayat Lengkap
           </button>
+          <button
+            onClick={() => setUbahPassword(true)}
+            className="col-span-2 bg-surface/80 backdrop-blur-xl border border-line text-body py-3 rounded-2xl text-sm font-medium shadow-soft transition hover:bg-surface/90 hover:border-line-strong"
+          >
+            Ubah Password
+          </button>
         </div>
+
+        {pesan && (
+          <div className="text-sm text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-100 dark:border-emerald-500/30 rounded-xl px-4 py-3 mb-5 font-medium">
+            ✓ {pesan}
+          </div>
+        )}
 
         {/* KPI Cards */}
         {stats && (
@@ -208,6 +223,16 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      {ubahPassword && (
+        <UbahPasswordModal
+          onTutup={() => setUbahPassword(false)}
+          onSelesai={(msg) => {
+            setUbahPassword(false);
+            setPesan(msg);
+          }}
+        />
+      )}
     </div>
   );
 }

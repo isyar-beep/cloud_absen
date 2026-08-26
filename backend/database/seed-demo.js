@@ -14,6 +14,7 @@ const { pool, query } = require('../src/config/db');
 const { uploadFotoAbsensi, hapusFotoLama } = require('../src/utils/uploadPhoto');
 const { gambarContoh } = require('./foto-contoh');
 const { durasiMenit } = require('../src/utils/shiftWindow');
+const { hariKerjaShift } = require('../src/utils/workday');
 require('dotenv').config();
 
 const TANGGAL_MULAI = 1; // 1 Agustus
@@ -75,7 +76,8 @@ function stempel(d) {
 
 async function main() {
   const pegawai = await query(
-    `SELECT u.id, u.name, COALESCE(s.start_time, '08:00:00') AS mulai, COALESCE(s.end_time, '17:00:00') AS selesai
+    `SELECT u.id, u.name, s.work_days,
+            COALESCE(s.start_time, '08:00:00') AS mulai, COALESCE(s.end_time, '17:00:00') AS selesai
      FROM users u LEFT JOIN shifts s ON u.shift_id = s.id
      WHERE u.role != 'admin' AND u.is_active = TRUE
      ORDER BY u.id`
@@ -117,12 +119,16 @@ async function main() {
 
   for (const p of pegawai.rows) {
     const lamaShift = durasiMenit({ start_time: p.mulai, end_time: p.selesai });
+    // Hari kerja mengikuti shift pegawainya, bukan Senin-Jumat untuk semua.
+    // Kalau tidak, pegawai shift piket akhir pekan lahir tanpa satu pun
+    // catatan absensi -- demo yang justru menyembunyikan fiturnya sendiri.
+    const hariKerja = hariKerjaShift(p);
 
     for (let d = new Date(mulai); d <= hariIni; d.setDate(d.getDate() + 1)) {
       const tgl = tanggalStr(d);
       const hari = d.getDay();
 
-      if (hari === 0 || hari === 6 || setLibur.has(tgl)) {
+      if (!hariKerja.includes(hari) || setLibur.has(tgl)) {
         dilewati++;
         continue;
       }

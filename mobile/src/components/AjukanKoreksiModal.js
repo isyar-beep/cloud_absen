@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, ScrollView,
 } from 'react-native';
+import { useWarna } from '../theme';
 import api from '../services/api';
 import { formatTanggalHari, formatJam } from '../utils/tanggal';
 
@@ -19,6 +20,8 @@ export default function AjukanKoreksiModal({ baris, onTutup, onKirim }) {
   const [alasan, setAlasan] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const w = useWarna();
+  const styles = useMemo(() => buatGaya(w), [w]);
 
   async function kirim() {
     setError('');
@@ -132,39 +135,39 @@ export default function AjukanKoreksiModal({ baris, onTutup, onKirim }) {
   );
 }
 
-const styles = StyleSheet.create({
+const buatGaya = (w) => StyleSheet.create({
   latar: { flex: 1, backgroundColor: 'rgba(17,24,39,0.5)', justifyContent: 'flex-end' },
   panel: {
-    backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20,
+    backgroundColor: w.permukaan, borderTopLeftRadius: 20, borderTopRightRadius: 20,
     padding: 20, maxHeight: '88%',
   },
-  judul: { fontSize: 15, fontWeight: '700', color: '#111827' },
-  subjudul: { fontSize: 12, color: '#6b7280', marginTop: 2, marginBottom: 14 },
+  judul: { fontSize: 15, fontWeight: '700', color: w.teks },
+  subjudul: { fontSize: 12, color: w.teksRedup, marginTop: 2, marginBottom: 14 },
   error: {
-    fontSize: 12, color: '#b91c1c', backgroundColor: '#fef2f2',
-    borderWidth: 1, borderColor: '#fecaca', borderRadius: 10,
+    fontSize: 12, color: w.merah.teks, backgroundColor: w.merah.latar,
+    borderWidth: 1, borderColor: w.merah.garis, borderRadius: 10,
     paddingHorizontal: 12, paddingVertical: 8, marginBottom: 12,
   },
-  kotakInfo: { backgroundColor: '#f9fafb', borderRadius: 10, padding: 12, marginBottom: 14 },
-  kotakLabel: { fontSize: 11, color: '#9ca3af' },
-  kotakNilai: { fontSize: 13, color: '#374151', marginTop: 2 },
+  kotakInfo: { backgroundColor: w.latar, borderRadius: 10, padding: 12, marginBottom: 14 },
+  kotakLabel: { fontSize: 11, color: w.teksSamar },
+  kotakNilai: { fontSize: 13, color: w.teksBadan, marginTop: 2 },
   jamRow: { flexDirection: 'row', gap: 12 },
   jamKolom: { flex: 1 },
-  label: { fontSize: 11, fontWeight: '600', color: '#6b7280', marginBottom: 6 },
+  label: { fontSize: 11, fontWeight: '600', color: w.teksRedup, marginBottom: 6 },
   input: {
-    borderWidth: 1, borderColor: '#d1d5db', borderRadius: 10,
+    borderWidth: 1, borderColor: w.garisTebal, borderRadius: 10,
     paddingHorizontal: 12, paddingVertical: 10, fontSize: 14,
-    backgroundColor: '#f9fafb', color: '#111827',
+    backgroundColor: w.latar, color: w.teks,
   },
   textarea: { height: 82, textAlignVertical: 'top', marginBottom: 14 },
-  petunjuk: { fontSize: 11, color: '#9ca3af', marginTop: 6, marginBottom: 14 },
+  petunjuk: { fontSize: 11, color: w.teksSamar, marginTop: 6, marginBottom: 14 },
   tombolRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   tombolUtama: {
-    flex: 1, backgroundColor: '#2563eb', borderRadius: 12,
+    flex: 1, backgroundColor: w.utama, borderRadius: 12,
     paddingVertical: 13, alignItems: 'center',
   },
   tombolMati: { opacity: 0.5 },
-  tombolUtamaTeks: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  tombolUtamaTeks: { color: w.permukaan, fontWeight: '700', fontSize: 14 },
   tombolBatal: { paddingHorizontal: 8, paddingVertical: 13 },
-  tombolBatalTeks: { color: '#6b7280', fontWeight: '600', fontSize: 13 },
+  tombolBatalTeks: { color: w.teksRedup, fontWeight: '600', fontSize: 13 },
 });

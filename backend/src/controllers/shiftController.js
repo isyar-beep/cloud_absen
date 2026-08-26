@@ -1,5 +1,6 @@
 const { query } = require('../config/db');
 const { lintasTengahMalam, durasiMenit } = require('../utils/shiftWindow');
+const { ringkasHariKerja, hariKerjaShift } = require('../utils/workday');
 
 // Kolom jendela waktu absen (menit relatif terhadap jam mulai/selesai shift).
 const KOLOM_JENDELA = [
@@ -16,6 +17,30 @@ const BATAS = {
   checkout_open_minutes: 720,
   checkout_close_minutes: 1440,
 };
+
+// Baca daftar hari kerja dari body. Dikembalikan null kalau tidak dikirim,
+// supaya COALESCE di SQL mempertahankan nilai lama.
+//
+// Dirapikan jadi urut & unik di sini: CHECK constraint di database tidak
+// bisa menolak nilai kembar (Postgres melarang subquery di dalam CHECK),
+// jadi pembersihannya harus terjadi sebelum tersimpan.
+function bacaHariKerja(body) {
+  const mentah = body.work_days;
+  if (mentah === undefined || mentah === null) return { nilai: null };
+
+  if (!Array.isArray(mentah)) {
+    return { galat: 'Hari kerja harus berupa daftar angka 0-6 (0=Minggu).' };
+  }
+  const angka = mentah.map(Number);
+  if (angka.some((h) => !Number.isInteger(h) || h < 0 || h > 6)) {
+    return { galat: 'Hari kerja harus berupa daftar angka 0-6 (0=Minggu).' };
+  }
+  const rapi = [...new Set(angka)].sort((a, b) => a - b);
+  if (rapi.length === 0) {
+    return { galat: 'Pilih minimal satu hari kerja, kalau tidak pegawai shift ini tidak akan pernah bisa absen.' };
+  }
+  return { nilai: rapi };
+}
 
 // Ambil nilai jendela dari body. Yang tidak dikirim dibiarkan null supaya
 // COALESCE di SQL mempertahankan nilai lama.
@@ -43,6 +68,8 @@ function lengkapi(shift) {
     end_time: formatJam(shift.end_time),
     lintas_hari: lintasTengahMalam(shift),
     durasi_menit: durasiMenit(shift),
+    work_days: hariKerjaShift(shift),
+    hari_kerja_teks: ringkasHariKerja(shift),
   };
 }
 
@@ -55,7 +82,7 @@ function formatJam(t) {
 async function getAllShifts(req, res, next) {
   try {
     const result = await query(
-      `SELECT s.id, s.name, s.start_time, s.end_time,
+      `SELECT s.id, s.name, s.start_time, s.end_time, s.work_days,
               s.checkin_open_minutes, s.checkin_close_minutes,
               s.checkout_open_minutes, s.checkout_close_minutes,
               COUNT(u.id) AS jumlah_pegawai
@@ -84,17 +111,23 @@ async function createShift(req, res, next) {
     const { nilai, galat } = bacaJendela(req.body);
     if (galat) return res.status(400).json({ message: galat });
 
+    const hari = bacaHariKerja(req.body);
+    if (hari.galat) return res.status(400).json({ message: hari.galat });
+
     const result = await query(
       `INSERT INTO shifts (name, start_time, end_time,
                            checkin_open_minutes, checkin_close_minutes,
-                           checkout_open_minutes, checkout_close_minutes)
+                           checkout_open_minutes, checkout_close_minutes,
+                           work_days)
        VALUES ($1, $2, $3,
                COALESCE($4, 30), COALESCE($5, 240),
-               COALESCE($6, 15), COALESCE($7, 360))
+               COALESCE($6, 15), COALESCE($7, 360),
+               COALESCE($8::SMALLINT[], '{1,2,3,4,5}'::SMALLINT[]))
        RETURNING *`,
       [name.trim(), start_time, end_time,
        nilai.checkin_open_minutes, nilai.checkin_close_minutes,
-       nilai.checkout_open_minutes, nilai.checkout_close_minutes]
+       nilai.checkout_open_minutes, nilai.checkout_close_minutes,
+       hari.nilai]
     );
     res.status(201).json({ message: 'Shift berhasil dibuat.', shift: lengkapi(result.rows[0]) });
   } catch (err) {
@@ -109,6 +142,9 @@ async function updateShift(req, res, next) {
     const { nilai, galat } = bacaJendela(req.body);
     if (galat) return res.status(400).json({ message: galat });
 
+    const hari = bacaHariKerja(req.body);
+    if (hari.galat) return res.status(400).json({ message: hari.galat });
+
     const result = await query(
       `UPDATE shifts
        SET name = COALESCE($1, name),
@@ -117,13 +153,14 @@ async function updateShift(req, res, next) {
            checkin_open_minutes = COALESCE($4, checkin_open_minutes),
            checkin_close_minutes = COALESCE($5, checkin_close_minutes),
            checkout_open_minutes = COALESCE($6, checkout_open_minutes),
-           checkout_close_minutes = COALESCE($7, checkout_close_minutes)
-       WHERE id = $8
+           checkout_close_minutes = COALESCE($7, checkout_close_minutes),
+           work_days = COALESCE($8::SMALLINT[], work_days)
+       WHERE id = $9
        RETURNING *`,
       [name?.trim() || null, start_time || null, end_time || null,
        nilai.checkin_open_minutes, nilai.checkin_close_minutes,
        nilai.checkout_open_minutes, nilai.checkout_close_minutes,
-       req.params.id]
+       hari.nilai, req.params.id]
     );
     if (result.rows.length === 0) {
       return res.status(404).json({ message: 'Shift tidak ditemukan.' });

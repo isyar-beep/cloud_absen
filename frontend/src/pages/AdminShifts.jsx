@@ -5,6 +5,21 @@ import { PlusIcon } from '../components/Icons';
 import AdminWfa from './AdminWfa';
 
 // Nilai bawaan jendela absen, sama dengan default di migration 005.
+// 0=Minggu ... 6=Sabtu, penomoran yang sama dengan getDay() dan
+// EXTRACT(DOW) di Postgres. Ditampilkan mulai Senin karena begitulah
+// minggu kerja dibaca orang, bukan karena urutan angkanya.
+const HARI = [
+  { n: 1, label: 'Sen' },
+  { n: 2, label: 'Sel' },
+  { n: 3, label: 'Rab' },
+  { n: 4, label: 'Kam' },
+  { n: 5, label: 'Jum' },
+  { n: 6, label: 'Sab' },
+  { n: 0, label: 'Min' },
+];
+
+const HARI_AWAL = [1, 2, 3, 4, 5];
+
 const JENDELA_AWAL = {
   checkin_open_minutes: 30,
   checkin_close_minutes: 240,
@@ -42,7 +57,7 @@ export default function AdminShifts() {
   const [shifts, setShifts] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [form, setForm] = useState({ name: '', start_time: '08:00', end_time: '17:00', ...JENDELA_AWAL });
+  const [form, setForm] = useState({ name: '', start_time: '08:00', end_time: '17:00', work_days: HARI_AWAL, ...JENDELA_AWAL });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -57,7 +72,7 @@ export default function AdminShifts() {
 
   function openCreateForm() {
     setEditingId(null);
-    setForm({ name: '', start_time: '08:00', end_time: '17:00', ...JENDELA_AWAL });
+    setForm({ name: '', start_time: '08:00', end_time: '17:00', work_days: HARI_AWAL, ...JENDELA_AWAL });
     setError('');
     setShowForm(true);
   }
@@ -68,6 +83,7 @@ export default function AdminShifts() {
       name: shift.name,
       start_time: shift.start_time,
       end_time: shift.end_time,
+      work_days: shift.work_days?.length ? shift.work_days : HARI_AWAL,
       checkin_open_minutes: shift.checkin_open_minutes ?? JENDELA_AWAL.checkin_open_minutes,
       checkin_close_minutes: shift.checkin_close_minutes ?? JENDELA_AWAL.checkin_close_minutes,
       checkout_open_minutes: shift.checkout_open_minutes ?? JENDELA_AWAL.checkout_open_minutes,
@@ -201,6 +217,45 @@ export default function AdminShifts() {
             )}
 
             <div>
+              <p className="text-xs font-semibold text-body mb-1">Hari kerja</p>
+              <p className="text-xs text-faint mb-2.5">
+                Di hari yang tidak dicentang, absen ditutup untuk pegawai shift ini
+                dan penanda alpha tidak berjalan. Hari libur nasional tetap berlaku
+                untuk semua shift.
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {HARI.map((h) => {
+                  const aktif = form.work_days.includes(h.n);
+                  return (
+                    <button
+                      key={h.n}
+                      type="button"
+                      aria-pressed={aktif}
+                      onClick={() => setForm({
+                        ...form,
+                        work_days: aktif
+                          ? form.work_days.filter((x) => x !== h.n)
+                          : [...form.work_days, h.n].sort((a, b) => a - b),
+                      })}
+                      className={`text-xs font-semibold px-3 py-2 rounded-xl border transition ${
+                        aktif
+                          ? 'bg-primary-600 border-primary-600 text-white shadow-glow'
+                          : 'bg-surface-2 border-line text-muted hover:border-line-strong hover:text-body'
+                      }`}
+                    >
+                      {h.label}
+                    </button>
+                  );
+                })}
+              </div>
+              {form.work_days.length === 0 && (
+                <p className="text-xs text-red-600 dark:text-red-400 mt-2">
+                  Pilih minimal satu hari, kalau tidak pegawai shift ini tidak akan pernah bisa absen.
+                </p>
+              )}
+            </div>
+
+            <div>
               <p className="text-xs font-semibold text-body mb-1">Jendela waktu absen</p>
               <p className="text-xs text-faint mb-2.5">
                 Di luar jendela ini absen ditolak. Dihitung dalam menit terhadap jam
@@ -236,7 +291,7 @@ export default function AdminShifts() {
             <div className="flex gap-2">
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || form.work_days.length === 0}
                 className="bg-ink text-on-ink px-5 py-2.5 rounded-xl text-sm font-semibold transition hover:bg-ink/90 disabled:opacity-50"
               >
                 {loading ? 'Menyimpan...' : 'Simpan Shift'}
@@ -258,6 +313,7 @@ export default function AdminShifts() {
               <tr className="border-b border-line">
                 <th className="text-left px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Shift</th>
                 <th className="text-left px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Jam Kerja</th>
+                <th className="text-left px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Hari Kerja</th>
                 <th className="text-left px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Jendela Absen</th>
                 <th className="text-left px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Pegawai</th>
                 <th className="text-right px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Aksi</th>
@@ -271,13 +327,14 @@ export default function AdminShifts() {
                     {s.start_time} — {s.end_time}
                     {s.lintas_hari && <span className="text-[11px] text-violet-600 dark:text-violet-400 ml-1.5">+1 hari</span>}
                   </td>
+                  <td className="px-5 py-3.5 text-body text-xs whitespace-nowrap">{s.hari_kerja_teks}</td>
                   <td className="px-5 py-3.5 text-muted text-xs tabular-nums whitespace-nowrap">
                     <div>Masuk {geserJam(s.start_time, -s.checkin_open_minutes)}–{geserJam(s.start_time, s.checkin_close_minutes)}</div>
                     <div>Pulang {geserJam(s.end_time, -s.checkout_open_minutes)}–{geserJam(s.end_time, s.checkout_close_minutes)}</div>
                   </td>
                   <td className="px-5 py-3.5 text-body">{s.jumlah_pegawai} orang</td>
                   <td className="px-5 py-3.5 text-right space-x-3">
-                    <button onClick={() => openEditForm(s)} className="text-xs font-semibold text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 dark:text-primary-300 transition">
+                    <button onClick={() => openEditForm(s)} className="text-xs font-semibold text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition">
                       Edit
                     </button>
                     <button onClick={() => handleDelete(s)} className="text-xs font-semibold text-red-500 hover:text-red-600 dark:text-red-400 transition">
@@ -288,7 +345,7 @@ export default function AdminShifts() {
               ))}
               {shifts.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="text-center text-sm text-faint px-5 py-12">
+                  <td colSpan={6} className="text-center text-sm text-faint px-5 py-12">
                     Belum ada shift. Tambahkan shift pertama.
                   </td>
                 </tr>

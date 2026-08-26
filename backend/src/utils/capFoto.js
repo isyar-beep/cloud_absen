@@ -35,6 +35,14 @@ const BULAN_SINGKAT = [
 // "5,10612S 119,52484E" -- gaya yang sama dengan aplikasi kamera GPS yang
 // sudah biasa dipakai di lapangan, termasuk koma sebagai pemisah desimal.
 function formatKoordinat(latitude, longitude) {
+  // null dan string kosong ditolak sebelum Number(). Keduanya menjadi 0 --
+  // angka yang sah menurut isFinite -- sehingga foto absen tanpa GPS akan
+  // bercap "0,00000N 0,00000E", titik di tengah Teluk Guinea, alih-alih
+  // "Koordinat tidak tersedia".
+  if (latitude === null || latitude === undefined || latitude === ''
+    || longitude === null || longitude === undefined || longitude === '') {
+    return null;
+  }
   const lat = Number(latitude);
   const lon = Number(longitude);
   if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;

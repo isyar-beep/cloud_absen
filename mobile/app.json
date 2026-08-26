@@ -4,11 +4,14 @@
     "slug": "cloud-absen",
     "version": "1.0.0",
     "orientation": "portrait",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "android": {
       "package": "com.cloudabsen.app",
-      "permissions": ["CAMERA", "ACCESS_FINE_LOCATION"],
+      "permissions": [
+        "CAMERA",
+        "ACCESS_FINE_LOCATION"
+      ],
       "edgeToEdgeEnabled": true
     },
     "plugins": [

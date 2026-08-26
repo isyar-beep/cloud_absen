@@ -1,7 +1,8 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, FlatList,
 } from 'react-native';
+import { useWarna } from '../theme';
 import api from '../services/api';
 import AjukanKoreksiModal from '../components/AjukanKoreksiModal';
 import { formatTanggalHari, formatJam } from '../utils/tanggal';
@@ -9,11 +10,13 @@ import { rentangPreset } from '../utils/periode';
 
 const LIMIT = 30;
 
-const statusInfo = {
-  hadir: { text: 'Hadir', color: '#15803d', bg: '#f0fdf4' },
-  terlambat: { text: 'Hadir (Terlambat)', color: '#b45309', bg: '#fffbeb' },
-  izin: { text: 'Izin', color: '#1d4ed8', bg: '#eff6ff' },
-  alpha: { text: 'Alpha', color: '#b91c1c', bg: '#fef2f2' },
+// Hanya labelnya yang tetap; warnanya diambil dari palet tema supaya pil
+// status tidak jadi pastel menyilaukan di atas kartu gelap.
+const LABEL_STATUS = {
+  hadir: 'Hadir',
+  terlambat: 'Hadir (Terlambat)',
+  izin: 'Izin',
+  alpha: 'Alpha',
 };
 
 // Preset periode. Dropdown bulan/tahun dan rentang khusus sengaja tidak
@@ -26,10 +29,10 @@ const periodeOptions = [
   { key: 'semua', label: 'Semua' },
 ];
 
-const KETERANGAN_KOREKSI = {
-  pending: { teks: 'Koreksi menunggu keputusan admin', warna: '#b45309' },
-  approved: { teks: 'Koreksi disetujui', warna: '#15803d' },
-  rejected: { teks: 'Koreksi ditolak', warna: '#dc2626' },
+const TEKS_KOREKSI = {
+  pending: 'Koreksi menunggu keputusan admin',
+  approved: 'Koreksi disetujui',
+  rejected: 'Koreksi ditolak',
 };
 
 const filterOptions = [
@@ -50,6 +53,8 @@ export default function HistoryScreen() {
   const [koreksi, setKoreksi] = useState(null);
   const [ajuan, setAjuan] = useState([]);
   const [pesan, setPesan] = useState('');
+  const w = useWarna();
+  const styles = useMemo(() => buatGaya(w), [w]);
 
   const rentang = rentangPreset(periode);
 
@@ -115,16 +120,17 @@ export default function HistoryScreen() {
   }, {});
 
   function renderItem({ item }) {
-    const info = statusInfo[item.status] || statusInfo.hadir;
+    const info = w.status[item.status] || w.status.hadir;
+    const label = LABEL_STATUS[item.status] || LABEL_STATUS.hadir;
     const pengajuan = ajuanPerTanggal[item.date];
-    const ket = pengajuan ? KETERANGAN_KOREKSI[pengajuan.status] : null;
+    const ket = pengajuan ? TEKS_KOREKSI[pengajuan.status] : null;
 
     return (
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <Text style={styles.date}>{formatTanggalHari(item.date)}</Text>
-          <View style={[styles.badge, { backgroundColor: info.bg }]}>
-            <Text style={[styles.badgeText, { color: info.color }]}>{info.text}</Text>
+          <View style={[styles.badge, { backgroundColor: info.latar }]}>
+            <Text style={[styles.badgeText, { color: info.teks }]}>{label}</Text>
           </View>
         </View>
         <Text style={styles.times}>
@@ -137,8 +143,8 @@ export default function HistoryScreen() {
             pengajuan izin, bukan koreksi absen. Sama seperti di web. */}
         {item.status !== 'izin' ? (
           ket ? (
-            <Text style={[styles.koreksiStatus, { color: ket.warna }]}>
-              {ket.teks}
+            <Text style={[styles.koreksiStatus, { color: w.status[pengajuan.status]?.teks || w.teksRedup }]}>
+              {ket}
               {pengajuan.admin_note ? <Text style={styles.catatanAdmin}> — {pengajuan.admin_note}</Text> : null}
             </Text>
           ) : (
@@ -176,10 +182,10 @@ export default function HistoryScreen() {
         <View>
           <View style={styles.rekapRow}>
             {[
-              { key: 'hadir', label: 'Hadir', nilai: rekap.hadir, warna: '#15803d' },
-              { key: 'terlambat', label: 'Terlambat', nilai: rekap.terlambat, warna: '#b45309' },
-              { key: 'izin', label: 'Izin', nilai: rekap.izin, warna: '#1d4ed8' },
-              { key: 'alpha', label: 'Alpha', nilai: rekap.alpha, warna: '#b91c1c' },
+              { key: 'hadir', label: 'Hadir', nilai: rekap.hadir, warna: w.status.hadir.teks },
+              { key: 'terlambat', label: 'Terlambat', nilai: rekap.terlambat, warna: w.status.terlambat.teks },
+              { key: 'izin', label: 'Izin', nilai: rekap.izin, warna: w.status.izin.teks },
+              { key: 'alpha', label: 'Alpha', nilai: rekap.alpha, warna: w.status.alpha.teks },
             ].map((k) => (
               <TouchableOpacity
                 key={k.key}
@@ -258,47 +264,47 @@ export default function HistoryScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9fafb', padding: 16 },
+const buatGaya = (w) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: w.latar, padding: 16 },
   filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
   filterChip: {
     paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999,
-    backgroundColor: '#fff', borderWidth: 1, borderColor: '#d1d5db',
+    backgroundColor: w.permukaan, borderWidth: 1, borderColor: w.garisTebal,
   },
-  filterChipActive: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
-  filterText: { fontSize: 12, color: '#4b5563', fontWeight: '500' },
-  filterTextActive: { color: '#fff' },
+  filterChipActive: { backgroundColor: w.utama, borderColor: w.utama },
+  filterText: { fontSize: 12, color: w.teksBadan, fontWeight: '500' },
+  filterTextActive: { color: w.permukaan },
   rekapRow: { flexDirection: 'row', gap: 8, marginBottom: 6 },
   rekapCard: {
-    flex: 1, backgroundColor: '#fff', borderRadius: 12, paddingVertical: 8,
-    alignItems: 'center', borderWidth: 1, borderColor: '#e5e7eb',
+    flex: 1, backgroundColor: w.permukaan, borderRadius: 12, paddingVertical: 8,
+    alignItems: 'center', borderWidth: 1, borderColor: w.garis,
   },
-  rekapCardActive: { borderColor: '#93c5fd', backgroundColor: '#eff6ff' },
+  rekapCardActive: { borderColor: w.utama, backgroundColor: w.permukaan2 },
   rekapNilai: { fontSize: 18, fontWeight: '700' },
-  rekapLabel: { fontSize: 11, color: '#6b7280' },
-  rekapKeterangan: { fontSize: 11, color: '#9ca3af', marginBottom: 12 },
+  rekapLabel: { fontSize: 11, color: w.teksRedup },
+  rekapKeterangan: { fontSize: 11, color: w.teksSamar, marginBottom: 12 },
   card: {
-    backgroundColor: '#fff', borderRadius: 12, padding: 14,
-    borderWidth: 1, borderColor: '#e5e7eb', marginBottom: 8,
+    backgroundColor: w.permukaan, borderRadius: 12, padding: 14,
+    borderWidth: 1, borderColor: w.garis, marginBottom: 8,
   },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  date: { fontSize: 14, fontWeight: '500', color: '#111827' },
+  date: { fontSize: 14, fontWeight: '500', color: w.teks },
   badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
   badgeText: { fontSize: 11, fontWeight: '600' },
-  times: { fontSize: 12, color: '#6b7280' },
-  reason: { fontSize: 12, color: '#9ca3af', marginTop: 2 },
-  koreksiTombol: { fontSize: 11, fontWeight: '700', color: '#2563eb', marginTop: 6 },
+  times: { fontSize: 12, color: w.teksRedup },
+  reason: { fontSize: 12, color: w.teksSamar, marginTop: 2 },
+  koreksiTombol: { fontSize: 11, fontWeight: '700', color: w.utama, marginTop: 6 },
   koreksiStatus: { fontSize: 11, fontWeight: '600', marginTop: 6 },
-  catatanAdmin: { color: '#9ca3af', fontWeight: '400' },
+  catatanAdmin: { color: w.teksSamar, fontWeight: '400' },
   pesan: {
-    fontSize: 12, color: '#15803d', backgroundColor: '#f0fdf4',
-    borderWidth: 1, borderColor: '#bbf7d0', borderRadius: 10,
+    fontSize: 12, color: w.hijau.teks, backgroundColor: w.hijau.latar,
+    borderWidth: 1, borderColor: w.hijau.garis, borderRadius: 10,
     paddingHorizontal: 12, paddingVertical: 8, marginBottom: 12, fontWeight: '600',
   },
-  empty: { fontSize: 13, color: '#9ca3af', textAlign: 'center', paddingVertical: 24 },
+  empty: { fontSize: 13, color: w.teksSamar, textAlign: 'center', paddingVertical: 24 },
   loadMore: {
-    backgroundColor: '#fff', borderWidth: 1, borderColor: '#d1d5db',
+    backgroundColor: w.permukaan, borderWidth: 1, borderColor: w.garisTebal,
     borderRadius: 10, paddingVertical: 12, alignItems: 'center', marginTop: 4,
   },
-  loadMoreText: { fontSize: 13, color: '#374151', fontWeight: '500' },
+  loadMoreText: { fontSize: 13, color: w.teksBadan, fontWeight: '500' },
 });

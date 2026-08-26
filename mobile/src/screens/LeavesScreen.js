@@ -1,7 +1,8 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert,
 } from 'react-native';
+import { useWarna } from '../theme';
 import * as DocumentPicker from 'expo-document-picker';
 import api from '../services/api';
 import { formatTanggal } from '../utils/tanggal';
@@ -19,23 +20,17 @@ const JENIS = [
   { key: 'cuti', label: 'Cuti' },
 ];
 
-const jenisInfo = {
-  izin: { text: 'Izin', color: '#1d4ed8', bg: '#eff6ff' },
-  sakit: { text: 'Sakit', color: '#be123c', bg: '#fff1f2' },
-  cuti: { text: 'Cuti', color: '#0f766e', bg: '#f0fdfa' },
-};
+const LABEL_JENIS = { izin: 'Izin', sakit: 'Sakit', cuti: 'Cuti' };
 
-const statusInfo = {
-  pending: { text: 'Menunggu', color: '#b45309', bg: '#fffbeb' },
-  approved: { text: 'Disetujui', color: '#15803d', bg: '#f0fdf4' },
-  rejected: { text: 'Ditolak', color: '#b91c1c', bg: '#fef2f2' },
-};
+const LABEL_STATUS = { pending: 'Menunggu', approved: 'Disetujui', rejected: 'Ditolak' };
 
 export default function LeavesScreen() {
   const [leaves, setLeaves] = useState([]);
   const [form, setForm] = useState({ type: 'izin', start_date: '', end_date: '', reason: '' });
   const [berkas, setBerkas] = useState(null);
   const [loading, setLoading] = useState(false);
+  const w = useWarna();
+  const styles = useMemo(() => buatGaya(w), [w]);
 
   async function pilihBerkas() {
     try {
@@ -184,27 +179,31 @@ export default function LeavesScreen() {
 
         <TouchableOpacity style={styles.button} onPress={handleSubmit} disabled={loading}>
           <Text style={styles.buttonText}>
-            {loading ? 'Mengirim...' : `Ajukan ${jenisInfo[form.type].text}`}
+            {loading ? 'Mengirim...' : `Ajukan ${LABEL_JENIS[form.type]}`}
           </Text>
         </TouchableOpacity>
       </View>
 
       <Text style={styles.sectionTitle}>Riwayat Pengajuan</Text>
       {leaves.map((item) => {
-        const info = statusInfo[item.status] || statusInfo.pending;
-        const jns = jenisInfo[item.type] || jenisInfo.izin;
+        const info = w.status[item.status] || w.status.pending;
+        const jns = w.status[item.type] || w.status.izin;
         return (
           <View key={item.id} style={styles.card}>
             <View style={styles.leaveHeader}>
-              <View style={[styles.badge, { backgroundColor: jns.bg, marginRight: 6 }]}>
-                <Text style={[styles.badgeText, { color: jns.color }]}>{jns.text}</Text>
+              <View style={[styles.badge, { backgroundColor: jns.latar, marginRight: 6 }]}>
+                <Text style={[styles.badgeText, { color: jns.teks }]}>
+                  {LABEL_JENIS[item.type] || LABEL_JENIS.izin}
+                </Text>
               </View>
               <Text style={[styles.leaveDate, { flex: 1 }]}>
                 {formatTanggal(item.start_date)}
                 {item.start_date !== item.end_date ? ` — ${formatTanggal(item.end_date)}` : ''}
               </Text>
-              <View style={[styles.badge, { backgroundColor: info.bg }]}>
-                <Text style={[styles.badgeText, { color: info.color }]}>{info.text}</Text>
+              <View style={[styles.badge, { backgroundColor: info.latar }]}>
+                <Text style={[styles.badgeText, { color: info.teks }]}>
+                  {LABEL_STATUS[item.status] || LABEL_STATUS.pending}
+                </Text>
               </View>
             </View>
             <Text style={styles.leaveReason}>{item.reason}</Text>
@@ -228,50 +227,50 @@ export default function LeavesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9fafb', padding: 16 },
-  sectionTitle: { fontSize: 14, fontWeight: '600', color: '#111827', marginBottom: 8, marginTop: 8 },
+const buatGaya = (w) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: w.latar, padding: 16 },
+  sectionTitle: { fontSize: 14, fontWeight: '600', color: w.teks, marginBottom: 8, marginTop: 8 },
   card: {
-    backgroundColor: '#fff', borderRadius: 12, padding: 14,
-    borderWidth: 1, borderColor: '#e5e7eb', marginBottom: 10,
+    backgroundColor: w.permukaan, borderRadius: 12, padding: 14,
+    borderWidth: 1, borderColor: w.garis, marginBottom: 10,
   },
   row: { flexDirection: 'row', gap: 10 },
   jenisRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
   jenisChip: {
     flex: 1, paddingVertical: 9, borderRadius: 10, alignItems: 'center',
-    borderWidth: 1, borderColor: '#d1d5db', backgroundColor: '#f9fafb',
+    borderWidth: 1, borderColor: w.garisTebal, backgroundColor: w.latar,
   },
-  jenisChipActive: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
-  jenisText: { fontSize: 13, fontWeight: '600', color: '#4b5563' },
-  jenisTextActive: { color: '#fff' },
-  lampiran: { fontSize: 11, color: '#6b7280', marginTop: 4, fontStyle: 'italic' },
+  jenisChipActive: { backgroundColor: w.utama, borderColor: w.utama },
+  jenisText: { fontSize: 13, fontWeight: '600', color: w.teksBadan },
+  jenisTextActive: { color: w.permukaan },
+  lampiran: { fontSize: 11, color: w.teksRedup, marginTop: 4, fontStyle: 'italic' },
   berkasPilih: {
-    borderWidth: 1, borderColor: '#93c5fd', borderStyle: 'dashed', borderRadius: 10,
-    paddingVertical: 12, alignItems: 'center', backgroundColor: '#eff6ff',
+    borderWidth: 1, borderColor: w.utama, borderStyle: 'dashed', borderRadius: 10,
+    paddingVertical: 12, alignItems: 'center', backgroundColor: w.permukaan2,
   },
-  berkasPilihTeks: { fontSize: 12, color: '#1d4ed8', fontWeight: '600' },
+  berkasPilihTeks: { fontSize: 12, color: w.aksen.biru, fontWeight: '600' },
   berkasBaris: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
-    borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 10,
-    paddingHorizontal: 12, paddingVertical: 11, backgroundColor: '#f9fafb',
+    borderWidth: 1, borderColor: w.garis, borderRadius: 10,
+    paddingHorizontal: 12, paddingVertical: 11, backgroundColor: w.latar,
   },
-  berkasNama: { flex: 1, fontSize: 12, color: '#111827' },
-  berkasHapus: { fontSize: 12, color: '#dc2626', fontWeight: '600' },
-  petunjuk: { fontSize: 11, color: '#9ca3af', marginTop: 6, marginBottom: 12 },
+  berkasNama: { flex: 1, fontSize: 12, color: w.teks },
+  berkasHapus: { fontSize: 12, color: w.aksen.merah, fontWeight: '600' },
+  petunjuk: { fontSize: 11, color: w.teksSamar, marginTop: 6, marginBottom: 12 },
   half: { flex: 1 },
-  label: { fontSize: 12, color: '#374151', marginBottom: 4, fontWeight: '500' },
+  label: { fontSize: 12, color: w.teksBadan, marginBottom: 4, fontWeight: '500' },
   input: {
-    borderWidth: 1, borderColor: '#d1d5db', borderRadius: 10,
-    paddingHorizontal: 12, paddingVertical: 10, marginBottom: 10, fontSize: 14, backgroundColor: '#fff',
+    borderWidth: 1, borderColor: w.garisTebal, borderRadius: 10,
+    paddingHorizontal: 12, paddingVertical: 10, marginBottom: 10, fontSize: 14, backgroundColor: w.permukaan,
   },
   textarea: { minHeight: 70, textAlignVertical: 'top' },
-  button: { backgroundColor: '#2563eb', borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
-  buttonText: { color: '#fff', fontWeight: '600', fontSize: 14 },
+  button: { backgroundColor: w.utama, borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
+  buttonText: { color: w.permukaan, fontWeight: '600', fontSize: 14 },
   leaveHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
-  leaveDate: { fontSize: 14, color: '#111827', fontWeight: '500', flex: 1 },
+  leaveDate: { fontSize: 14, color: w.teks, fontWeight: '500', flex: 1 },
   badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
   badgeText: { fontSize: 11, fontWeight: '600' },
-  leaveReason: { fontSize: 13, color: '#6b7280' },
-  adminNote: { fontSize: 12, color: '#9ca3af', marginTop: 4 },
-  empty: { fontSize: 13, color: '#9ca3af', textAlign: 'center', paddingVertical: 24 },
+  leaveReason: { fontSize: 13, color: w.teksRedup },
+  adminNote: { fontSize: 12, color: w.teksSamar, marginTop: 4 },
+  empty: { fontSize: 13, color: w.teksSamar, textAlign: 'center', paddingVertical: 24 },
 });

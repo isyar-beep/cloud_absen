@@ -212,6 +212,12 @@ export default function Attendance() {
               </div>
             </div>
 
+            {shift.hari_kerja_teks && (
+              <p className="text-xs text-muted mt-2.5">
+                Hari kerja: <span className="font-semibold text-body">{shift.hari_kerja_teks}</span>
+              </p>
+            )}
+
             {info.wfa?.aktif && (
               <p className="text-xs text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-500/15 border border-violet-100 dark:border-violet-500/30 rounded-lg px-2.5 py-1.5 mt-3">
                 <span className="font-semibold">Hari ini Anda terdaftar WFA.</span>{' '}

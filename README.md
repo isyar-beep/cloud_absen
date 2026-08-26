@@ -66,7 +66,9 @@ Ini akan membuat akun `admin@company.com` dengan password `admin123`.
 npm run seed:demo
 ```
 Mengisi absensi acak sejak 1 Agustus untuk seluruh pegawai aktif, supaya grafik
-dan laporan terlihat berisi saat didemokan. Akhir pekan dan hari libur dilewati.
+dan laporan terlihat berisi saat didemokan. Hari yang dilewati mengikuti hari
+kerja shift masing-masing pegawai (plus hari libur terdaftar) — pegawai shift
+piket akhir pekan mendapat catatan Sabtu-Minggu, bukan Senin-Jumat.
 Foto contoh (siluet berwarna, bukan foto orang sungguhan) ikut ditulis ke
 `uploads/absensi/` supaya Galeri Foto tidak kosong. Sekitar satu dari delapan
 hari sengaja tanpa absen pulang, meniru pegawai yang lupa absen keluar.
@@ -122,6 +124,11 @@ Beberapa hal yang disengaja:
   diluruskan mengikuti EXIF.
 
 Label zona waktu (WITA/WIB/WIT) mengikuti `TZ` di `.env`.
+
+Koordinat yang sama juga tampil di menu **Riwayat** (kolom Lokasi) dan di
+panel detail **Galeri Foto**, sebagai tautan ke Google Maps. Sekali lagi:
+ini keterangan tempat, bukan pembatasan — absen lapangan memang bisa dari
+mana saja, dan tidak ada satu pun pemeriksaan jarak di dalam aplikasi.
 
 **Akses foto butuh login.** Foto TIDAK dilayani sebagai folder statis publik.
 Frontend memanggil `/api/photos/token` untuk mendapat token berumur 30 menit,
@@ -254,6 +261,22 @@ Setelah menjalankan `npm run seed` di backend:
 ---
 
 ## 7. Fitur Utama
+
+### Hari kerja per shift
+
+Tiap shift punya daftar harinya sendiri, diatur lewat menu **Shift & WFA**.
+Bawaannya Senin–Jumat; divisi piket bisa dibuatkan shift dengan centang
+Sabtu–Minggu. Di hari yang tidak dicentang, absen ditutup untuk pegawai
+shift itu **dan** penanda alpha tidak berjalan — dua sisi yang harus selalu
+sepakat, kalau tidak statistiknya menipu. Hari libur nasional tetap berlaku
+untuk semua shift.
+
+### Ubah password sendiri
+
+Pegawai mengganti passwordnya dari tombol **Ubah Password** di dashboard,
+baik di web maupun mobile. Admin tetap bisa me-reset password lewat menu
+Pengguna untuk kasus lupa password — bedanya, jalur reset itu membuat
+password sempat diketahui orang lain, sedangkan jalur ini tidak.
 
 - Login berbasis akun terdaftar (bukan lagi kirim foto manual via WhatsApp)
 - Absen masuk & pulang dengan kamera aktif langsung dari browser/HP

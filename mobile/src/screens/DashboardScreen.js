@@ -1,25 +1,27 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView, RefreshControl,
 } from 'react-native';
+import { useWarna } from '../theme';
 import api from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { unregisterPushToken } from '../services/notifications';
+import UbahPasswordModal from '../components/UbahPasswordModal';
 import { formatJam, formatTanggalHari, tanggalLokal } from '../utils/tanggal';
 
-const statusInfo = {
-  hadir: { text: 'Hadir', color: '#15803d', bg: '#f0fdf4' },
-  terlambat: { text: 'Terlambat', color: '#b45309', bg: '#fffbeb' },
-  izin: { text: 'Izin', color: '#1d4ed8', bg: '#eff6ff' },
-  alpha: { text: 'Alpha', color: '#b91c1c', bg: '#fef2f2' },
+const LABEL_STATUS = {
+  hadir: 'Hadir',
+  terlambat: 'Terlambat',
+  izin: 'Izin',
+  alpha: 'Alpha',
 };
 
 // Satu baris "kapan boleh absen": rentang jamnya plus titik warna --
 // hijau berarti sedang dibuka, abu berarti belum atau sudah lewat, biru
 // berarti absennya memang sudah dilakukan. Kembaran JendelaBaris di
 // frontend/src/pages/Attendance.jsx.
-function JendelaBaris({ label, info, selesai, tutup }) {
-  const warna = selesai ? '#2563eb' : info?.boleh ? '#22c55e' : '#d1d5db';
+function JendelaBaris({ label, info, selesai, tutup, styles, w }) {
+  const warna = selesai ? w.titikSelesai : info?.boleh ? w.titikHidup : w.titikMati;
   const keterangan = tutup
     ? 'Kantor tutup'
     : selesai ? 'Sudah dilakukan' : info?.boleh ? 'Dibuka sekarang' : 'Belum dibuka';
@@ -40,7 +42,7 @@ function JendelaBaris({ label, info, selesai, tutup }) {
   );
 }
 
-function KartuAngka({ label, nilai, warna }) {
+function KartuAngka({ label, nilai, warna, styles }) {
   return (
     <View style={styles.statCard}>
       <Text style={[styles.statValue, warna ? { color: warna } : null]}>{nilai}</Text>
@@ -56,6 +58,10 @@ export default function DashboardScreen({ navigation }) {
   const [history, setHistory] = useState([]);
   const [error, setError] = useState('');
   const [memuat, setMemuat] = useState(false);
+  const [ubahPassword, setUbahPassword] = useState(false);
+  const [pesan, setPesan] = useState('');
+  const w = useWarna();
+  const styles = useMemo(() => buatGaya(w), [w]);
 
   // Ketiga permintaan dijalankan terpisah dengan allSettled, bukan
   // Promise.all. Dengan Promise.all satu kegagalan membatalkan semuanya
@@ -157,6 +163,7 @@ export default function DashboardScreen({ navigation }) {
 
       <View style={styles.isi}>
         {error ? <Text style={styles.error}>{error}</Text> : null}
+        {pesan ? <Text style={styles.pesan}>✓ {pesan}</Text> : null}
 
         {/* Kartu shift: jam kerja dan kapan absen dibuka, sebelum menekan
             tombol apa pun. */}
@@ -175,6 +182,10 @@ export default function DashboardScreen({ navigation }) {
                 </Text>
               </View>
             </View>
+
+            {shift.hari_kerja_teks ? (
+              <Text style={styles.hariKerja}>Hari kerja: {shift.hari_kerja_teks}</Text>
+            ) : null}
 
             {info?.wfa?.aktif ? (
               <Text style={[styles.catatan, styles.catatanUngu]}>
@@ -198,8 +209,8 @@ export default function DashboardScreen({ navigation }) {
             ) : null}
 
             <View style={styles.jendelaRow}>
-              <JendelaBaris label="Absen masuk" info={info.masuk} selesai={sudahCheckIn} tutup={kantorTutup} />
-              <JendelaBaris label="Absen pulang" info={info.pulang} selesai={sudahCheckOut} tutup={kantorTutup} />
+              <JendelaBaris label="Absen masuk" info={info.masuk} selesai={sudahCheckIn} tutup={kantorTutup} styles={styles} w={w} />
+              <JendelaBaris label="Absen pulang" info={info.pulang} selesai={sudahCheckOut} tutup={kantorTutup} styles={styles} w={w} />
             </View>
           </View>
         ) : null}
@@ -248,10 +259,10 @@ export default function DashboardScreen({ navigation }) {
         <Text style={styles.judulBagian}>Statistik Bulan Ini</Text>
         {stats ? (
           <View style={styles.statGrid}>
-            <KartuAngka label="Total Hadir" nilai={`${stats.total_hadir} hari`} warna="#15803d" />
-            <KartuAngka label="Attendance Rate" nilai={`${stats.attendance_rate}%`} warna="#2563eb" />
-            <KartuAngka label="Terlambat" nilai={`${stats.total_terlambat} kali`} warna="#b45309" />
-            <KartuAngka label="Rata-rata Kerja" nilai={`${stats.avg_work_hours} jam`} warna="#7c3aed" />
+            <KartuAngka label="Total Hadir" nilai={`${stats.total_hadir} hari`} warna={w.status.hadir.teks} />
+            <KartuAngka label="Attendance Rate" nilai={`${stats.attendance_rate}%`} warna={w.aksen.biru} />
+            <KartuAngka label="Terlambat" nilai={`${stats.total_terlambat} kali`} warna={w.status.terlambat.teks} />
+            <KartuAngka label="Rata-rata Kerja" nilai={`${stats.avg_work_hours} jam`} warna={w.aksen.ungu} />
           </View>
         ) : (
           // Kalau statistik gagal dimuat, katakan begitu. Sebelumnya blok
@@ -273,7 +284,7 @@ export default function DashboardScreen({ navigation }) {
         </View>
         <View style={styles.card}>
           {history.map((item, i) => {
-            const s = statusInfo[item.status] || statusInfo.hadir;
+            const s = w.status[item.status] || w.status.hadir;
             return (
               <View key={item.id} style={[styles.riwayatBaris, i > 0 && styles.riwayatGaris]}>
                 <View>
@@ -286,8 +297,10 @@ export default function DashboardScreen({ navigation }) {
                     {item.check_in_time ? `Masuk ${formatJam(item.check_in_time)}` : 'Tidak ada jam masuk'}
                   </Text>
                 </View>
-                <View style={[styles.badge, { backgroundColor: s.bg }]}>
-                  <Text style={[styles.badgeText, { color: s.color }]}>{s.text}</Text>
+                <View style={[styles.badge, { backgroundColor: s.latar }]}>
+                  <Text style={[styles.badgeText, { color: s.teks }]}>
+                    {LABEL_STATUS[item.status] || LABEL_STATUS.hadir}
+                  </Text>
                 </View>
               </View>
             );
@@ -306,99 +319,122 @@ export default function DashboardScreen({ navigation }) {
             <Text style={styles.menuButtonText}>Riwayat Absensi</Text>
           </TouchableOpacity>
         </View>
+
+        <TouchableOpacity
+          style={[styles.menuButton, { marginTop: 10 }]}
+          onPress={() => setUbahPassword(true)}
+        >
+          <Text style={styles.menuButtonText}>Ubah Password</Text>
+        </TouchableOpacity>
       </View>
+
+      {ubahPassword ? (
+        <UbahPasswordModal
+          onTutup={() => setUbahPassword(false)}
+          onSelesai={(msg) => {
+            setUbahPassword(false);
+            setPesan(msg);
+          }}
+        />
+      ) : null}
     </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9fafb' },
+const buatGaya = (w) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: w.latar },
 
-  hero: { backgroundColor: '#2563eb', paddingTop: 20, paddingBottom: 56, paddingHorizontal: 16 },
+  hero: { backgroundColor: w.utama, paddingTop: 20, paddingBottom: 56, paddingHorizontal: 16 },
   heroRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   heroTeks: { flex: 1, paddingRight: 12 },
-  heroTanggal: { fontSize: 12, color: '#dbeafe' },
-  heroNama: { fontSize: 19, fontWeight: '700', color: '#fff', marginTop: 2 },
-  heroShift: { fontSize: 12, color: '#dbeafe', marginTop: 4 },
-  logout: { fontSize: 13, color: '#dbeafe', fontWeight: '600' },
+  heroTanggal: { fontSize: 12, color: w.utamaTeks },
+  heroNama: { fontSize: 19, fontWeight: '700', color: w.permukaan, marginTop: 2 },
+  heroShift: { fontSize: 12, color: w.utamaTeks, marginTop: 4 },
+  logout: { fontSize: 13, color: w.utamaTeks, fontWeight: '600' },
 
   isi: { paddingHorizontal: 16, marginTop: -42 },
+  pesan: {
+    fontSize: 12, color: w.hijau.teks, backgroundColor: w.hijau.latar,
+    borderWidth: 1, borderColor: w.hijau.garis, borderRadius: 10,
+    paddingHorizontal: 12, paddingVertical: 8, marginBottom: 10, fontWeight: '600',
+  },
   error: {
-    fontSize: 12, color: '#b91c1c', backgroundColor: '#fef2f2',
-    borderWidth: 1, borderColor: '#fecaca', borderRadius: 10,
+    fontSize: 12, color: w.merah.teks, backgroundColor: w.merah.latar,
+    borderWidth: 1, borderColor: w.merah.garis, borderRadius: 10,
     paddingHorizontal: 12, paddingVertical: 8, marginBottom: 10,
   },
 
   card: {
-    backgroundColor: '#fff', borderRadius: 14, padding: 14,
-    borderWidth: 1, borderColor: '#e5e7eb', marginBottom: 12,
+    backgroundColor: w.permukaan, borderRadius: 14, padding: 14,
+    borderWidth: 1, borderColor: w.garis, marginBottom: 12,
   },
   shiftHeader: { flexDirection: 'row', justifyContent: 'space-between' },
   shiftKolom: { flex: 1 },
-  kecil: { fontSize: 11, color: '#6b7280' },
-  besar: { fontSize: 15, fontWeight: '700', color: '#111827', marginTop: 1 },
-  plusHari: { fontSize: 11, fontWeight: '600', color: '#7c3aed' },
+  kecil: { fontSize: 11, color: w.teksRedup },
+  besar: { fontSize: 15, fontWeight: '700', color: w.teks, marginTop: 1 },
+  plusHari: { fontSize: 11, fontWeight: '600', color: w.aksen.ungu },
+  hariKerja: { fontSize: 11, color: w.teksRedup, marginTop: 8 },
 
   catatan: {
     fontSize: 11, borderRadius: 8, borderWidth: 1,
     paddingHorizontal: 10, paddingVertical: 6, marginTop: 10,
   },
-  catatanUngu: { color: '#6d28d9', backgroundColor: '#f5f3ff', borderColor: '#ddd6fe' },
-  catatanKuning: { color: '#92400e', backgroundColor: '#fffbeb', borderColor: '#fde68a' },
+  catatanUngu: { color: w.ungu.teks, backgroundColor: w.ungu.latar, borderColor: w.ungu.garis },
+  catatanKuning: { color: w.kuning.teks, backgroundColor: w.kuning.latar, borderColor: w.kuning.garis },
 
   jendelaRow: {
     flexDirection: 'row', gap: 12, marginTop: 12, paddingTop: 12,
-    borderTopWidth: 1, borderTopColor: '#f3f4f6',
+    borderTopWidth: 1, borderTopColor: w.permukaan2,
   },
   jendelaKolom: { flex: 1 },
-  jendelaLabel: { fontSize: 11, color: '#9ca3af' },
-  jendelaJam: { fontSize: 13, fontWeight: '600', color: '#1f2937', marginTop: 1 },
+  jendelaLabel: { fontSize: 11, color: w.teksSamar },
+  jendelaJam: { fontSize: 13, fontWeight: '600', color: w.teks, marginTop: 1 },
   jendelaStatusRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 2 },
   titik: { width: 6, height: 6, borderRadius: 3 },
-  jendelaStatus: { fontSize: 11, color: '#6b7280', flexShrink: 1 },
+  jendelaStatus: { fontSize: 11, color: w.teksRedup, flexShrink: 1 },
 
   jamRow: { flexDirection: 'row', alignItems: 'center' },
   jamKolom: { flex: 1 },
-  jamNilai: { fontSize: 18, fontWeight: '700', color: '#111827', marginTop: 2 },
-  pemisah: { width: 1, alignSelf: 'stretch', backgroundColor: '#f3f4f6', marginHorizontal: 12 },
+  jamNilai: { fontSize: 18, fontWeight: '700', color: w.teks, marginTop: 2 },
+  pemisah: { width: 1, alignSelf: 'stretch', backgroundColor: w.permukaan2, marginHorizontal: 12 },
 
   tombolUtama: {
-    backgroundColor: '#2563eb', borderRadius: 14, paddingVertical: 15, alignItems: 'center',
+    backgroundColor: w.utama, borderRadius: 14, paddingVertical: 15, alignItems: 'center',
   },
   tombolGelap: {
-    backgroundColor: '#111827', borderRadius: 14, paddingVertical: 15, alignItems: 'center',
+    backgroundColor: w.teks, borderRadius: 14, paddingVertical: 15, alignItems: 'center',
   },
   tombolMati: { opacity: 0.4 },
-  tombolTeks: { color: '#fff', fontWeight: '700', fontSize: 14 },
-  tombolCatatan: { fontSize: 11, color: '#6b7280', textAlign: 'center', marginTop: 6 },
+  tombolTeks: { color: w.permukaan, fontWeight: '700', fontSize: 14 },
+  tombolCatatan: { fontSize: 11, color: w.teksRedup, textAlign: 'center', marginTop: 6 },
 
-  judulBagian: { fontSize: 14, fontWeight: '700', color: '#111827', marginTop: 22, marginBottom: 10 },
+  judulBagian: { fontSize: 14, fontWeight: '700', color: w.teks, marginTop: 22, marginBottom: 10 },
   judulRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  tautan: { fontSize: 12, color: '#2563eb', fontWeight: '600', marginTop: 12 },
+  tautan: { fontSize: 12, color: w.utama, fontWeight: '600', marginTop: 12 },
 
   statGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 2 },
   statCard: {
-    width: '47.5%', flexGrow: 1, backgroundColor: '#fff', borderRadius: 14,
-    borderWidth: 1, borderColor: '#e5e7eb', paddingVertical: 14, paddingHorizontal: 14,
+    width: '47.5%', flexGrow: 1, backgroundColor: w.permukaan, borderRadius: 14,
+    borderWidth: 1, borderColor: w.garis, paddingVertical: 14, paddingHorizontal: 14,
   },
-  statValue: { fontSize: 19, fontWeight: '700', color: '#111827' },
-  statLabel: { fontSize: 11, color: '#6b7280', marginTop: 2 },
+  statValue: { fontSize: 19, fontWeight: '700', color: w.teks },
+  statLabel: { fontSize: 11, color: w.teksRedup, marginTop: 2 },
 
   riwayatBaris: {
     flexDirection: 'row', justifyContent: 'space-between',
     alignItems: 'center', paddingVertical: 10,
   },
-  riwayatGaris: { borderTopWidth: 1, borderTopColor: '#f3f4f6' },
-  riwayatTanggal: { fontSize: 13, fontWeight: '600', color: '#111827' },
-  riwayatJam: { fontSize: 11, color: '#9ca3af', marginTop: 1 },
+  riwayatGaris: { borderTopWidth: 1, borderTopColor: w.permukaan2 },
+  riwayatTanggal: { fontSize: 13, fontWeight: '600', color: w.teks },
+  riwayatJam: { fontSize: 11, color: w.teksSamar, marginTop: 1 },
   badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
   badgeText: { fontSize: 11, fontWeight: '600' },
-  kosong: { fontSize: 12, color: '#9ca3af', textAlign: 'center', paddingVertical: 14 },
+  kosong: { fontSize: 12, color: w.teksSamar, textAlign: 'center', paddingVertical: 14 },
 
   menuRow: { flexDirection: 'row', gap: 10, marginTop: 6 },
   menuButton: {
-    flex: 1, backgroundColor: '#fff', borderRadius: 14, paddingVertical: 13,
-    alignItems: 'center', borderWidth: 1, borderColor: '#e5e7eb',
+    flex: 1, backgroundColor: w.permukaan, borderRadius: 14, paddingVertical: 13,
+    alignItems: 'center', borderWidth: 1, borderColor: w.garis,
   },
-  menuButtonText: { fontSize: 13, color: '#374151', fontWeight: '600' },
+  menuButtonText: { fontSize: 13, color: w.teksBadan, fontWeight: '600' },
 });

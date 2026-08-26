@@ -21,7 +21,8 @@ async function checkIn(req, res, next) {
     // nama berkas foto, cap di gambar, dan kolom check_in_time.
     const sekarang = new Date();
 
-    const jendela = jendelaAbsen(await shiftPegawai(query, userId), sekarang);
+    const shift = await shiftPegawai(query, userId);
+    const jendela = jendelaAbsen(shift, sekarang);
     if (!jendela.masuk.boleh) {
       return res.status(403).json({ message: jendela.masuk.alasan, jendela });
     }
@@ -33,7 +34,7 @@ async function checkIn(req, res, next) {
 
     // Akhir pekan & hari libur: kantor tutup, absen ditolak. Diperiksa
     // pada tanggal shift, jadi shift malam Jumat->Sabtu tetap boleh.
-    const hariKerja = await cekHariKerja(query, tanggal);
+    const hariKerja = await cekHariKerja(query, tanggal, shift);
     if (!hariKerja.kerja) {
       return res.status(403).json({ message: hariKerja.alasan, hari_kerja: hariKerja });
     }
@@ -115,7 +116,8 @@ async function checkOut(req, res, next) {
 
     const sekarang = new Date();
 
-    const jendela = jendelaAbsen(await shiftPegawai(query, userId), sekarang);
+    const shift = await shiftPegawai(query, userId);
+    const jendela = jendelaAbsen(shift, sekarang);
     if (!jendela.pulang.boleh) {
       return res.status(403).json({ message: jendela.pulang.alasan, jendela });
     }
@@ -125,7 +127,7 @@ async function checkOut(req, res, next) {
     // 21 -- tempat absen masuk pukul 22:00 tadi malam disimpan.
     const tanggal = jendela.tanggal_shift_pulang;
 
-    const hariKerja = await cekHariKerja(query, tanggal);
+    const hariKerja = await cekHariKerja(query, tanggal, shift);
     if (!hariKerja.kerja) {
       return res.status(403).json({ message: hariKerja.alasan, hari_kerja: hariKerja });
     }
@@ -171,7 +173,8 @@ async function checkOut(req, res, next) {
 // tanpa menebak-nebak aturan yang ada di server.
 async function getTodayStatus(req, res, next) {
   try {
-    const jendela = jendelaAbsen(await shiftPegawai(query, req.user.id));
+    const shift = await shiftPegawai(query, req.user.id);
+    const jendela = jendelaAbsen(shift);
 
     // Untuk shift malam, kedua tanggal ini bisa berbeda saat pergantian
     // hari. Yang ditampilkan adalah shift yang absen masuknya sudah ada
@@ -189,7 +192,7 @@ async function getTodayStatus(req, res, next) {
       || null;
 
     const tanggalShift = absensi?.date || jendela.tanggal_shift_masuk;
-    const hariKerja = await cekHariKerja(query, tanggalShift);
+    const hariKerja = await cekHariKerja(query, tanggalShift, shift);
     // Pegawai perlu tahu hari ini dia terdaftar WFA -- absennya tetap sama,
     // tapi tanpa keterangan ini penandaan WFA di riwayat akan terasa
     // muncul entah dari mana.
@@ -400,8 +403,13 @@ async function getAllHistory(req, res, next) {
 
     params.push(limit, offset);
     const result = await query(
+      // Koordinat ikut dikirim: sejak awal direkam setiap absen masuk, tapi
+      // tidak pernah ditampilkan di layar mana pun. Ini absen lapangan --
+      // tidak ada pembatasan area, jadi gunanya murni sebagai keterangan
+      // tempat, bukan alat menolak absen.
       `SELECT a.id, a.date, a.check_in_time, a.check_out_time, a.status, a.reason,
               a.photo_in_url, a.photo_out_url, a.work_mode,
+              a.latitude, a.longitude,
               u.id AS user_id, u.name, u.avatar_url, d.name AS department
        FROM attendance a
        JOIN users u ON a.user_id = u.id
@@ -453,13 +461,20 @@ async function markAlpha(req, res, next) {
       });
     }
 
+    // Hari kerja diambil dari shift masing-masing pegawai, bukan dipaku
+    // Senin-Jumat seperti sebelumnya. Tanpa ini, pegawai shift akhir pekan
+    // tidak pernah tertandai alpha di hari kerjanya sendiri -- bolos di hari
+    // Sabtu tidak pernah tercatat, dan statistiknya ikut menipu.
+    //
+    // COALESCE menjaga pegawai yang belum punya shift tetap Senin-Jumat.
     const result = await query(
       `INSERT INTO attendance (user_id, date, status)
        SELECT u.id, $1::date, 'alpha'
        FROM users u
+       LEFT JOIN shifts s ON u.shift_id = s.id
        WHERE u.role != 'admin' AND u.is_active = TRUE
          AND NOT EXISTS (SELECT 1 FROM attendance a WHERE a.user_id = u.id AND a.date = $1::date)
-         AND EXTRACT(DOW FROM $1::date) NOT IN (0, 6)
+         AND EXTRACT(DOW FROM $1::date)::SMALLINT = ANY(COALESCE(s.work_days, '{1,2,3,4,5}'::SMALLINT[]))
          AND NOT EXISTS (SELECT 1 FROM holidays h WHERE h.date = $1::date)
        RETURNING user_id`,
       [targetDate]

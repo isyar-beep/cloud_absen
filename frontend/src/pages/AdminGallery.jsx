@@ -4,6 +4,7 @@ import { urlFoto, useTokenFoto } from '../api/fileUrl';
 import AdminHeader from '../components/AdminHeader';
 import Avatar from '../components/Avatar';
 import StatusBadge from '../components/StatusBadge';
+import Koordinat from '../components/Koordinat';
 import WfaBadge from '../components/WfaBadge';
 import { formatTanggalHari, formatJam, formatJamDetik } from '../utils/tanggal';
 
@@ -416,6 +417,12 @@ export default function AdminGallery() {
                     <dd className="text-strong font-medium text-right tabular-nums">{v}</dd>
                   </div>
                 ))}
+                <div className="flex justify-between gap-4 py-2 border-b border-line">
+                  <dt className="text-muted">Koordinat</dt>
+                  <dd className="text-right">
+                    <Koordinat latitude={detail.row.latitude} longitude={detail.row.longitude} />
+                  </dd>
+                </div>
                 <div className="flex justify-between gap-4 py-2">
                   <dt className="text-muted">Status</dt>
                   <dd><StatusBadge status={detail.row.status} /></dd>

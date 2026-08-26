@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert, Image } from 'react-native';
+import { useWarna } from '../theme';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Location from 'expo-location';
 import api from '../services/api';
@@ -24,6 +25,8 @@ export default function CameraScreen({ route, navigation }) {
   const [loading, setLoading] = useState(false);
   const [lokasi, setLokasi] = useState(null);
   const [lokasiStatus, setLokasiStatus] = useState('mencari'); // mencari | ada | gagal
+  const w = useWarna();
+  const styles = useMemo(() => buatGaya(w), [w]);
 
   // Lokasi diminta sejak layar dibuka, bukan saat tombol kirim ditekan.
   // GPS bisa perlu beberapa detik untuk mengunci; menunggunya di detik
@@ -172,7 +175,7 @@ export default function CameraScreen({ route, navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const buatGaya = (w) => StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
   tengah: { justifyContent: 'center' },
   camera: { flex: 1 },
@@ -184,8 +187,8 @@ const styles = StyleSheet.create({
     paddingTop: 48, paddingBottom: 12, paddingHorizontal: 16,
     backgroundColor: 'rgba(0,0,0,0.35)',
   },
-  topBarText: { color: '#fff', fontSize: 15, fontWeight: '700' },
-  topBarKembali: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  topBarText: { color: w.permukaan, fontSize: 15, fontWeight: '700' },
+  topBarKembali: { color: w.permukaan, fontSize: 13, fontWeight: '600' },
   topBarSpacer: { width: 34 },
 
   lokasiMengambang: {
@@ -195,28 +198,28 @@ const styles = StyleSheet.create({
   },
   lokasiRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   titik: { width: 7, height: 7, borderRadius: 4 },
-  lokasiTeks: { color: '#fff', fontSize: 12, flexShrink: 1, fontWeight: '500' },
-  ulangi: { color: '#93c5fd', fontSize: 12, fontWeight: '600' },
+  lokasiTeks: { color: w.permukaan, fontSize: 12, flexShrink: 1, fontWeight: '500' },
+  ulangi: { color: w.utama, fontSize: 12, fontWeight: '600' },
 
   captureButton: {
     position: 'absolute', bottom: 32, alignSelf: 'center',
-    width: 70, height: 70, borderRadius: 35, backgroundColor: '#fff',
-    borderWidth: 4, borderColor: '#d1d5db',
+    width: 70, height: 70, borderRadius: 35, backgroundColor: w.permukaan,
+    borderWidth: 4, borderColor: w.garisTebal,
   },
 
-  panelBawah: { backgroundColor: '#fff', padding: 16, gap: 10 },
-  keterangan: { fontSize: 11, color: '#6b7280' },
+  panelBawah: { backgroundColor: w.permukaan, padding: 16, gap: 10 },
+  keterangan: { fontSize: 11, color: w.teksRedup },
   actionRow: { flexDirection: 'row', gap: 12, marginTop: 2 },
   button: {
-    flex: 1, backgroundColor: '#2563eb', borderRadius: 12,
+    flex: 1, backgroundColor: w.utama, borderRadius: 12,
     paddingVertical: 14, alignItems: 'center',
   },
   buttonMati: { opacity: 0.5 },
   secondaryButton: {
-    flex: 1, backgroundColor: '#f3f4f6', borderRadius: 12,
+    flex: 1, backgroundColor: w.permukaan2, borderRadius: 12,
     paddingVertical: 14, alignItems: 'center',
   },
-  buttonText: { color: '#fff', fontWeight: '600', fontSize: 14 },
-  secondaryButtonText: { color: '#374151', fontWeight: '600', fontSize: 14 },
-  permissionText: { color: '#fff', textAlign: 'center', margin: 24, fontSize: 14 },
+  buttonText: { color: w.permukaan, fontWeight: '600', fontSize: 14 },
+  secondaryButtonText: { color: w.teksBadan, fontWeight: '600', fontSize: 14 },
+  permissionText: { color: w.permukaan, textAlign: 'center', margin: 24, fontSize: 14 },
 });

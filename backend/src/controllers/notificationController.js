@@ -162,7 +162,9 @@ async function daftarBelumCheckin(idTerpilih = null) {
     // belum dibuka -- mungkin ia memang ingin mengingatkan lebih awal.
     if (!idTerpilih && !d.jendela.masuk.boleh) continue;
 
-    const hariKerja = await cekHariKerja(query, d.jendela.tanggal_shift_masuk);
+    // Baris pegawai dari jendelaSemuaPegawai sudah membawa work_days shiftnya,
+    // jadi pegawai shift akhir pekan tetap diingatkan di hari kerjanya sendiri.
+    const hariKerja = await cekHariKerja(query, d.jendela.tanggal_shift_masuk, d.pegawai);
     if (!hariKerja.kerja) continue;
 
     hasil.push({

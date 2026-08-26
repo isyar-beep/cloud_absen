@@ -5,6 +5,7 @@ import AdminHeader from '../components/AdminHeader';
 import StatusBadge from '../components/StatusBadge';
 import WfaBadge from '../components/WfaBadge';
 import EditAbsensiModal from '../components/EditAbsensiModal';
+import Koordinat from '../components/Koordinat';
 import { formatTanggal, formatJam } from '../utils/tanggal';
 
 const LIMIT = 50;
@@ -130,6 +131,7 @@ export default function AdminHistory() {
                 <th className="text-left px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Masuk</th>
                 <th className="text-left px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Pulang</th>
                 <th className="text-left px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Status</th>
+                <th className="text-left px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Lokasi</th>
                 <th className="text-left px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Foto</th>
                 <th className="text-right px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Aksi</th>
               </tr>
@@ -146,6 +148,9 @@ export default function AdminHistory() {
                       <StatusBadge status={item.status} />
                       <WfaBadge mode={item.work_mode} />
                     </span>
+                  </td>
+                  <td className="px-5 py-3.5 whitespace-nowrap">
+                    <Koordinat latitude={item.latitude} longitude={item.longitude} />
                   </td>
                   <td className="px-5 py-3.5 space-x-2 whitespace-nowrap">
                     {item.photo_in_url && (

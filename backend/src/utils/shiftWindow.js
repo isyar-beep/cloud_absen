@@ -16,6 +16,8 @@
 //    tombolnya ditekan.
 // ============================================================
 
+const { hariKerjaShift, ringkasHariKerja } = require('./workday');
+
 const MENIT_SEHARI = 1440;
 
 // Nilai cadangan kalau pegawai belum di-assign ke shift manapun.
@@ -23,6 +25,9 @@ const SHIFT_DEFAULT = {
   name: 'Reguler',
   start_time: '08:00:00',
   end_time: '17:00:00',
+  // 0=Minggu ... 6=Sabtu. Senin-Jumat, sama seperti sebelum hari kerja
+  // bisa diatur per shift (migration 009).
+  work_days: [1, 2, 3, 4, 5],
   checkin_open_minutes: 30,
   checkin_close_minutes: 240,
   checkout_open_minutes: 15,
@@ -149,6 +154,10 @@ function jendelaAbsen(shiftMentah, sekarang = new Date()) {
       mulai: String(shift.start_time).slice(0, 5),
       selesai: String(shift.end_time).slice(0, 5),
       lintas_hari: lintasTengahMalam(shift),
+      // Hari kerja ikut dikirim supaya layar pegawai bisa menyebutkan
+      // "Senin-Jumat" tanpa memanggil endpoint shift terpisah.
+      hari_kerja: hariKerjaShift(shift),
+      hari_kerja_teks: ringkasHariKerja(shift),
     },
     // Tanggal yang dipakai menyimpan catatan absensi. Untuk shift malam,
     // absen masuk 22:00 dan absen pulang 06:10 keesokan harinya sama-sama
@@ -165,7 +174,7 @@ function jendelaAbsen(shiftMentah, sekarang = new Date()) {
 // Ambil shift seorang pegawai berikut pengaturan jendelanya.
 async function shiftPegawai(query, userId) {
   const hasil = await query(
-    `SELECT s.name, s.start_time, s.end_time,
+    `SELECT s.name, s.start_time, s.end_time, s.work_days,
             s.checkin_open_minutes, s.checkin_close_minutes,
             s.checkout_open_minutes, s.checkout_close_minutes
      FROM users u LEFT JOIN shifts s ON u.shift_id = s.id
@@ -190,7 +199,7 @@ async function shiftPegawai(query, userId) {
 async function jendelaSemuaPegawai(query, sekarang = new Date()) {
   const hasil = await query(
     `SELECT u.id, u.name, u.avatar_url, u.push_token, d.name AS department,
-            s.name AS shift_nama, s.start_time, s.end_time,
+            s.name AS shift_nama, s.start_time, s.end_time, s.work_days,
             s.checkin_open_minutes, s.checkin_close_minutes,
             s.checkout_open_minutes, s.checkout_close_minutes
      FROM users u
