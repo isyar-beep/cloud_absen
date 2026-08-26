@@ -32,6 +32,11 @@ cp .env.example .env
 
 Edit file `.env` dan isi sesuai konfigurasi Anda (lihat penjelasan tiap variabel di `.env.example`).
 
+**Zona waktu.** Bawaannya `TZ=Asia/Makassar` (WITA). Nilai ini menentukan
+tanggal absensi, batas terlambat, jendela shift, dan cap jam di foto. Kalau
+diubah, container database perlu dibuat ulang juga (`docker compose up -d`)
+supaya jam di kedua sisi tetap sama.
+
 **Opsi A — Database via Docker (paling mudah):**
 ```bash
 docker-compose up -d postgres
@@ -90,6 +95,33 @@ uploads/absensi/2026-08/2026-08-22_12-31-22_id02_budi-pegawai_masuk_a636.jpg
 
 Foto profil terpisah di `uploads/profil/`. Berkas dikelompokkan per bulan
 supaya satu folder tidak berisi puluhan ribu file.
+
+**Cap koordinat & jam.** Setiap foto absensi dibubuhi keterangan di pojok
+kanan bawah sebelum disimpan:
+
+```
+26 Agu 2026 08.35.23 WITA
+5,10612S 119,52484E
+```
+
+Beberapa hal yang disengaja:
+
+- **Ditanam ke gambar, bukan ditampilkan di sebelahnya.** Foto absensi sering
+  diteruskan lewat WhatsApp; keterangan yang hanya hidup di halaman web akan
+  hilang begitu gambarnya keluar dari aplikasi.
+- **Dikerjakan di server** (`src/utils/capFoto.js`), bukan di perangkat. Web
+  dan mobile jadi menghasilkan foto yang sama persis, dan capnya tidak bisa
+  dipalsukan dari sisi pegawai.
+- **Jamnya dari jam API**, sumber yang sama dengan kolom `check_in_time`.
+  Kalau memakai jam perangkat, pegawai yang menggeser jam HP-nya bisa membuat
+  cap dan catatan absensi saling bertentangan.
+- **Ini keterangan, bukan pembatasan.** Tidak ada pemeriksaan jarak ke kantor
+  di mana pun — koordinat hanya direkam dan ditampilkan. Absen tetap berhasil
+  walau izin lokasi ditolak; capnya berbunyi "Koordinat tidak tersedia".
+- Foto sekaligus diperkecil ke sisi terpanjang 1000px dan orientasinya
+  diluruskan mengikuti EXIF.
+
+Label zona waktu (WITA/WIB/WIT) mengikuti `TZ` di `.env`.
 
 **Akses foto butuh login.** Foto TIDAK dilayani sebagai folder statis publik.
 Frontend memanggil `/api/photos/token` untuk mendapat token berumur 30 menit,

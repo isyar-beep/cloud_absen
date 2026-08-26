@@ -292,8 +292,15 @@ export default function Attendance() {
         )}
 
         {capturedPhoto && (
-          <div className="rounded-3xl overflow-hidden mb-5 ring-4 ring-emerald-500/20 shadow-soft">
-            <img src={capturedPhoto} alt="Preview absensi" className="w-full aspect-[4/3] object-cover" />
+          <div className="mb-5">
+            <div className="rounded-3xl overflow-hidden ring-4 ring-emerald-500/20 shadow-soft">
+              <img src={capturedPhoto} alt="Preview absensi" className="w-full aspect-[4/3] object-cover" />
+            </div>
+            {/* Capnya ditanam di server, jadi tidak terlihat di pratinjau ini.
+                Disebutkan supaya pegawai tidak mengira fiturnya tidak jalan. */}
+            <p className="text-xs text-gray-500 text-center mt-2">
+              Koordinat dan jam akan ditanam otomatis di pojok kanan bawah foto.
+            </p>
           </div>
         )}
 

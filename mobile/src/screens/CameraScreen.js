@@ -1,8 +1,20 @@
-import { useState, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert, Image } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Location from 'expo-location';
 import api from '../services/api';
+
+const JUDUL = { 'check-in': 'Absen Masuk', 'check-out': 'Absen Pulang' };
+
+// "5,10612S 119,52484E" -- format yang sama dengan cap yang ditanam server
+// di src/utils/capFoto.js, supaya yang dilihat pegawai di layar persis
+// sama dengan yang nanti muncul di fotonya.
+function formatKoordinat(lat, lon) {
+  if (lat == null || lon == null) return null;
+  const sisi = (nilai, positif, negatif) =>
+    `${Math.abs(nilai).toFixed(5).replace('.', ',')}${nilai < 0 ? negatif : positif}`;
+  return `${sisi(lat, 'N', 'S')} ${sisi(lon, 'E', 'W')}`;
+}
 
 export default function CameraScreen({ route, navigation }) {
   const { mode } = route.params; // 'check-in' | 'check-out'
@@ -10,12 +22,37 @@ export default function CameraScreen({ route, navigation }) {
   const cameraRef = useRef(null);
   const [photo, setPhoto] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [lokasi, setLokasi] = useState(null);
+  const [lokasiStatus, setLokasiStatus] = useState('mencari'); // mencari | ada | gagal
+
+  // Lokasi diminta sejak layar dibuka, bukan saat tombol kirim ditekan.
+  // GPS bisa perlu beberapa detik untuk mengunci; menunggunya di detik
+  // terakhir membuat tombol "Kirim Absensi" terasa menggantung.
+  const ambilLokasi = useCallback(async () => {
+    setLokasiStatus('mencari');
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setLokasiStatus('gagal');
+        return;
+      }
+      const loc = await Location.getCurrentPositionAsync({});
+      setLokasi({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
+      setLokasiStatus('ada');
+    } catch (err) {
+      setLokasiStatus('gagal');
+    }
+  }, []);
+
+  useEffect(() => {
+    ambilLokasi();
+  }, [ambilLokasi]);
 
   if (!permission) return <View style={styles.container} />;
 
   if (!permission.granted) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, styles.tengah]}>
         <Text style={styles.permissionText}>Aplikasi memerlukan izin kamera untuk absensi.</Text>
         <TouchableOpacity style={styles.button} onPress={requestPermission}>
           <Text style={styles.buttonText}>Izinkan Kamera</Text>
@@ -34,23 +71,16 @@ export default function CameraScreen({ route, navigation }) {
   async function submitAttendance() {
     setLoading(true);
     try {
-      let coords = {};
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status === 'granted') {
-        const loc = await Location.getCurrentPositionAsync({});
-        coords = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
-      }
-
       const formData = new FormData();
       formData.append('photo', {
         uri: photo,
         name: 'attendance.jpg',
         type: 'image/jpeg',
       });
-      if (coords.latitude) {
+      if (lokasi) {
         // FormData React Native mengharuskan nilai string, bukan number
-        formData.append('latitude', String(coords.latitude));
-        formData.append('longitude', String(coords.longitude));
+        formData.append('latitude', String(lokasi.latitude));
+        formData.append('longitude', String(lokasi.longitude));
       }
 
       const endpoint = mode === 'check-in' ? '/attendance/check-in' : '/attendance/check-out';
@@ -68,17 +98,57 @@ export default function CameraScreen({ route, navigation }) {
     }
   }
 
+  const koordinat = lokasi ? formatKoordinat(lokasi.latitude, lokasi.longitude) : null;
+
+  // Keterangan lokasi. Absen tetap boleh dikirim tanpa GPS -- koordinat
+  // hanya keterangan, bukan syarat, dan tidak ada pembatasan area.
+  const lokasiTeks = {
+    mencari: 'Mencari lokasi...',
+    ada: koordinat,
+    gagal: 'Lokasi tidak tersedia — absen tetap bisa dikirim',
+  }[lokasiStatus];
+
+  const lokasiWarna = { mencari: '#fbbf24', ada: '#22c55e', gagal: '#f87171' }[lokasiStatus];
+
+  // Dipanggil sebagai fungsi biasa, bukan <Komponen />: komponen yang
+  // dideklarasikan di dalam render akan dianggap tipe baru tiap kali
+  // render dan dipasang ulang dari nol.
+  const barisLokasi = () => (
+    <View style={styles.lokasiRow}>
+      <View style={[styles.titik, { backgroundColor: lokasiWarna }]} />
+      <Text style={styles.lokasiTeks} numberOfLines={1}>{lokasiTeks}</Text>
+      {lokasiStatus === 'gagal' ? (
+        <TouchableOpacity onPress={ambilLokasi} hitSlop={8}>
+          <Text style={styles.ulangi}>Coba lagi</Text>
+        </TouchableOpacity>
+      ) : null}
+    </View>
+  );
+
   if (photo) {
     return (
       <View style={styles.container}>
+        <View style={styles.topBar}>
+          <Text style={styles.topBarText}>{JUDUL[mode] || 'Absensi'}</Text>
+        </View>
         <Image source={{ uri: photo }} style={styles.preview} />
-        <View style={styles.actionRow}>
-          <TouchableOpacity style={styles.secondaryButton} onPress={() => setPhoto(null)}>
-            <Text style={styles.secondaryButtonText}>Ambil Ulang</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.button} onPress={submitAttendance} disabled={loading}>
-            <Text style={styles.buttonText}>{loading ? 'Mengirim...' : 'Kirim Absensi'}</Text>
-          </TouchableOpacity>
+        <View style={styles.panelBawah}>
+          {barisLokasi()}
+          <Text style={styles.keterangan}>
+            Koordinat dan jam akan ditanam otomatis di pojok kanan bawah foto.
+          </Text>
+          <View style={styles.actionRow}>
+            <TouchableOpacity style={styles.secondaryButton} onPress={() => setPhoto(null)}>
+              <Text style={styles.secondaryButtonText}>Ambil Ulang</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.button, loading && styles.buttonMati]}
+              onPress={submitAttendance}
+              disabled={loading}
+            >
+              <Text style={styles.buttonText}>{loading ? 'Mengirim...' : 'Kirim Absensi'}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     );
@@ -87,6 +157,16 @@ export default function CameraScreen({ route, navigation }) {
   return (
     <View style={styles.container}>
       <CameraView style={styles.camera} facing="front" ref={cameraRef} />
+      <View style={styles.topBar}>
+        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={10}>
+          <Text style={styles.topBarKembali}>Batal</Text>
+        </TouchableOpacity>
+        <Text style={styles.topBarText}>{JUDUL[mode] || 'Absensi'}</Text>
+        <View style={styles.topBarSpacer} />
+      </View>
+      <View style={styles.lokasiMengambang}>
+        {barisLokasi()}
+      </View>
       <TouchableOpacity style={styles.captureButton} onPress={takePhoto} />
     </View>
   );
@@ -94,20 +174,44 @@ export default function CameraScreen({ route, navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
+  tengah: { justifyContent: 'center' },
   camera: { flex: 1 },
   preview: { flex: 1 },
+
+  topBar: {
+    position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingTop: 48, paddingBottom: 12, paddingHorizontal: 16,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+  },
+  topBarText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  topBarKembali: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  topBarSpacer: { width: 34 },
+
+  lokasiMengambang: {
+    position: 'absolute', bottom: 120, left: 16, right: 16,
+    backgroundColor: 'rgba(0,0,0,0.45)', borderRadius: 10,
+    paddingHorizontal: 12, paddingVertical: 8,
+  },
+  lokasiRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  titik: { width: 7, height: 7, borderRadius: 4 },
+  lokasiTeks: { color: '#fff', fontSize: 12, flexShrink: 1, fontWeight: '500' },
+  ulangi: { color: '#93c5fd', fontSize: 12, fontWeight: '600' },
+
   captureButton: {
     position: 'absolute', bottom: 32, alignSelf: 'center',
     width: 70, height: 70, borderRadius: 35, backgroundColor: '#fff',
     borderWidth: 4, borderColor: '#d1d5db',
   },
-  actionRow: {
-    flexDirection: 'row', padding: 16, gap: 12, backgroundColor: '#fff',
-  },
+
+  panelBawah: { backgroundColor: '#fff', padding: 16, gap: 10 },
+  keterangan: { fontSize: 11, color: '#6b7280' },
+  actionRow: { flexDirection: 'row', gap: 12, marginTop: 2 },
   button: {
     flex: 1, backgroundColor: '#2563eb', borderRadius: 12,
     paddingVertical: 14, alignItems: 'center',
   },
+  buttonMati: { opacity: 0.5 },
   secondaryButton: {
     flex: 1, backgroundColor: '#f3f4f6', borderRadius: 12,
     paddingVertical: 14, alignItems: 'center',

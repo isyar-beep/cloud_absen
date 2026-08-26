@@ -5,7 +5,7 @@ require('dotenv').config();
 //
 // Bawaan pg mengubahnya jadi objek Date tengah malam waktu server, lalu
 // Express men-JSON-kannya sebagai instan UTC: tanggal 21 Agustus di server
-// WIB berangkat sebagai "2026-08-20T17:00:00.000Z" dan terbaca sebagai
+// WITA berangkat sebagai "2026-08-20T16:00:00.000Z" dan terbaca sebagai
 // 20 Agustus oleh browser yang zona waktunya lebih barat. Tanggal absensi
 // adalah tanggal kalender, bukan titik waktu -- jadi jangan pernah
 // dikonversi zona waktu.
@@ -13,8 +13,8 @@ types.setTypeParser(1082, (nilai) => nilai);
 
 // Alasan yang sama untuk TIMESTAMP tanpa zona waktu (jam absen masuk &
 // pulang). Nilainya adalah jam dinding kantor. Kalau dikirim sebagai
-// instan UTC, jam 07.39 WIB tampil jadi 00.39 di browser yang berjalan
-// pada UTC. Dikirim apa adanya: "2026-08-21 07:39:12".
+// instan UTC, jam 07.39 WITA tampil jadi 23.39 hari sebelumnya di browser
+// yang berjalan pada UTC. Dikirim apa adanya: "2026-08-21 07:39:12".
 types.setTypeParser(1114, (nilai) => nilai);
 
 const pool = new Pool({

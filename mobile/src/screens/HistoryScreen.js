@@ -3,6 +3,7 @@ import {
   View, Text, TouchableOpacity, StyleSheet, FlatList,
 } from 'react-native';
 import api from '../services/api';
+import AjukanKoreksiModal from '../components/AjukanKoreksiModal';
 import { formatTanggalHari, formatJam } from '../utils/tanggal';
 import { rentangPreset } from '../utils/periode';
 
@@ -25,6 +26,12 @@ const periodeOptions = [
   { key: 'semua', label: 'Semua' },
 ];
 
+const KETERANGAN_KOREKSI = {
+  pending: { teks: 'Koreksi menunggu keputusan admin', warna: '#b45309' },
+  approved: { teks: 'Koreksi disetujui', warna: '#15803d' },
+  rejected: { teks: 'Koreksi ditolak', warna: '#dc2626' },
+};
+
 const filterOptions = [
   { key: '', label: 'Semua' },
   { key: 'hadir', label: 'Hadir' },
@@ -40,6 +47,9 @@ export default function HistoryScreen() {
   const [periode, setPeriode] = useState('bulan_ini');
   const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [koreksi, setKoreksi] = useState(null);
+  const [ajuan, setAjuan] = useState([]);
+  const [pesan, setPesan] = useState('');
 
   const rentang = rentangPreset(periode);
 
@@ -75,6 +85,17 @@ export default function HistoryScreen() {
     }
   }, [rentang.start_date, rentang.end_date]);
 
+  // Status pengajuan koreksi milik sendiri, supaya baris yang sudah pernah
+  // diajukan tidak menawarkan tombol "Ajukan koreksi" lagi.
+  const fetchAjuan = useCallback(async () => {
+    try {
+      const res = await api.get('/corrections/me');
+      setAjuan(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  }, []);
+
   useEffect(() => {
     fetchHistory();
   }, [fetchHistory]);
@@ -83,8 +104,21 @@ export default function HistoryScreen() {
     fetchRekap();
   }, [fetchRekap]);
 
+  useEffect(() => {
+    fetchAjuan();
+  }, [fetchAjuan]);
+
+  // Satu pengajuan aktif per tanggal; yang terbaru menang.
+  const ajuanPerTanggal = ajuan.reduce((hasil, a) => {
+    if (!hasil[a.date]) hasil[a.date] = a;
+    return hasil;
+  }, {});
+
   function renderItem({ item }) {
     const info = statusInfo[item.status] || statusInfo.hadir;
+    const pengajuan = ajuanPerTanggal[item.date];
+    const ket = pengajuan ? KETERANGAN_KOREKSI[pengajuan.status] : null;
+
     return (
       <View style={styles.card}>
         <View style={styles.cardHeader}>
@@ -97,12 +131,30 @@ export default function HistoryScreen() {
           Masuk: {formatJam(item.check_in_time)}   Pulang: {formatJam(item.check_out_time)}
         </Text>
         {item.reason ? <Text style={styles.reason}>{item.reason}</Text> : null}
+
+        {/* Jalur resmi untuk jam yang keliru atau lupa absen pulang. Hari
+            berstatus izin tidak menawarkan koreksi jam -- itu ranah
+            pengajuan izin, bukan koreksi absen. Sama seperti di web. */}
+        {item.status !== 'izin' ? (
+          ket ? (
+            <Text style={[styles.koreksiStatus, { color: ket.warna }]}>
+              {ket.teks}
+              {pengajuan.admin_note ? <Text style={styles.catatanAdmin}> — {pengajuan.admin_note}</Text> : null}
+            </Text>
+          ) : (
+            <TouchableOpacity onPress={() => setKoreksi(item)} hitSlop={6}>
+              <Text style={styles.koreksiTombol}>Ajukan koreksi</Text>
+            </TouchableOpacity>
+          )
+        ) : null}
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
+      {pesan ? <Text style={styles.pesan}>✓ {pesan}</Text> : null}
+
       {/* Pilih periode */}
       <View style={styles.filterRow}>
         {periodeOptions.map((p) => (
@@ -163,6 +215,11 @@ export default function HistoryScreen() {
 
       <FlatList
         data={items}
+        // extraData wajib: renderItem membaca daftar pengajuan koreksi yang
+        // hidup di luar `data`. Tanpa ini, baris yang baru saja diajukan
+        // koreksinya tetap menampilkan tombol "Ajukan koreksi" sampai
+        // daftarnya kebetulan dimuat ulang.
+        extraData={ajuan}
         keyExtractor={(item) => String(item.id)}
         renderItem={renderItem}
         contentContainerStyle={{ paddingBottom: 24 }}
@@ -185,6 +242,18 @@ export default function HistoryScreen() {
           ) : null
         }
       />
+
+      {koreksi ? (
+        <AjukanKoreksiModal
+          baris={koreksi}
+          onTutup={() => setKoreksi(null)}
+          onKirim={(msg) => {
+            setKoreksi(null);
+            setPesan(msg);
+            fetchAjuan();
+          }}
+        />
+      ) : null}
     </View>
   );
 }
@@ -218,6 +287,14 @@ const styles = StyleSheet.create({
   badgeText: { fontSize: 11, fontWeight: '600' },
   times: { fontSize: 12, color: '#6b7280' },
   reason: { fontSize: 12, color: '#9ca3af', marginTop: 2 },
+  koreksiTombol: { fontSize: 11, fontWeight: '700', color: '#2563eb', marginTop: 6 },
+  koreksiStatus: { fontSize: 11, fontWeight: '600', marginTop: 6 },
+  catatanAdmin: { color: '#9ca3af', fontWeight: '400' },
+  pesan: {
+    fontSize: 12, color: '#15803d', backgroundColor: '#f0fdf4',
+    borderWidth: 1, borderColor: '#bbf7d0', borderRadius: 10,
+    paddingHorizontal: 12, paddingVertical: 8, marginBottom: 12, fontWeight: '600',
+  },
   empty: { fontSize: 13, color: '#9ca3af', textAlign: 'center', paddingVertical: 24 },
   loadMore: {
     backgroundColor: '#fff', borderWidth: 1, borderColor: '#d1d5db',

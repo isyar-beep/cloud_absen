@@ -1,6 +1,7 @@
 const { query } = require('../config/db');
 const { uploadFotoAbsensi } = require('../utils/uploadPhoto');
-const { todayLocal } = require('../utils/date');
+const { tanamCap } = require('../utils/capFoto');
+const { todayLocal, sekarangLokalSql } = require('../utils/date');
 const { jendelaAbsen, jendelaSemuaPegawai, shiftPegawai } = require('../utils/shiftWindow');
 const { cekHariKerja } = require('../utils/workday');
 const { wfaBerlaku } = require('./wfaController');
@@ -16,7 +17,11 @@ async function checkIn(req, res, next) {
       return res.status(400).json({ message: 'Foto wajib diambil untuk absen.' });
     }
 
-    const jendela = jendelaAbsen(await shiftPegawai(query, userId));
+    // Satu jam dipakai untuk semuanya: jendela absen, status terlambat,
+    // nama berkas foto, cap di gambar, dan kolom check_in_time.
+    const sekarang = new Date();
+
+    const jendela = jendelaAbsen(await shiftPegawai(query, userId), sekarang);
     if (!jendela.masuk.boleh) {
       return res.status(403).json({ message: jendela.masuk.alasan, jendela });
     }
@@ -48,10 +53,16 @@ async function checkIn(req, res, next) {
       });
     }
 
-    const photoUrl = await uploadFotoAbsensi(req.file.buffer, {
+    // Cap koordinat & jam ditanam sebelum foto disimpan, jadi berkas yang
+    // ada di disk sudah bercap -- termasuk kalau nanti diunduh admin atau
+    // diteruskan lewat WhatsApp.
+    const foto = await tanamCap(req.file.buffer, { latitude, longitude, waktu: sekarang });
+
+    const photoUrl = await uploadFotoAbsensi(foto, {
       userId,
       userName: req.user.name,
       jenis: 'masuk',
+      waktu: sekarang,
     });
 
     const status = jendela.terlambat ? 'terlambat' : 'hadir';
@@ -62,23 +73,25 @@ async function checkIn(req, res, next) {
     const wfa = await wfaBerlaku(userId, tanggal);
     const modeKerja = wfa ? 'wfa' : 'wfo';
 
+    const waktuMasuk = sekarangLokalSql(sekarang);
+
     // Baris "alpha" bisa sudah dibuat penanda otomatis tengah malam padahal
     // pegawai shift malam baru absen setelahnya. Baris seperti itu ditimpa,
     // bukan ditolak -- alpha hanya penanda sementara selama belum ada absen.
     const result = lama
       ? await query(
           `UPDATE attendance
-           SET check_in_time = NOW(), status = $1, photo_in_url = $2,
-               latitude = $3, longitude = $4, reason = NULL, work_mode = $5
-           WHERE id = $6
+           SET check_in_time = $1, status = $2, photo_in_url = $3,
+               latitude = $4, longitude = $5, reason = NULL, work_mode = $6
+           WHERE id = $7
            RETURNING id, date, check_in_time, status, photo_in_url, work_mode`,
-          [status, photoUrl, latitude || null, longitude || null, modeKerja, lama.id]
+          [waktuMasuk, status, photoUrl, latitude || null, longitude || null, modeKerja, lama.id]
         )
       : await query(
           `INSERT INTO attendance (user_id, date, check_in_time, status, photo_in_url, latitude, longitude, work_mode)
-           VALUES ($1, $2, NOW(), $3, $4, $5, $6, $7)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
            RETURNING id, date, check_in_time, status, photo_in_url, work_mode`,
-          [userId, tanggal, status, photoUrl, latitude || null, longitude || null, modeKerja]
+          [userId, tanggal, waktuMasuk, status, photoUrl, latitude || null, longitude || null, modeKerja]
         );
 
     res.status(201).json({ message: 'Absen masuk berhasil.', attendance: result.rows[0] });
@@ -91,12 +104,18 @@ async function checkIn(req, res, next) {
 async function checkOut(req, res, next) {
   try {
     const userId = req.user.id;
+    // Koordinat absen pulang dipakai untuk cap di foto. Tabel absensi hanya
+    // punya satu pasang kolom lat/long (diisi saat absen masuk), jadi
+    // lokasi pulang hidup di dalam gambarnya -- bukan di basis data.
+    const { latitude, longitude } = req.body;
 
     if (!req.file) {
       return res.status(400).json({ message: 'Foto wajib diambil untuk absen pulang.' });
     }
 
-    const jendela = jendelaAbsen(await shiftPegawai(query, userId));
+    const sekarang = new Date();
+
+    const jendela = jendelaAbsen(await shiftPegawai(query, userId), sekarang);
     if (!jendela.pulang.boleh) {
       return res.status(403).json({ message: jendela.pulang.alasan, jendela });
     }
@@ -123,18 +142,21 @@ async function checkOut(req, res, next) {
       return res.status(409).json({ message: 'Anda sudah melakukan absen pulang untuk shift ini.' });
     }
 
-    const photoUrl = await uploadFotoAbsensi(req.file.buffer, {
+    const foto = await tanamCap(req.file.buffer, { latitude, longitude, waktu: sekarang });
+
+    const photoUrl = await uploadFotoAbsensi(foto, {
       userId,
       userName: req.user.name,
       jenis: 'pulang',
+      waktu: sekarang,
     });
 
     const result = await query(
       `UPDATE attendance
-       SET check_out_time = NOW(), photo_out_url = $1
-       WHERE id = $2
+       SET check_out_time = $1, photo_out_url = $2
+       WHERE id = $3
        RETURNING id, date, check_in_time, check_out_time, status, photo_out_url`,
-      [photoUrl, existing.rows[0].id]
+      [sekarangLokalSql(sekarang), photoUrl, existing.rows[0].id]
     );
 
     res.json({ message: 'Absen pulang berhasil.', attendance: result.rows[0] });

@@ -9,7 +9,7 @@ services:
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
       # Zona waktu harus sama dengan API supaya jam absensi konsisten
-      TZ: ${TZ:-Asia/Jakarta}
+      TZ: ${TZ:-Asia/Makassar}
     ports:
       # Terikat ke localhost saja -- database TIDAK boleh diakses dari internet
       # DB_HOST_PORT bisa diganti di .env kalau port 5432 di komputer Anda sudah
@@ -42,7 +42,7 @@ services:
       - .env
     environment:
       DB_HOST: postgres
-      TZ: ${TZ:-Asia/Jakarta}
+      TZ: ${TZ:-Asia/Makassar}
     ports:
       # Terikat ke localhost saja -- akses publik lewat Nginx reverse proxy
       - '127.0.0.1:5000:5000'

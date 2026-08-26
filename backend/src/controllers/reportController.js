@@ -2,6 +2,7 @@ const ExcelJS = require('exceljs');
 const PDFDocument = require('pdfkit');
 const { query } = require('../config/db');
 const { hitungRate } = require('../utils/attendanceRate');
+const { zonaWaktu } = require('../utils/date');
 
 const NAMA_BULAN = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -55,7 +56,7 @@ function formatJam(timestamp) {
   return new Date(timestamp).toLocaleTimeString('id-ID', {
     hour: '2-digit',
     minute: '2-digit',
-    timeZone: process.env.TZ || 'Asia/Jakarta',
+    timeZone: zonaWaktu(),
   });
 }
 
@@ -64,7 +65,7 @@ function formatTanggal(date) {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
-    timeZone: process.env.TZ || 'Asia/Jakarta',
+    timeZone: zonaWaktu(),
   });
 }
 
