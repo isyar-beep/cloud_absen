@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useThemeStore } from './store/themeStore';
+import { PenyediaDialog } from './components/Dialog';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Attendance from './pages/Attendance';
@@ -24,6 +25,10 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      {/* Penyedia dialog membungkus seluruh rute: dialog konfirmasi
+          dipanggil dari banyak halaman, dan tiap halaman tidak perlu
+          mengingat untuk merender komponennya sendiri. */}
+      <PenyediaDialog>
       <Routes>
         <Route path="/login" element={<Login />} />
 
@@ -128,6 +133,7 @@ export default function App() {
 
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
+      </PenyediaDialog>
     </BrowserRouter>
   );
 }

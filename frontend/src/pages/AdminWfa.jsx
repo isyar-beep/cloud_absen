@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import api from '../api/axios';
+import { useDialog } from '../components/Dialog';
 import Avatar from '../components/Avatar';
 import { PlusIcon } from '../components/Icons';
 import { formatTanggalHari, tanggalLokal } from '../utils/tanggal';
@@ -11,6 +12,7 @@ import { keTanggal } from '../utils/periode';
 // persetujuan di sini, cukup tambah dan batalkan.
 export default function AdminWfa() {
   const [daftar, setDaftar] = useState([]);
+  const { konfirmasi } = useDialog();
   const [pegawai, setPegawai] = useState([]);
   const [tampilForm, setTampilForm] = useState(false);
   const [form, setForm] = useState({ user_id: '', start_date: '', end_date: '', note: '' });
@@ -61,10 +63,13 @@ export default function AdminWfa() {
   }
 
   async function hapus(w) {
-    if (!confirm(
-      `Batalkan WFA ${w.name} (${w.start_date} s/d ${w.end_date})?\n\n`
-      + 'Catatan absensi pada rentang itu akan kembali ditandai WFO.'
-    )) return;
+    const setuju = await konfirmasi({
+      judul: `Batalkan WFA ${w.name}?`,
+      pesan: `Rentang ${w.start_date} s/d ${w.end_date}.\n\n`
+        + 'Catatan absensi pada rentang itu akan kembali ditandai WFO.',
+      tombolYa: 'Batalkan WFA',
+    });
+    if (!setuju) return;
     try {
       const res = await api.delete(`/wfa/${w.id}`);
       setPesan(res.data.message);

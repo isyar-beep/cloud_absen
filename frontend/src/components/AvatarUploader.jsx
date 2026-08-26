@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import api from '../api/axios';
+import { useDialog } from './Dialog';
 import Avatar from './Avatar';
 
 const MAKS_PIKSEL = 400; // foto profil tidak pernah ditampilkan lebih besar dari ini
@@ -40,6 +41,7 @@ export default function AvatarUploader({ name, src, onChange }) {
   const inputRef = useRef(null);
   const [proses, setProses] = useState(false);
   const [error, setError] = useState('');
+  const { konfirmasi } = useDialog();
 
   async function pilihFile(e) {
     const file = e.target.files?.[0];
@@ -62,7 +64,12 @@ export default function AvatarUploader({ name, src, onChange }) {
   }
 
   async function hapus() {
-    if (!confirm('Hapus foto profil? Tampilan kembali memakai inisial nama.')) return;
+    const setuju = await konfirmasi({
+      judul: 'Hapus foto profil?',
+      pesan: 'Tampilan kembali memakai inisial nama. Anda bisa mengunggah foto baru kapan saja.',
+      tombolYa: 'Hapus foto',
+    });
+    if (!setuju) return;
     setProses(true);
     setError('');
     try {

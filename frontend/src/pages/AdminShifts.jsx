@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../api/axios';
 import AdminHeader from '../components/AdminHeader';
+import { useDialog } from '../components/Dialog';
 import { PlusIcon } from '../components/Icons';
 import AdminWfa from './AdminWfa';
 
@@ -54,6 +55,7 @@ export default function AdminShifts() {
   // Shift dan WFA sama-sama "penjadwalan cara kerja pegawai", jadi digabung
   // di satu halaman sebagai tab daripada menambah menu baru di bilah navigasi.
   const [tab, setTab] = useState('shift');
+  const { konfirmasi } = useDialog();
   const [shifts, setShifts] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -113,7 +115,14 @@ export default function AdminShifts() {
   }
 
   async function handleDelete(shift) {
-    if (!confirm(`Hapus shift "${shift.name}"? Pegawai yang memakainya jadi tanpa shift (batas telat default 08:00).`)) return;
+    const setuju = await konfirmasi({
+      judul: `Hapus shift "${shift.name}"?`,
+      pesan: shift.jumlah_pegawai > 0
+        ? `${shift.jumlah_pegawai} pegawai memakai shift ini dan akan menjadi tanpa shift — jam kerjanya kembali ke bawaan 08.00–17.00, Senin–Jumat.`
+        : 'Tidak ada pegawai yang memakai shift ini.',
+      tombolYa: 'Hapus shift',
+    });
+    if (!setuju) return;
     await api.delete(`/shifts/${shift.id}`);
     fetchShifts();
   }

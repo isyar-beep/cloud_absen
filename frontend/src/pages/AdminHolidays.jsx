@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import api from '../api/axios';
 import AdminHeader from '../components/AdminHeader';
+import { useDialog } from '../components/Dialog';
 import { PlusIcon } from '../components/Icons';
 import { tanggalLokal } from '../utils/tanggal';
 
 export default function AdminHolidays() {
   const [holidays, setHolidays] = useState([]);
+  const { konfirmasi } = useDialog();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ date: '', name: '' });
   const [error, setError] = useState('');
@@ -37,7 +39,12 @@ export default function AdminHolidays() {
   }
 
   async function handleDelete(holiday) {
-    if (!confirm(`Hapus hari libur "${holiday.name}"?`)) return;
+    const setuju = await konfirmasi({
+      judul: `Hapus hari libur "${holiday.name}"?`,
+      pesan: 'Absen di tanggal itu akan terbuka kembali untuk semua pegawai.',
+      tombolYa: 'Hapus',
+    });
+    if (!setuju) return;
     await api.delete(`/holidays/${holiday.id}`);
     fetchHolidays();
   }

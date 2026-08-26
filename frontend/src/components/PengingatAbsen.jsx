@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import api from '../api/axios';
+import { useDialog } from './Dialog';
 import Avatar from './Avatar';
 import { ClockIcon } from './Icons';
 
@@ -17,6 +18,7 @@ export default function PengingatAbsen() {
   const [daftar, setDaftar] = useState([]);
   const [terpilih, setTerpilih] = useState(new Set());
   const [pesanKustom, setPesanKustom] = useState('');
+  const { konfirmasi } = useDialog();
   const [pakaiPesan, setPakaiPesan] = useState(false);
   const [hasil, setHasil] = useState('');
   const [loading, setLoading] = useState(false);
@@ -59,7 +61,13 @@ export default function PengingatAbsen() {
     const kepada = jumlah === 1
       ? daftar.find((r) => r.id === [...terpilih][0])?.name
       : `${jumlah} pegawai`;
-    if (!confirm(`Kirim pengingat absen ke ${kepada}?`)) return;
+    const setuju = await konfirmasi({
+      judul: 'Kirim pengingat absen?',
+      pesan: `Notifikasi dikirim ke ${kepada}.`,
+      jenis: 'info',
+      tombolYa: 'Kirim pengingat',
+    });
+    if (!setuju) return;
 
     setLoading(true);
     setHasil('');

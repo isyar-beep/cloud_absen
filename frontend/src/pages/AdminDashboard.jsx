@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../api/axios';
 import AdminHeader from '../components/AdminHeader';
+import { useDialog } from '../components/Dialog';
 import StatusBadge from '../components/StatusBadge';
 import {
   UsersIcon, CheckBadgeIcon, ClockIcon, AlertIcon, DownloadIcon, MailIcon,
@@ -10,6 +11,7 @@ import PengingatAbsen from '../components/PengingatAbsen';
 
 export default function AdminDashboard() {
   const [overview, setOverview] = useState(null);
+  const { konfirmasi, beritahu } = useDialog();
   const [todayAll, setTodayAll] = useState([]);
   const [ranking, setRanking] = useState({ top_performers: [], at_risk: [] });
   const [reportPeriod, setReportPeriod] = useState({
@@ -67,14 +69,24 @@ export default function AdminDashboard() {
       link.click();
       URL.revokeObjectURL(url);
     } catch (err) {
-      alert('Gagal mengunduh laporan. Coba lagi.');
+      beritahu({
+        judul: 'Gagal mengunduh laporan',
+        pesan: 'Periksa koneksi ke server, lalu coba lagi.',
+      });
     } finally {
       setDownloading('');
     }
   }
 
   async function sendWarningEmails() {
-    if (!confirm('Kirim email peringatan ke semua pegawai dengan attendance rendah?')) return;
+    const setuju = await konfirmasi({
+      judul: 'Kirim email peringatan?',
+      pesan: 'Email dikirim ke semua pegawai yang attendance rate-nya di bawah batas. '
+        + 'Email yang sudah terkirim tidak bisa ditarik kembali.',
+      jenis: 'info',
+      tombolYa: 'Kirim email',
+    });
+    if (!setuju) return;
     setSendingWarning(true);
     setWarningResult('');
     try {

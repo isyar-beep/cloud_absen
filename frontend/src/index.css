@@ -89,6 +89,26 @@ body::before {
     radial-gradient(38rem 30rem at 60% 100%, rgb(var(--glow-3) / calc(var(--glow-alpha) * 0.75)), transparent 60%);
 }
 
+/* Dialog konfirmasi muncul dengan gerakan singkat. Tanpa itu ia terasa
+   "meloncat" ke layar, dan pada dialog penghapusan gerakan sekejap itu
+   yang memberi mata waktu untuk menangkap bahwa ada yang berubah. */
+@keyframes muncul {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-\[muncul_140ms_ease-out\] {
+    animation: none;
+  }
+}
+
 /* Transisi hanya untuk warna, dan hanya saat tema berpindah. Kalau
    dipasang permanen, setiap hover ikut melambat dan aplikasi terasa berat. */
 .ganti-tema,

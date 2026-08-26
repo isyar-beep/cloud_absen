@@ -1,11 +1,15 @@
 import { useEffect, useState } from 'react';
 import api from '../api/axios';
 import AdminHeader from '../components/AdminHeader';
+import { useDialog } from '../components/Dialog';
+import { useAuthStore } from '../store/authStore';
 import { PlusIcon } from '../components/Icons';
 import Avatar from '../components/Avatar';
 
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);
+  const { konfirmasi } = useDialog();
+  const user = useAuthStore((s) => s.user);
   const [shifts, setShifts] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: '', email: '', password: '', role: 'staff', shift_id: '' });
@@ -52,7 +56,13 @@ export default function AdminUsers() {
 
   async function toggleActive(userItem) {
     if (userItem.is_active) {
-      if (!confirm(`Nonaktifkan akun ${userItem.name}?`)) return;
+      const setuju = await konfirmasi({
+        judul: `Nonaktifkan akun ${userItem.name}?`,
+        pesan: 'Akunnya tidak bisa dipakai login dan tidak ikut dihitung di statistik. '
+          + 'Riwayat absensinya tetap tersimpan, dan akun ini bisa diaktifkan lagi kapan saja.',
+        tombolYa: 'Nonaktifkan',
+      });
+      if (!setuju) return;
       await api.delete(`/users/${userItem.id}`);
     } else {
       await api.put(`/users/${userItem.id}`, { is_active: true });
@@ -234,16 +244,23 @@ export default function AdminUsers() {
                     </span>
                   </td>
                   <td className="px-5 py-3.5 text-right">
-                    <button
-                      onClick={() => toggleActive(u)}
-                      className={`text-xs font-semibold transition ${
-                        u.is_active
-                          ? 'text-red-500 hover:text-red-600 dark:text-red-400'
-                          : 'text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 dark:text-primary-300'
-                      }`}
-                    >
-                      {u.is_active ? 'Nonaktifkan' : 'Aktifkan'}
-                    </button>
+                    {/* Baris akun sendiri tidak menawarkan tombolnya. Server
+                        juga menolak, tapi menawarkan tombol yang pasti gagal
+                        hanya membuat orang mencoba lalu bingung. */}
+                    {u.id === user?.id ? (
+                      <span className="text-xs text-faint">Akun Anda</span>
+                    ) : (
+                      <button
+                        onClick={() => toggleActive(u)}
+                        className={`text-xs font-semibold transition ${
+                          u.is_active
+                            ? 'text-red-500 hover:text-red-600 dark:text-red-400'
+                            : 'text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300'
+                        }`}
+                      >
+                        {u.is_active ? 'Nonaktifkan' : 'Aktifkan'}
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
