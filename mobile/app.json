@@ -5,17 +5,27 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
+    "newArchEnabled": true,
     "android": {
       "package": "com.cloudabsen.app",
-      "permissions": ["CAMERA", "ACCESS_FINE_LOCATION"]
+      "permissions": ["CAMERA", "ACCESS_FINE_LOCATION"],
+      "edgeToEdgeEnabled": true
     },
     "plugins": [
       [
         "expo-camera",
         {
-          "cameraPermission": "Aplikasi memerlukan akses kamera untuk mengambil foto absensi."
+          "cameraPermission": "Aplikasi memerlukan akses kamera untuk mengambil foto absensi.",
+          "recordAudioAndroid": false
         }
       ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Aplikasi memakai lokasi untuk mencatat koordinat pada foto absensi."
+        }
+      ],
+      "expo-document-picker",
       "expo-notifications"
     ]
   }

@@ -4,10 +4,16 @@ import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import api from './api';
 
-// Notifikasi tetap tampil (banner + suara) walau app sedang dibuka
+// Notifikasi tetap tampil (banner + suara) walau app sedang dibuka.
+//
+// shouldShowBanner & shouldShowList menggantikan shouldShowAlert yang
+// sudah usang sejak expo-notifications 0.29 -- keduanya wajib diisi,
+// karena sekarang banner (muncul sekilas di atas) dan daftar notifikasi
+// dikendalikan terpisah.
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
     shouldPlaySound: true,
     shouldSetBadge: false,
   }),

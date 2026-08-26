@@ -31,9 +31,12 @@ export default function App() {
         initialRouteName={token ? 'Dashboard' : 'Login'}
         screenOptions={{ headerShown: false }}
       >
+        {/* Dashboard dan Camera memakai kepala layarnya sendiri (hero biru
+            dan bilah gelap di atas kamera), jadi header bawaan navigator
+            dimatikan supaya tidak bertumpuk dua. */}
         <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen name="Dashboard" component={DashboardScreen} options={{ headerShown: true, title: 'Cloud Absen' }} />
-        <Stack.Screen name="Camera" component={CameraScreen} options={{ headerShown: true, title: 'Ambil Foto Absensi' }} />
+        <Stack.Screen name="Dashboard" component={DashboardScreen} />
+        <Stack.Screen name="Camera" component={CameraScreen} />
         <Stack.Screen name="Leaves" component={LeavesScreen} options={{ headerShown: true, title: 'Pengajuan Izin' }} />
         <Stack.Screen name="History" component={HistoryScreen} options={{ headerShown: true, title: 'Riwayat Absensi' }} />
       </Stack.Navigator>
