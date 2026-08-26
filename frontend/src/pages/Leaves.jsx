@@ -101,37 +101,37 @@ export default function Leaves() {
     : 0;
 
   const inputClass =
-    'w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm transition focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/40';
+    'w-full px-3 py-2.5 bg-surface-2 border border-line rounded-xl text-sm transition focus:outline-none focus:bg-surface/75 backdrop-blur-xl focus:ring-2 focus:ring-primary-500/40';
 
   return (
-    <div className="min-h-screen bg-gray-50 px-4 py-6">
+    <div className="min-h-screen px-4 py-6">
       <div className="max-w-md mx-auto">
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition mb-5"
+          className="flex items-center gap-1.5 text-sm text-muted hover:text-strong transition mb-5"
         >
           <ArrowLeftIcon className="w-4 h-4" /> Kembali
         </button>
 
-        <h1 className="text-xl font-bold text-gray-900 tracking-tight mb-1">Pengajuan Izin</h1>
-        <p className="text-sm text-gray-500 mb-6">
+        <h1 className="text-xl font-bold text-strong tracking-tight mb-1">Pengajuan Izin</h1>
+        <p className="text-sm text-muted mb-6">
           Ajukan izin, sakit, atau cuti. Status berubah setelah direview admin.
         </p>
 
         {message && (
-          <div className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3 mb-4 font-medium">
+          <div className="text-sm text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-100 dark:border-emerald-500/30 rounded-xl px-4 py-3 mb-4 font-medium">
             ✓ {message}
           </div>
         )}
         {error && (
-          <div className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-3 mb-4">
+          <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/15 border border-red-100 dark:border-red-500/30 rounded-xl px-4 py-3 mb-4">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-gray-100 shadow-soft p-5 space-y-4 mb-6">
+        <form onSubmit={handleSubmit} className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft p-5 space-y-4 mb-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Jenis pengajuan</label>
+            <label className="block text-sm font-medium text-body mb-1.5">Jenis pengajuan</label>
             <div className="grid grid-cols-3 gap-2">
               {JENIS.map((j) => (
                 <button
@@ -141,19 +141,19 @@ export default function Leaves() {
                   className={`py-2 rounded-xl text-sm font-semibold border transition ${
                     form.type === j.id
                       ? 'bg-primary-600 text-white border-primary-600 shadow-glow'
-                      : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-gray-300'
+                      : 'bg-surface-2 text-body border-line hover:border-line-strong'
                   }`}
                 >
                   {j.label}
                 </button>
               ))}
             </div>
-            <p className="text-xs text-gray-400 mt-1.5">{jenisTerpilih.bantu}</p>
+            <p className="text-xs text-faint mt-1.5">{jenisTerpilih.bantu}</p>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Dari tanggal</label>
+              <label className="block text-sm font-medium text-body mb-1.5">Dari tanggal</label>
               <input
                 type="date"
                 required
@@ -163,7 +163,7 @@ export default function Leaves() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Sampai tanggal</label>
+              <label className="block text-sm font-medium text-body mb-1.5">Sampai tanggal</label>
               <input
                 type="date"
                 required
@@ -175,13 +175,13 @@ export default function Leaves() {
             </div>
           </div>
           {jumlahHari > 0 && (
-            <p className="text-xs text-gray-500 -mt-2">
+            <p className="text-xs text-muted -mt-2">
               {jumlahHari} hari kalender.
             </p>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Alasan</label>
+            <label className="block text-sm font-medium text-body mb-1.5">Alasan</label>
             <textarea
               required
               rows={3}
@@ -193,21 +193,21 @@ export default function Leaves() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              Lampiran <span className="text-gray-400 font-normal">(opsional)</span>
+            <label className="block text-sm font-medium text-body mb-1.5">
+              Lampiran <span className="text-faint font-normal">(opsional)</span>
             </label>
             {berkas ? (
-              <div className="flex items-center justify-between gap-2 px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl">
-                <p className="text-sm text-gray-700 truncate">
+              <div className="flex items-center justify-between gap-2 px-3 py-2.5 bg-surface-2 border border-line rounded-xl">
+                <p className="text-sm text-body truncate">
                   {berkas.name}
-                  <span className="text-xs text-gray-400 ml-1.5">
+                  <span className="text-xs text-faint ml-1.5">
                     {berkas.size < 1024 ? '<1' : (berkas.size / 1024).toFixed(0)} KB
                   </span>
                 </p>
                 <button
                   type="button"
                   onClick={hapusBerkas}
-                  className="text-xs font-semibold text-red-500 hover:text-red-600 transition shrink-0"
+                  className="text-xs font-semibold text-red-500 hover:text-red-600 dark:text-red-400 transition shrink-0"
                 >
                   Hapus
                 </button>
@@ -218,10 +218,10 @@ export default function Leaves() {
                 type="file"
                 accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
                 onChange={pilihBerkas}
-                className="w-full text-sm text-gray-600 file:mr-3 file:py-2 file:px-3.5 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 file:cursor-pointer"
+                className="w-full text-sm text-body file:mr-3 file:py-2 file:px-3.5 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-surface-3 file:text-body hover:file:bg-surface-3 file:cursor-pointer"
               />
             )}
-            <p className="text-xs text-gray-400 mt-1.5">
+            <p className="text-xs text-faint mt-1.5">
               Surat dokter, surat tugas, atau surat cuti. PDF/JPG/PNG maks. 5MB.
             </p>
           </div>
@@ -235,38 +235,38 @@ export default function Leaves() {
           </button>
         </form>
 
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-soft overflow-hidden">
-          <p className="text-sm font-semibold text-gray-900 px-5 pt-4 pb-2">Riwayat Pengajuan</p>
+        <div className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft overflow-hidden">
+          <p className="text-sm font-semibold text-strong px-5 pt-4 pb-2">Riwayat Pengajuan</p>
           {leaves.map((item) => (
-            <div key={item.id} className="px-5 py-3.5 border-t border-gray-50 hover:bg-gray-50/60 transition">
+            <div key={item.id} className="px-5 py-3.5 border-t border-line hover:bg-surface-2/60 transition">
               <div className="flex justify-between items-center gap-2 mb-1">
                 <div className="flex items-center gap-2 min-w-0">
                   <JenisBadge jenis={item.type} />
-                  <p className="text-sm font-medium text-gray-900 truncate">
+                  <p className="text-sm font-medium text-strong truncate">
                     {formatTanggal(item.start_date)}
                     {item.start_date !== item.end_date && ` — ${formatTanggal(item.end_date)}`}
                   </p>
                 </div>
                 <StatusBadge status={item.status} />
               </div>
-              <p className="text-xs text-gray-500">{item.reason}</p>
+              <p className="text-xs text-muted">{item.reason}</p>
               {item.document_url && (
                 <a
                   href={urlFoto(item.document_url, tokenFoto)}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-block text-xs font-semibold text-primary-600 hover:underline mt-1"
+                  className="inline-block text-xs font-semibold text-primary-600 dark:text-primary-400 hover:underline mt-1"
                 >
                   Lihat lampiran{item.document_name ? ` — ${item.document_name}` : ''}
                 </a>
               )}
               {item.admin_note && (
-                <p className="text-xs text-gray-400 mt-1 italic">Catatan admin: {item.admin_note}</p>
+                <p className="text-xs text-faint mt-1 italic">Catatan admin: {item.admin_note}</p>
               )}
             </div>
           ))}
           {leaves.length === 0 && (
-            <p className="text-sm text-gray-400 px-5 py-8 text-center">Belum ada pengajuan.</p>
+            <p className="text-sm text-faint px-5 py-8 text-center">Belum ada pengajuan.</p>
           )}
         </div>
       </div>

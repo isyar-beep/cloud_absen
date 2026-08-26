@@ -11,6 +11,23 @@
       rel="stylesheet"
     />
     <title>Cloud Absen</title>
+    <script>
+      // Tema dipasang SEBELUM React jalan. Kalau menunggu komponen ter-mount,
+      // halaman sempat tergambar putih terang sepersekian detik sebelum
+      // berubah gelap -- kedipan yang menyilaukan di ruangan gelap.
+      (function () {
+        try {
+          var pilihan = localStorage.getItem('cloud_absen_tema') || 'sistem';
+          var gelap =
+            pilihan === 'gelap' ||
+            (pilihan === 'sistem' &&
+              window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (gelap) document.documentElement.classList.add('dark');
+        } catch (e) {
+          // localStorage diblokir -- biarkan mode terang.
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -103,24 +103,24 @@ export default function AdminShifts() {
   }
 
   const inputClass =
-    'px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm transition focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/40 focus:border-primary-300';
-  const labelClass = 'block text-xs font-medium text-gray-500 mb-1.5';
+    'px-3.5 py-2.5 bg-surface-2 border border-line rounded-xl text-sm transition focus:outline-none focus:bg-surface/75 backdrop-blur-xl focus:ring-2 focus:ring-primary-500/40 focus:border-primary-300';
+  const labelClass = 'block text-xs font-medium text-muted mb-1.5';
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       <AdminHeader />
 
       <div className="max-w-4xl mx-auto px-4 py-7">
         <div className="mb-5">
-          <h1 className="text-xl font-bold text-gray-900 tracking-tight">Shift &amp; WFA</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <h1 className="text-xl font-bold text-strong tracking-tight">Shift &amp; WFA</h1>
+          <p className="text-sm text-muted mt-0.5">
             {tab === 'shift'
               ? `${shifts.length} shift terdaftar — menentukan batas jam telat dan jendela waktu absen`
               : 'Tetapkan rentang tanggal pegawai bekerja dari luar kantor'}
           </p>
         </div>
 
-        <div className="flex gap-2 mb-5 border-b border-gray-200">
+        <div className="flex gap-2 mb-5 border-b border-line">
           {[
             { key: 'shift', label: 'Shift Kerja' },
             { key: 'wfa', label: 'WFA' },
@@ -130,8 +130,8 @@ export default function AdminShifts() {
               onClick={() => setTab(t.key)}
               className={`px-4 py-2.5 text-sm font-semibold border-b-2 -mb-px transition ${
                 tab === t.key
-                  ? 'border-primary-600 text-primary-700'
-                  : 'border-transparent text-gray-500 hover:text-gray-800'
+                  ? 'border-primary-600 text-primary-700 dark:text-primary-300'
+                  : 'border-transparent text-muted hover:text-strong'
               }`}
             >
               {t.label}
@@ -154,10 +154,10 @@ export default function AdminShifts() {
         </div>
 
         {showForm && (
-          <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-gray-100 shadow-soft p-5 mb-6 space-y-4">
-            <p className="text-sm font-semibold text-gray-900">{editingId ? 'Edit Shift' : 'Shift Baru'}</p>
+          <form onSubmit={handleSubmit} className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft p-5 mb-6 space-y-4">
+            <p className="text-sm font-semibold text-strong">{editingId ? 'Edit Shift' : 'Shift Baru'}</p>
             {error && (
-              <div className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-2.5">
+              <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/15 border border-red-100 dark:border-red-500/30 rounded-xl px-4 py-2.5">
                 {error}
               </div>
             )}
@@ -194,15 +194,15 @@ export default function AdminShifts() {
               </div>
             </div>
             {lintasHari(form.start_time, form.end_time) && (
-              <p className="text-xs text-violet-700 bg-violet-50 border border-violet-100 rounded-xl px-3 py-2">
+              <p className="text-xs text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-500/15 border border-violet-100 dark:border-violet-500/30 rounded-xl px-3 py-2">
                 Shift ini menyeberang tengah malam. Absen masuk dan absen pulangnya
                 tetap dihitung sebagai satu shift yang sama, meski jatuh di dua tanggal.
               </p>
             )}
 
             <div>
-              <p className="text-xs font-semibold text-gray-700 mb-1">Jendela waktu absen</p>
-              <p className="text-xs text-gray-400 mb-2.5">
+              <p className="text-xs font-semibold text-body mb-1">Jendela waktu absen</p>
+              <p className="text-xs text-faint mb-2.5">
                 Di luar jendela ini absen ditolak. Dihitung dalam menit terhadap jam
                 shift, jadi aturannya ikut bergeser kalau jam shift diubah.
               </p>
@@ -219,32 +219,32 @@ export default function AdminShifts() {
                       onChange={(e) => setForm({ ...form, [f.key]: e.target.value === '' ? '' : Number(e.target.value) })}
                       className={`${inputClass} w-full`}
                     />
-                    <p className="text-[11px] text-gray-400 mt-1">{f.bantu}</p>
+                    <p className="text-[11px] text-faint mt-1">{f.bantu}</p>
                   </div>
                 ))}
               </div>
-              <p className="text-xs text-gray-500 mt-2.5">
+              <p className="text-xs text-muted mt-2.5">
                 Absen masuk: <span className="font-semibold tabular-nums">{geserJam(form.start_time, -form.checkin_open_minutes)}–{geserJam(form.start_time, form.checkin_close_minutes)}</span>
                 {' · '}
                 Absen pulang: <span className="font-semibold tabular-nums">{geserJam(form.end_time, -form.checkout_open_minutes)}–{geserJam(form.end_time, form.checkout_close_minutes)}</span>
               </p>
             </div>
 
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-faint">
               Pegawai yang check-in setelah jam masuk shift ini otomatis tercatat "terlambat".
             </p>
             <div className="flex gap-2">
               <button
                 type="submit"
                 disabled={loading}
-                className="bg-gray-900 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition hover:bg-gray-800 disabled:opacity-50"
+                className="bg-ink text-on-ink px-5 py-2.5 rounded-xl text-sm font-semibold transition hover:bg-ink/90 disabled:opacity-50"
               >
                 {loading ? 'Menyimpan...' : 'Simpan Shift'}
               </button>
               <button
                 type="button"
                 onClick={() => setShowForm(false)}
-                className="text-sm text-gray-500 px-3 hover:text-gray-700 transition"
+                className="text-sm text-muted px-3 hover:text-body transition"
               >
                 Batal
               </button>
@@ -252,35 +252,35 @@ export default function AdminShifts() {
           </form>
         )}
 
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-soft overflow-x-auto">
+        <div className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100">
-                <th className="text-left px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Shift</th>
-                <th className="text-left px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Jam Kerja</th>
-                <th className="text-left px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Jendela Absen</th>
-                <th className="text-left px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Pegawai</th>
-                <th className="text-right px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Aksi</th>
+              <tr className="border-b border-line">
+                <th className="text-left px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Shift</th>
+                <th className="text-left px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Jam Kerja</th>
+                <th className="text-left px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Jendela Absen</th>
+                <th className="text-left px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Pegawai</th>
+                <th className="text-right px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Aksi</th>
               </tr>
             </thead>
             <tbody>
               {shifts.map((s) => (
-                <tr key={s.id} className="border-b border-gray-50 last:border-b-0 hover:bg-gray-50/60 transition">
-                  <td className="px-5 py-3.5 font-medium text-gray-900">{s.name}</td>
-                  <td className="px-5 py-3.5 text-gray-600 tabular-nums whitespace-nowrap">
+                <tr key={s.id} className="border-b border-line last:border-b-0 hover:bg-surface-2/60 transition">
+                  <td className="px-5 py-3.5 font-medium text-strong">{s.name}</td>
+                  <td className="px-5 py-3.5 text-body tabular-nums whitespace-nowrap">
                     {s.start_time} — {s.end_time}
-                    {s.lintas_hari && <span className="text-[11px] text-violet-600 ml-1.5">+1 hari</span>}
+                    {s.lintas_hari && <span className="text-[11px] text-violet-600 dark:text-violet-400 ml-1.5">+1 hari</span>}
                   </td>
-                  <td className="px-5 py-3.5 text-gray-500 text-xs tabular-nums whitespace-nowrap">
+                  <td className="px-5 py-3.5 text-muted text-xs tabular-nums whitespace-nowrap">
                     <div>Masuk {geserJam(s.start_time, -s.checkin_open_minutes)}–{geserJam(s.start_time, s.checkin_close_minutes)}</div>
                     <div>Pulang {geserJam(s.end_time, -s.checkout_open_minutes)}–{geserJam(s.end_time, s.checkout_close_minutes)}</div>
                   </td>
-                  <td className="px-5 py-3.5 text-gray-600">{s.jumlah_pegawai} orang</td>
+                  <td className="px-5 py-3.5 text-body">{s.jumlah_pegawai} orang</td>
                   <td className="px-5 py-3.5 text-right space-x-3">
-                    <button onClick={() => openEditForm(s)} className="text-xs font-semibold text-primary-600 hover:text-primary-700 transition">
+                    <button onClick={() => openEditForm(s)} className="text-xs font-semibold text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 dark:text-primary-300 transition">
                       Edit
                     </button>
-                    <button onClick={() => handleDelete(s)} className="text-xs font-semibold text-red-500 hover:text-red-600 transition">
+                    <button onClick={() => handleDelete(s)} className="text-xs font-semibold text-red-500 hover:text-red-600 dark:text-red-400 transition">
                       Hapus
                     </button>
                   </td>
@@ -288,7 +288,7 @@ export default function AdminShifts() {
               ))}
               {shifts.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="text-center text-sm text-gray-400 px-5 py-12">
+                  <td colSpan={5} className="text-center text-sm text-faint px-5 py-12">
                     Belum ada shift. Tambahkan shift pertama.
                   </td>
                 </tr>

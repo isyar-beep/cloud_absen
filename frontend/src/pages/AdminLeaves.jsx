@@ -60,20 +60,20 @@ export default function AdminLeaves() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       <AdminHeader />
 
       <div className="max-w-4xl mx-auto px-4 py-7">
         <div className="mb-5">
-          <h1 className="text-xl font-bold text-gray-900 tracking-tight">Pengajuan Pegawai</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <h1 className="text-xl font-bold text-strong tracking-tight">Pengajuan Pegawai</h1>
+          <p className="text-sm text-muted mt-0.5">
             {tab === 'izin'
               ? 'Review pengajuan izin, sakit, dan cuti dari pegawai'
               : 'Review usulan koreksi jam absen dari pegawai'}
           </p>
         </div>
 
-        <div className="flex gap-2 mb-5 border-b border-gray-200">
+        <div className="flex gap-2 mb-5 border-b border-line">
           {[
             { key: 'izin', label: 'Izin, Sakit & Cuti' },
             { key: 'koreksi', label: 'Koreksi Absensi' },
@@ -83,8 +83,8 @@ export default function AdminLeaves() {
               onClick={() => setTab(t.key)}
               className={`px-4 py-2.5 text-sm font-semibold border-b-2 -mb-px transition ${
                 tab === t.key
-                  ? 'border-primary-600 text-primary-700'
-                  : 'border-transparent text-gray-500 hover:text-gray-800'
+                  ? 'border-primary-600 text-primary-700 dark:text-primary-300'
+                  : 'border-transparent text-muted hover:text-strong'
               }`}
             >
               {t.label}
@@ -98,7 +98,7 @@ export default function AdminLeaves() {
         <>
 
         {error && (
-          <div className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-3 mb-4">
+          <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/15 border border-red-100 dark:border-red-500/30 rounded-xl px-4 py-3 mb-4">
             {error}
           </div>
         )}
@@ -112,14 +112,14 @@ export default function AdminLeaves() {
               className={`text-sm px-4 py-2 rounded-full font-medium transition ${
                 filter === f.key
                   ? 'bg-primary-600 text-white shadow-glow'
-                  : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-300 hover:text-gray-900'
+                  : 'bg-surface/75 backdrop-blur-xl border border-line text-body hover:border-line-strong hover:text-strong'
               }`}
             >
               {f.label}
             </button>
           ))}
 
-          <span className="w-px bg-gray-200 mx-1 self-stretch" />
+          <span className="w-px bg-surface-3 mx-1 self-stretch" />
 
           {[
             { key: '', label: 'Semua jenis' },
@@ -132,8 +132,8 @@ export default function AdminLeaves() {
               onClick={() => setJenis(j.key)}
               className={`text-sm px-4 py-2 rounded-full font-medium transition ${
                 jenis === j.key
-                  ? 'bg-gray-900 text-white'
-                  : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-300 hover:text-gray-900'
+                  ? 'bg-ink text-on-ink'
+                  : 'bg-surface/75 backdrop-blur-xl border border-line text-body hover:border-line-strong hover:text-strong'
               }`}
             >
               {j.label}
@@ -143,13 +143,13 @@ export default function AdminLeaves() {
 
         <div className="space-y-3">
           {leaves.map((item) => (
-            <div key={item.id} className="bg-white rounded-2xl border border-gray-100 shadow-soft p-5">
+            <div key={item.id} className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft p-5">
               <div className="flex justify-between items-start gap-3 mb-3">
                 <div className="flex items-center gap-2.5 min-w-0">
                   <Avatar name={item.name} src={item.avatar_url} size={34} />
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 truncate">{item.name}</p>
-                    <p className="text-xs text-gray-400">{item.department || '—'}</p>
+                    <p className="text-sm font-semibold text-strong truncate">{item.name}</p>
+                    <p className="text-xs text-faint">{item.department || '—'}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
@@ -158,18 +158,18 @@ export default function AdminLeaves() {
                 </div>
               </div>
 
-              <div className="bg-gray-50 rounded-xl px-4 py-3 mb-3">
-                <p className="text-sm font-medium text-gray-800">
+              <div className="bg-surface-2 rounded-xl px-4 py-3 mb-3">
+                <p className="text-sm font-medium text-strong">
                   {formatTanggal(item.start_date)}
                   {item.start_date !== item.end_date && ` — ${formatTanggal(item.end_date)}`}
                 </p>
-                <p className="text-sm text-gray-500 mt-1">{item.reason}</p>
+                <p className="text-sm text-muted mt-1">{item.reason}</p>
                 {item.document_url && (
                   <a
                     href={urlFoto(item.document_url, tokenFoto)}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-block text-xs font-semibold text-primary-600 hover:underline mt-2"
+                    className="inline-block text-xs font-semibold text-primary-600 dark:text-primary-400 hover:underline mt-2"
                   >
                     Buka lampiran{item.document_name ? ` — ${item.document_name}` : ''}
                   </a>
@@ -179,19 +179,19 @@ export default function AdminLeaves() {
               {item.status === 'pending' && reviewingId !== item.id && (
                 <button
                   onClick={() => { setReviewingId(item.id); setNote(''); }}
-                  className="text-sm text-primary-600 font-semibold hover:text-primary-700 transition"
+                  className="text-sm text-primary-600 dark:text-primary-400 font-semibold hover:text-primary-700 dark:hover:text-primary-300 dark:text-primary-300 transition"
                 >
                   Review Pengajuan →
                 </button>
               )}
 
               {reviewingId === item.id && (
-                <div className="border-t border-gray-100 pt-4 space-y-3">
+                <div className="border-t border-line pt-4 space-y-3">
                   <input
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
                     placeholder="Catatan admin (opsional)"
-                    className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm transition focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/40"
+                    className="w-full px-3.5 py-2.5 bg-surface-2 border border-line rounded-xl text-sm transition focus:outline-none focus:bg-surface/75 backdrop-blur-xl focus:ring-2 focus:ring-primary-500/40"
                   />
                   <div className="flex gap-2">
                     <button
@@ -208,7 +208,7 @@ export default function AdminLeaves() {
                     </button>
                     <button
                       onClick={() => setReviewingId(null)}
-                      className="text-sm text-gray-500 px-3 hover:text-gray-700 transition"
+                      className="text-sm text-muted px-3 hover:text-body transition"
                     >
                       Batal
                     </button>
@@ -217,8 +217,8 @@ export default function AdminLeaves() {
               )}
 
               {item.status !== 'pending' && (
-                <p className="text-xs text-gray-400 border-t border-gray-100 pt-3">
-                  Direview oleh <span className="font-medium text-gray-500">{item.reviewed_by_name || '—'}</span>
+                <p className="text-xs text-faint border-t border-line pt-3">
+                  Direview oleh <span className="font-medium text-muted">{item.reviewed_by_name || '—'}</span>
                   {item.admin_note && <span className="italic"> — "{item.admin_note}"</span>}
                 </p>
               )}
@@ -226,8 +226,8 @@ export default function AdminLeaves() {
           ))}
 
           {leaves.length === 0 && (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-soft py-14 text-center">
-              <p className="text-sm text-gray-400">Tidak ada pengajuan.</p>
+            <div className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft py-14 text-center">
+              <p className="text-sm text-faint">Tidak ada pengajuan.</p>
             </div>
           )}
         </div>

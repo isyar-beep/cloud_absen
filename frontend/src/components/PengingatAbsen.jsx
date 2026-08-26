@@ -79,26 +79,26 @@ export default function PengingatAbsen() {
   }
 
   return (
-    <div className="border border-gray-100 rounded-xl p-4">
+    <div className="border border-line rounded-xl p-4">
       <div className="flex items-center justify-between gap-2 mb-1">
         <div className="flex items-center gap-2.5">
-          <span className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+          <span className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
             <ClockIcon className="w-4 h-4" />
           </span>
-          <p className="text-sm font-semibold text-gray-900">Pengingat Absen</p>
+          <p className="text-sm font-semibold text-strong">Pengingat Absen</p>
         </div>
         <button
           onClick={ambil}
-          className="text-xs text-gray-400 hover:text-gray-600 transition"
+          className="text-xs text-faint hover:text-body transition"
         >
           Muat ulang
         </button>
       </div>
 
-      {memuat && <p className="text-xs text-gray-400 mt-3">Memuat daftar…</p>}
+      {memuat && <p className="text-xs text-faint mt-3">Memuat daftar…</p>}
 
       {!memuat && daftar.length === 0 && (
-        <p className="text-xs text-emerald-600 mt-3">
+        <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-3">
           Tidak ada yang perlu diingatkan. Pegawai yang jam kerjanya belum
           dibuka tidak ikut didaftar di sini.
         </p>
@@ -107,13 +107,13 @@ export default function PengingatAbsen() {
       {!memuat && daftar.length > 0 && (
         <>
           <div className="flex items-center justify-between gap-2 mt-3 mb-2">
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted">
               {daftar.length} pegawai belum absen &mdash; jam kerjanya sudah dibuka
             </p>
             {bisaDikirimi.length > 0 && (
               <button
                 onClick={toggleSemua}
-                className="text-xs font-semibold text-primary-600 hover:text-primary-700 transition"
+                className="text-xs font-semibold text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 dark:text-primary-300 transition"
               >
                 {semuaTerpilih ? 'Kosongkan pilihan' : 'Pilih semua'}
               </button>
@@ -126,10 +126,10 @@ export default function PengingatAbsen() {
                 key={r.id}
                 className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg border transition ${
                   !r.bisa_dikirimi
-                    ? 'border-gray-100 bg-gray-50/60 cursor-not-allowed'
+                    ? 'border-line bg-surface-2/60 cursor-not-allowed'
                     : terpilih.has(r.id)
-                      ? 'border-primary-200 bg-primary-50/60 cursor-pointer'
-                      : 'border-gray-100 hover:border-gray-200 cursor-pointer'
+                      ? 'border-primary-200 dark:border-primary-500/35 bg-primary-50/60 dark:bg-primary-500/15 cursor-pointer'
+                      : 'border-line hover:border-line-strong cursor-pointer'
                 }`}
               >
                 <input
@@ -137,29 +137,29 @@ export default function PengingatAbsen() {
                   disabled={!r.bisa_dikirimi}
                   checked={terpilih.has(r.id)}
                   onChange={() => toggle(r.id)}
-                  className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500/40 disabled:opacity-40"
+                  className="w-4 h-4 rounded border-line-strong text-primary-600 dark:text-primary-400 focus:ring-primary-500/40 disabled:opacity-40"
                 />
                 <Avatar name={r.name} src={r.avatar_url} size={26} />
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-medium text-gray-900 truncate">{r.name}</p>
-                  <p className="text-[11px] text-gray-400 truncate">
+                  <p className="text-xs font-medium text-strong truncate">{r.name}</p>
+                  <p className="text-[11px] text-faint truncate">
                     {r.department || 'Tanpa departemen'}
                     {r.shift_name && ` · ${r.shift_name} ${String(r.shift_start).slice(0, 5)}`}
                   </p>
                 </div>
                 {!r.bisa_dikirimi && (
-                  <span className="text-[10px] text-gray-400 shrink-0">belum pakai aplikasi</span>
+                  <span className="text-[10px] text-faint shrink-0">belum pakai aplikasi</span>
                 )}
               </label>
             ))}
           </div>
 
-          <label className="flex items-center gap-2 mt-3 text-xs text-gray-600 cursor-pointer">
+          <label className="flex items-center gap-2 mt-3 text-xs text-body cursor-pointer">
             <input
               type="checkbox"
               checked={pakaiPesan}
               onChange={(e) => setPakaiPesan(e.target.checked)}
-              className="w-3.5 h-3.5 rounded border-gray-300 text-primary-600 focus:ring-primary-500/40"
+              className="w-3.5 h-3.5 rounded border-line-strong text-primary-600 dark:text-primary-400 focus:ring-primary-500/40"
             />
             Tulis pesan sendiri
           </label>
@@ -170,7 +170,7 @@ export default function PengingatAbsen() {
               value={pesanKustom}
               onChange={(e) => setPesanKustom(e.target.value)}
               placeholder="mis. Mohon segera absen, rapat pagi dimulai pukul 09.00"
-              className="w-full mt-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs resize-none transition focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/40"
+              className="w-full mt-2 px-3 py-2 bg-surface-2 border border-line rounded-xl text-xs resize-none transition focus:outline-none focus:bg-surface/75 backdrop-blur-xl focus:ring-2 focus:ring-primary-500/40"
             />
           )}
 
@@ -187,14 +187,14 @@ export default function PengingatAbsen() {
           </button>
 
           {tanpaAplikasi > 0 && (
-            <p className="text-[11px] text-gray-400 mt-2">
+            <p className="text-[11px] text-faint mt-2">
               {tanpaAplikasi} pegawai belum bisa dikirimi notifikasi — perlu login dulu di aplikasi mobile.
             </p>
           )}
         </>
       )}
 
-      {hasil && <p className="text-xs text-gray-600 mt-2.5">{hasil}</p>}
+      {hasil && <p className="text-xs text-body mt-2.5">{hasil}</p>}
     </div>
   );
 }

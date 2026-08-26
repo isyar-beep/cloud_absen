@@ -73,28 +73,28 @@ export default function EditAbsensiModal({ baris, onTutup, onSimpan }) {
   }
 
   const inputClass =
-    'w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm transition focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/40';
-  const labelClass = 'block text-xs font-medium text-gray-500 mb-1.5';
+    'w-full px-3 py-2 bg-surface-2 border border-line rounded-xl text-sm transition focus:outline-none focus:bg-surface/75 backdrop-blur-xl focus:ring-2 focus:ring-primary-500/40';
+  const labelClass = 'block text-xs font-medium text-muted mb-1.5';
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-gray-900/50 backdrop-blur-sm flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 bg-slate-950/55 dark:bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4"
       onClick={onTutup}
     >
       <div
-        className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
+        className="bg-surface/90 backdrop-blur-2xl border border-line rounded-2xl shadow-glass w-full max-w-lg max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="px-5 py-4 border-b border-gray-100">
-          <p className="text-sm font-bold text-gray-900">Koreksi Absensi</p>
-          <p className="text-xs text-gray-500 mt-0.5">
+        <div className="px-5 py-4 border-b border-line">
+          <p className="text-sm font-bold text-strong">Koreksi Absensi</p>
+          <p className="text-xs text-muted mt-0.5">
             {baris.name} · {formatTanggalHari(baris.date)}
           </p>
         </div>
 
         <form onSubmit={simpan} className="p-5 space-y-4">
           {error && (
-            <div className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-2.5">
+            <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/15 border border-red-100 dark:border-red-500/30 rounded-xl px-4 py-2.5">
               {error}
             </div>
           )}
@@ -156,7 +156,7 @@ export default function EditAbsensiModal({ baris, onTutup, onSimpan }) {
               placeholder="mis. Mesin absen error, dikonfirmasi ke atasan"
               className={`${inputClass} resize-none`}
             />
-            <p className="text-[11px] text-gray-400 mt-1">
+            <p className="text-[11px] text-faint mt-1">
               Tersimpan di jejak audit bersama nilai lama dan nama Anda. Tidak bisa dihapus.
             </p>
           </div>
@@ -165,14 +165,14 @@ export default function EditAbsensiModal({ baris, onTutup, onSimpan }) {
             <button
               type="submit"
               disabled={loading}
-              className="bg-gray-900 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition hover:bg-gray-800 disabled:opacity-50"
+              className="bg-ink text-on-ink px-5 py-2.5 rounded-xl text-sm font-semibold transition hover:bg-ink/90 disabled:opacity-50"
             >
               {loading ? 'Menyimpan...' : 'Simpan Perubahan'}
             </button>
             <button
               type="button"
               onClick={onTutup}
-              className="text-sm text-gray-500 px-3 hover:text-gray-700 transition"
+              className="text-sm text-muted px-3 hover:text-body transition"
             >
               Batal
             </button>
@@ -181,19 +181,19 @@ export default function EditAbsensiModal({ baris, onTutup, onSimpan }) {
 
         {riwayat.length > 0 && (
           <div className="px-5 pb-5">
-            <p className="text-xs font-semibold text-gray-700 mb-2">
+            <p className="text-xs font-semibold text-body mb-2">
               Jejak perubahan ({riwayat.length})
             </p>
             <div className="space-y-2">
               {riwayat.map((e) => (
-                <div key={e.id} className="text-[11px] bg-gray-50 border border-gray-100 rounded-xl px-3 py-2">
-                  <p className="text-gray-700">
+                <div key={e.id} className="text-[11px] bg-surface-2 border border-line rounded-xl px-3 py-2">
+                  <p className="text-body">
                     <span className="font-semibold">{LABEL_KOLOM[e.field] || e.field}</span>:{' '}
-                    <span className="text-gray-400 line-through">{nilaiTampil(e.field, e.old_value)}</span>
+                    <span className="text-faint line-through">{nilaiTampil(e.field, e.old_value)}</span>
                     {' → '}
-                    <span className="font-medium text-gray-900">{nilaiTampil(e.field, e.new_value)}</span>
+                    <span className="font-medium text-strong">{nilaiTampil(e.field, e.new_value)}</span>
                   </p>
-                  <p className="text-gray-500 mt-0.5">
+                  <p className="text-muted mt-0.5">
                     {e.edited_by_name || 'Pengguna terhapus'} · {formatTanggalHari(e.created_at)}
                     {e.note ? ` · ${e.note}` : ''}
                   </p>
@@ -204,7 +204,7 @@ export default function EditAbsensiModal({ baris, onTutup, onSimpan }) {
         )}
 
         {riwayat.length === 0 && (
-          <p className="px-5 pb-5 text-[11px] text-gray-400">
+          <p className="px-5 pb-5 text-[11px] text-faint">
             Belum pernah diubah. <StatusBadge status={baris.status} /> tercatat dari absen pegawai sendiri.
           </p>
         )}

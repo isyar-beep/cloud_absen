@@ -2,14 +2,102 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================
+   Token warna.
+   Ditulis sebagai kanal RGB terpisah (bukan #rrggbb) supaya penanda
+   opacity Tailwind seperti bg-surface/75 tetap bekerja -- itu yang
+   membuat efek kaca mungkin tanpa menulis rgba() manual di mana-mana.
+   ============================================================ */
+
+:root {
+  --c-canvas: 244 246 251;
+  --c-surface: 255 255 255;
+  --c-surface-2: 246 248 252;
+  --c-surface-3: 237 241 248;
+  --c-line: 226 232 240;
+  --c-line-strong: 203 213 225;
+  --c-strong: 15 23 42;
+  --c-body: 51 65 85;
+  --c-muted: 100 116 139;
+  --c-faint: 148 163 184;
+  --c-ink: 15 23 42;
+  --c-on-ink: 255 255 255;
+
+  --shadow-soft: 0 2px 12px -2px rgb(15 23 42 / 0.06), 0 8px 28px -8px rgb(15 23 42 / 0.08);
+  --shadow-glow: 0 8px 24px -8px rgb(37 99 235 / 0.45);
+  --shadow-glass: 0 1px 0 0 rgb(255 255 255 / 0.6) inset, 0 8px 32px -12px rgb(15 23 42 / 0.14);
+
+  /* Warna noda cahaya di latar. Inilah yang "terlihat" menembus kartu
+     kaca; tanpa sesuatu di belakangnya, backdrop-blur tidak ada efeknya. */
+  --glow-1: 59 130 246;
+  --glow-2: 139 92 246;
+  --glow-3: 45 212 191;
+  --glow-alpha: 0.16;
+
+  color-scheme: light;
+}
+
+.dark {
+  --c-canvas: 9 13 24;
+  --c-surface: 25 32 48;
+  --c-surface-2: 32 41 59;
+  --c-surface-3: 42 53 74;
+  --c-line: 51 65 88;
+  --c-line-strong: 71 88 115;
+  --c-strong: 241 245 249;
+  --c-body: 203 213 225;
+  --c-muted: 148 163 184;
+  --c-faint: 113 128 150;
+  --c-ink: 241 245 249;
+  --c-on-ink: 15 23 42;
+
+  --shadow-soft: 0 2px 12px -2px rgb(0 0 0 / 0.5), 0 8px 28px -8px rgb(0 0 0 / 0.45);
+  --shadow-glow: 0 8px 24px -8px rgb(59 130 246 / 0.55);
+  --shadow-glass: 0 1px 0 0 rgb(255 255 255 / 0.06) inset, 0 8px 32px -12px rgb(0 0 0 / 0.6);
+
+  --glow-alpha: 0.22;
+
+  color-scheme: dark;
+}
+
+html {
+  background-color: rgb(var(--c-canvas));
+}
+
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  color: rgb(var(--c-body));
+  background-color: rgb(var(--c-canvas));
+  min-height: 100vh;
+}
+
+/* Tiga noda cahaya yang menempel di viewport. Dipasang lewat body::before
+   supaya tidak ikut menggulung -- kaca yang bergerak di atas latar diam
+   terbaca sebagai kedalaman, sedangkan latar yang ikut bergerak justru
+   membuat efeknya hilang. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(46rem 34rem at 12% -8%, rgb(var(--glow-1) / var(--glow-alpha)), transparent 60%),
+    radial-gradient(40rem 30rem at 88% 4%, rgb(var(--glow-2) / var(--glow-alpha)), transparent 62%),
+    radial-gradient(38rem 30rem at 60% 100%, rgb(var(--glow-3) / calc(var(--glow-alpha) * 0.75)), transparent 60%);
+}
+
+/* Transisi hanya untuk warna, dan hanya saat tema berpindah. Kalau
+   dipasang permanen, setiap hover ikut melambat dan aplikasi terasa berat. */
+.ganti-tema,
+.ganti-tema * {
+  transition: background-color 220ms ease, border-color 220ms ease, color 220ms ease;
 }
 
 ::selection {
-  background-color: #bfdbfe;
+  background-color: rgb(var(--glow-1) / 0.28);
 }
 
 /* Scrollbar tipis dan halus untuk daftar panjang */
@@ -18,9 +106,17 @@ body {
   height: 6px;
 }
 ::-webkit-scrollbar-thumb {
-  background-color: #d1d5db;
+  background-color: rgb(var(--c-line-strong));
   border-radius: 999px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
+}
+
+/* Kalender & jam bawaan browser pada <input type="date"> menampilkan ikon
+   gelap yang nyaris tak terlihat di mode gelap. */
+.dark input[type='date']::-webkit-calendar-picker-indicator,
+.dark input[type='time']::-webkit-calendar-picker-indicator,
+.dark input[type='month']::-webkit-calendar-picker-indicator {
+  filter: invert(1) opacity(0.65);
 }

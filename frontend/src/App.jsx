@@ -1,4 +1,6 @@
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useThemeStore } from './store/themeStore';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Attendance from './pages/Attendance';
@@ -15,6 +17,11 @@ import AdminLeaves from './pages/AdminLeaves';
 import ProtectedRoute from './components/ProtectedRoute';
 
 export default function App() {
+  const mulaiTema = useThemeStore((s) => s.mulai);
+
+  // Memasang kelas `dark` dan mendengarkan perubahan setelan sistem.
+  useEffect(() => mulaiTema(), [mulaiTema]);
+
   return (
     <BrowserRouter>
       <Routes>

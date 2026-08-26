@@ -53,22 +53,22 @@ export default function AdminHistory() {
 
 
   const inputClass =
-    'w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm transition focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/40';
+    'w-full px-2.5 py-2 bg-surface-2 border border-line rounded-xl text-sm transition focus:outline-none focus:bg-surface/75 backdrop-blur-xl focus:ring-2 focus:ring-primary-500/40';
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       <AdminHeader />
 
       <div className="max-w-6xl mx-auto px-4 py-7">
         <div className="mb-6">
-          <h1 className="text-xl font-bold text-gray-900 tracking-tight">Riwayat Absensi Pegawai</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Semua catatan absensi dengan filter</p>
+          <h1 className="text-xl font-bold text-strong tracking-tight">Riwayat Absensi Pegawai</h1>
+          <p className="text-sm text-muted mt-0.5">Semua catatan absensi dengan filter</p>
         </div>
 
         {/* Filter */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-soft p-4 mb-5 grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft p-4 mb-5 grid grid-cols-2 md:grid-cols-4 gap-3">
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">Dari tanggal</label>
+            <label className="block text-xs font-medium text-muted mb-1.5">Dari tanggal</label>
             <input
               type="date"
               value={filter.start_date}
@@ -77,7 +77,7 @@ export default function AdminHistory() {
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">Sampai tanggal</label>
+            <label className="block text-xs font-medium text-muted mb-1.5">Sampai tanggal</label>
             <input
               type="date"
               value={filter.end_date}
@@ -86,7 +86,7 @@ export default function AdminHistory() {
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">Pegawai</label>
+            <label className="block text-xs font-medium text-muted mb-1.5">Pegawai</label>
             <select
               value={filter.user_id}
               onChange={(e) => setFilter({ ...filter, user_id: e.target.value })}
@@ -99,7 +99,7 @@ export default function AdminHistory() {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">Status</label>
+            <label className="block text-xs font-medium text-muted mb-1.5">Status</label>
             <select
               value={filter.status}
               onChange={(e) => setFilter({ ...filter, status: e.target.value })}
@@ -115,32 +115,32 @@ export default function AdminHistory() {
         </div>
 
         {pesan && (
-          <div className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3 mb-4 font-medium">
+          <div className="text-sm text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-100 dark:border-emerald-500/30 rounded-xl px-4 py-3 mb-4 font-medium">
             ✓ {pesan}
           </div>
         )}
 
         {/* Tabel riwayat */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-soft overflow-x-auto">
+        <div className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100">
-                <th className="text-left px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Tanggal</th>
-                <th className="text-left px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Nama</th>
-                <th className="text-left px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Masuk</th>
-                <th className="text-left px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Pulang</th>
-                <th className="text-left px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Status</th>
-                <th className="text-left px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Foto</th>
-                <th className="text-right px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Aksi</th>
+              <tr className="border-b border-line">
+                <th className="text-left px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Tanggal</th>
+                <th className="text-left px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Nama</th>
+                <th className="text-left px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Masuk</th>
+                <th className="text-left px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Pulang</th>
+                <th className="text-left px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Status</th>
+                <th className="text-left px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Foto</th>
+                <th className="text-right px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Aksi</th>
               </tr>
             </thead>
             <tbody>
               {items.map((item) => (
-                <tr key={item.id} className="border-b border-gray-50 last:border-b-0 hover:bg-gray-50/60 transition">
-                  <td className="px-5 py-3.5 text-gray-900 font-medium whitespace-nowrap">{formatTanggal(item.date)}</td>
-                  <td className="px-5 py-3.5 text-gray-900">{item.name}</td>
-                  <td className="px-5 py-3.5 text-gray-600">{formatJam(item.check_in_time)}</td>
-                  <td className="px-5 py-3.5 text-gray-600">{formatJam(item.check_out_time)}</td>
+                <tr key={item.id} className="border-b border-line last:border-b-0 hover:bg-surface-2/60 transition">
+                  <td className="px-5 py-3.5 text-strong font-medium whitespace-nowrap">{formatTanggal(item.date)}</td>
+                  <td className="px-5 py-3.5 text-strong">{item.name}</td>
+                  <td className="px-5 py-3.5 text-body">{formatJam(item.check_in_time)}</td>
+                  <td className="px-5 py-3.5 text-body">{formatJam(item.check_out_time)}</td>
                   <td className="px-5 py-3.5">
                     <span className="flex items-center gap-1.5">
                       <StatusBadge status={item.status} />
@@ -149,23 +149,23 @@ export default function AdminHistory() {
                   </td>
                   <td className="px-5 py-3.5 space-x-2 whitespace-nowrap">
                     {item.photo_in_url && (
-                      <a href={urlFoto(item.photo_in_url, tokenFoto)} target="_blank" rel="noreferrer" className="text-xs text-primary-600 font-medium hover:underline">
+                      <a href={urlFoto(item.photo_in_url, tokenFoto)} target="_blank" rel="noreferrer" className="text-xs text-primary-600 dark:text-primary-400 font-medium hover:underline">
                         Masuk
                       </a>
                     )}
                     {item.photo_out_url && (
-                      <a href={urlFoto(item.photo_out_url, tokenFoto)} target="_blank" rel="noreferrer" className="text-xs text-primary-600 font-medium hover:underline">
+                      <a href={urlFoto(item.photo_out_url, tokenFoto)} target="_blank" rel="noreferrer" className="text-xs text-primary-600 dark:text-primary-400 font-medium hover:underline">
                         Pulang
                       </a>
                     )}
                     {!item.photo_in_url && !item.photo_out_url && (
-                      <span className="text-xs text-gray-300">—</span>
+                      <span className="text-xs text-faint">—</span>
                     )}
                   </td>
                   <td className="px-5 py-3.5 text-right">
                     <button
                       onClick={() => setEdit(item)}
-                      className="text-xs font-semibold text-primary-600 hover:text-primary-700 transition"
+                      className="text-xs font-semibold text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 dark:text-primary-300 transition"
                     >
                       Koreksi
                     </button>
@@ -176,7 +176,7 @@ export default function AdminHistory() {
           </table>
 
           {items.length === 0 && !loading && (
-            <p className="text-sm text-gray-400 px-5 py-12 text-center">
+            <p className="text-sm text-faint px-5 py-12 text-center">
               Tidak ada data untuk filter ini.
             </p>
           )}
@@ -186,7 +186,7 @@ export default function AdminHistory() {
           <button
             onClick={() => fetchHistory(items.length, true)}
             disabled={loading}
-            className="w-full mt-4 bg-white border border-gray-200 text-gray-700 py-3 rounded-2xl text-sm font-semibold shadow-soft transition hover:border-gray-300 disabled:opacity-50"
+            className="w-full mt-4 bg-surface/75 backdrop-blur-xl border border-line text-body py-3 rounded-2xl text-sm font-semibold shadow-soft transition hover:border-line-strong disabled:opacity-50"
           >
             {loading ? 'Memuat...' : 'Muat Lebih Banyak'}
           </button>

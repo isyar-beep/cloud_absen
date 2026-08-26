@@ -5,9 +5,9 @@ import { urlFoto, useTokenFoto } from '../api/fileUrl';
 // beberapa halaman dan tidak pernah memakai foto sama sekali.
 
 const WARNA = [
-  'bg-primary-100 text-primary-700', 'bg-violet-100 text-violet-700',
-  'bg-emerald-100 text-emerald-700', 'bg-amber-100 text-amber-700',
-  'bg-rose-100 text-rose-700', 'bg-sky-100 text-sky-700',
+  'bg-primary-100 dark:bg-primary-500/20 text-primary-700 dark:text-primary-300', 'bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-300',
+  'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300', 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300',
+  'bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300', 'bg-sky-100 dark:bg-sky-500/20 text-sky-700 dark:text-sky-300',
 ];
 
 function inisial(nama) {
@@ -36,7 +36,7 @@ export default function Avatar({ name, src, size = 36, className = '' }) {
         src={urlFoto(src, tokenFoto)}
         alt={name || 'Foto profil'}
         style={gaya}
-        className={`rounded-full object-cover bg-gray-100 shrink-0 ${className}`}
+        className={`rounded-full object-cover bg-surface-3 shrink-0 ${className}`}
       />
     );
   }

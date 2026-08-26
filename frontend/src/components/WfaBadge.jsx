@@ -9,7 +9,7 @@ export default function WfaBadge({ mode, className = '' }) {
   return (
     <span
       title="Work From Anywhere — ditetapkan admin"
-      className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold tracking-wide bg-violet-50 text-violet-700 border border-violet-100 ${className}`}
+      className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold tracking-wide bg-violet-50 dark:bg-violet-500/15 text-violet-700 dark:text-violet-300 border border-violet-100 dark:border-violet-500/30 ${className}`}
     >
       WFA
     </span>

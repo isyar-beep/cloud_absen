@@ -94,21 +94,21 @@ export default function AdminDashboard() {
 
   const kpiCards = overview
     ? [
-        { label: 'Total Pegawai', value: overview.total_pegawai, icon: UsersIcon, chip: 'bg-primary-50 text-primary-600' },
-        { label: 'Hadir Hari Ini', value: overview.hadir_hari_ini, icon: CheckBadgeIcon, chip: 'bg-emerald-50 text-emerald-600' },
-        { label: 'Terlambat', value: overview.terlambat_hari_ini, icon: ClockIcon, chip: 'bg-amber-50 text-amber-600' },
-        { label: 'Alpha', value: overview.alpha_hari_ini, icon: AlertIcon, chip: 'bg-red-50 text-red-600' },
+        { label: 'Total Pegawai', value: overview.total_pegawai, icon: UsersIcon, chip: 'bg-primary-50 dark:bg-primary-500/15 text-primary-600 dark:text-primary-400' },
+        { label: 'Hadir Hari Ini', value: overview.hadir_hari_ini, icon: CheckBadgeIcon, chip: 'bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' },
+        { label: 'Terlambat', value: overview.terlambat_hari_ini, icon: ClockIcon, chip: 'bg-amber-50 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400' },
+        { label: 'Alpha', value: overview.alpha_hari_ini, icon: AlertIcon, chip: 'bg-red-50 dark:bg-red-500/15 text-red-600 dark:text-red-400' },
       ]
     : [];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       <AdminHeader />
 
       <div className="max-w-6xl mx-auto px-4 py-7">
         <div className="mb-6">
-          <h1 className="text-xl font-bold text-gray-900 tracking-tight">Dashboard</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <h1 className="text-xl font-bold text-strong tracking-tight">Dashboard</h1>
+          <p className="text-sm text-muted mt-0.5">
             {new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
         </div>
@@ -117,13 +117,13 @@ export default function AdminDashboard() {
         {overview && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             {kpiCards.map((card) => (
-              <div key={card.label} className="bg-white rounded-2xl border border-gray-100 shadow-soft p-5 flex items-center gap-4">
+              <div key={card.label} className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft p-5 flex items-center gap-4">
                 <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${card.chip}`}>
                   <card.icon className="w-6 h-6" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs text-gray-500 truncate">{card.label}</p>
-                  <p className="text-2xl font-bold text-gray-900 leading-tight">{card.value}</p>
+                  <p className="text-xs text-muted truncate">{card.label}</p>
+                  <p className="text-2xl font-bold text-strong leading-tight">{card.value}</p>
                 </div>
               </div>
             ))}
@@ -131,14 +131,14 @@ export default function AdminDashboard() {
         )}
 
         {/* Export laporan */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-soft p-5 mb-6 flex flex-wrap items-center justify-between gap-4">
+        <div className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft p-5 mb-6 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-primary-50 dark:bg-primary-500/15 text-primary-600 dark:text-primary-400 flex items-center justify-center shrink-0">
               <DownloadIcon className="w-5 h-5" />
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-gray-900">Export Laporan Bulanan</p>
-              <p className="text-xs text-gray-500 truncate">Rekap &amp; detail absensi seluruh pegawai</p>
+              <p className="text-sm font-semibold text-strong">Export Laporan Bulanan</p>
+              <p className="text-xs text-muted truncate">Rekap &amp; detail absensi seluruh pegawai</p>
             </div>
           </div>
 
@@ -146,7 +146,7 @@ export default function AdminDashboard() {
             <select
               value={reportPeriod.month}
               onChange={(e) => setReportPeriod({ ...reportPeriod, month: Number(e.target.value) })}
-              className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm transition focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/40"
+              className="px-3 py-2 bg-surface-2 border border-line rounded-xl text-sm transition focus:outline-none focus:bg-surface/75 backdrop-blur-xl focus:ring-2 focus:ring-primary-500/40"
             >
               {namaBulan.map((nama, i) => (
                 <option key={nama} value={i + 1}>{nama}</option>
@@ -155,7 +155,7 @@ export default function AdminDashboard() {
             <select
               value={reportPeriod.year}
               onChange={(e) => setReportPeriod({ ...reportPeriod, year: Number(e.target.value) })}
-              className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm transition focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/40"
+              className="px-3 py-2 bg-surface-2 border border-line rounded-xl text-sm transition focus:outline-none focus:bg-surface/75 backdrop-blur-xl focus:ring-2 focus:ring-primary-500/40"
             >
               {[0, 1, 2].map((offset) => {
                 const tahun = new Date().getFullYear() - offset;
@@ -172,7 +172,7 @@ export default function AdminDashboard() {
             <button
               onClick={() => downloadReport('pdf')}
               disabled={!!downloading}
-              className="text-sm bg-gray-900 text-white px-4 py-2 rounded-xl font-semibold transition hover:bg-gray-800 disabled:opacity-50"
+              className="text-sm bg-ink text-on-ink px-4 py-2 rounded-xl font-semibold transition hover:bg-ink/90 disabled:opacity-50"
             >
               {downloading === 'pdf' ? 'Mengunduh…' : 'PDF'}
             </button>
@@ -181,9 +181,9 @@ export default function AdminDashboard() {
 
         {/* Tindakan admin: normalnya dijalankan terjadwal lewat cron di server,
             tombol ini untuk menjalankan manual / keperluan demo */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-soft p-5 mb-6">
-          <p className="text-sm font-semibold text-gray-900">Tindakan Admin</p>
-          <p className="text-xs text-gray-500 mt-0.5">
+        <div className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft p-5 mb-6">
+          <p className="text-sm font-semibold text-strong">Tindakan Admin</p>
+          <p className="text-xs text-muted mt-0.5">
             Penandaan alpha berjalan otomatis terjadwal di server tiap dini hari.
             Untuk mengoreksi satu catatan absensi, buka menu Riwayat lalu klik Koreksi.
           </p>
@@ -195,10 +195,10 @@ export default function AdminDashboard() {
 
         <div className="grid lg:grid-cols-2 gap-6">
           {/* Real-time board */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-soft overflow-hidden">
+          <div className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft overflow-hidden">
             <div className="flex items-center justify-between px-5 pt-4 pb-2">
-              <p className="text-sm font-semibold text-gray-900">Status Absensi Hari Ini</p>
-              <span className="flex items-center gap-1.5 text-xs text-emerald-600 font-medium">
+              <p className="text-sm font-semibold text-strong">Status Absensi Hari Ini</p>
+              <span className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-medium">
                 <span className="relative flex w-2 h-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                   <span className="relative inline-flex rounded-full w-2 h-2 bg-emerald-500" />
@@ -208,76 +208,76 @@ export default function AdminDashboard() {
             </div>
             <div className="max-h-[26rem] overflow-y-auto">
               {todayAll.map((item) => (
-                <div key={item.user_id} className="flex items-center gap-3 px-5 py-3 border-t border-gray-50 hover:bg-gray-50/60 transition">
+                <div key={item.user_id} className="flex items-center gap-3 px-5 py-3 border-t border-line hover:bg-surface-2/60 transition">
                   <Avatar name={item.name} src={item.avatar_url} />
                   <div className="min-w-0 mr-auto">
-                    <p className="text-sm font-medium text-gray-900 truncate">{item.name}</p>
-                    <p className="text-xs text-gray-400 truncate">{item.department || '—'}</p>
+                    <p className="text-sm font-medium text-strong truncate">{item.name}</p>
+                    <p className="text-xs text-faint truncate">{item.department || '—'}</p>
                   </div>
                   {item.status ? (
                     <StatusBadge status={item.status} />
                   ) : (
-                    <span className="text-xs px-2.5 py-1 rounded-full bg-gray-100 text-gray-500 font-medium">
+                    <span className="text-xs px-2.5 py-1 rounded-full bg-surface-3 text-muted font-medium">
                       Belum absen
                     </span>
                   )}
                 </div>
               ))}
               {todayAll.length === 0 && (
-                <p className="text-sm text-gray-400 px-5 py-8 text-center">Belum ada pegawai.</p>
+                <p className="text-sm text-faint px-5 py-8 text-center">Belum ada pegawai.</p>
               )}
             </div>
           </div>
 
           {/* Ranking */}
           <div className="space-y-6">
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-soft p-5">
-              <p className="text-sm font-semibold text-gray-900 mb-4">Top Performers</p>
+            <div className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft p-5">
+              <p className="text-sm font-semibold text-strong mb-4">Top Performers</p>
               <div className="space-y-3">
                 {ranking.top_performers.map((r, i) => (
                   <div key={r.id} className="flex items-center gap-3">
                     <span className={`w-6 h-6 rounded-lg text-xs font-bold flex items-center justify-center shrink-0 ${
-                      i === 0 ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-500'
+                      i === 0 ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300' : 'bg-surface-3 text-muted'
                     }`}>
                       {i + 1}
                     </span>
-                    <span className="text-sm text-gray-700 mr-auto truncate">{r.name}</span>
-                    <div className="w-24 h-1.5 rounded-full bg-gray-100 overflow-hidden shrink-0">
+                    <span className="text-sm text-body mr-auto truncate">{r.name}</span>
+                    <div className="w-24 h-1.5 rounded-full bg-surface-3 overflow-hidden shrink-0">
                       <div
                         className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-500"
                         style={{ width: `${Math.min(Number(r.attendance_rate), 100)}%` }}
                       />
                     </div>
-                    <span className="text-sm font-bold text-emerald-600 w-14 text-right shrink-0">
+                    <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400 w-14 text-right shrink-0">
                       {r.attendance_rate}%
                     </span>
                   </div>
                 ))}
                 {ranking.top_performers.length === 0 && (
-                  <p className="text-xs text-gray-400">Belum ada data.</p>
+                  <p className="text-xs text-faint">Belum ada data.</p>
                 )}
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-soft p-5">
-              <p className="text-sm font-semibold text-gray-900 mb-4">Perlu Perhatian</p>
+            <div className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft p-5">
+              <p className="text-sm font-semibold text-strong mb-4">Perlu Perhatian</p>
               <div className="space-y-3">
                 {ranking.at_risk.map((r) => (
                   <div key={r.id} className="flex items-center gap-3">
-                    <span className="text-sm text-gray-700 mr-auto truncate">{r.name}</span>
-                    <div className="w-24 h-1.5 rounded-full bg-gray-100 overflow-hidden shrink-0">
+                    <span className="text-sm text-body mr-auto truncate">{r.name}</span>
+                    <div className="w-24 h-1.5 rounded-full bg-surface-3 overflow-hidden shrink-0">
                       <div
                         className="h-full rounded-full bg-gradient-to-r from-red-400 to-red-500"
                         style={{ width: `${Math.min(Number(r.attendance_rate), 100)}%` }}
                       />
                     </div>
-                    <span className="text-sm font-bold text-red-600 w-14 text-right shrink-0">
+                    <span className="text-sm font-bold text-red-600 dark:text-red-400 w-14 text-right shrink-0">
                       {r.attendance_rate}%
                     </span>
                   </div>
                 ))}
                 {ranking.at_risk.length === 0 && (
-                  <p className="text-xs text-gray-400">Tidak ada pegawai berisiko. 🎉</p>
+                  <p className="text-xs text-faint">Tidak ada pegawai berisiko. 🎉</p>
                 )}
               </div>
               {ranking.at_risk.length > 0 && (
@@ -291,7 +291,7 @@ export default function AdminDashboard() {
                 </button>
               )}
               {warningResult && (
-                <p className="text-xs text-gray-500 mt-2">{warningResult}</p>
+                <p className="text-xs text-muted mt-2">{warningResult}</p>
               )}
             </div>
           </div>

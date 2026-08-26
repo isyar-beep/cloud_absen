@@ -36,11 +36,11 @@ function KartuRekap({ label, nilai, warna, aktif, onClick }) {
     <button
       onClick={onClick}
       className={`rounded-xl border px-2 py-2 text-center transition ${
-        aktif ? 'border-primary-300 bg-primary-50/60' : 'border-gray-100 bg-white hover:border-gray-200'
+        aktif ? 'border-primary-300 bg-primary-50/60 dark:bg-primary-500/15' : 'border-line bg-surface/75 backdrop-blur-xl hover:border-line-strong'
       }`}
     >
       <p className={`text-lg font-bold tabular-nums ${warna}`}>{nilai}</p>
-      <p className="text-[11px] text-gray-500">{label}</p>
+      <p className="text-[11px] text-muted">{label}</p>
     </button>
   );
 }
@@ -132,34 +132,34 @@ export default function History() {
   }
 
   const inputClass =
-    'w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm transition focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/40';
+    'w-full px-2.5 py-2 bg-surface-2 border border-line rounded-xl text-sm transition focus:outline-none focus:bg-surface/75 backdrop-blur-xl focus:ring-2 focus:ring-primary-500/40';
 
   const chipClass = (aktif) =>
     `px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition ${
-      aktif ? 'bg-primary-600 text-white shadow-glow' : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-300'
+      aktif ? 'bg-primary-600 text-white shadow-glow' : 'bg-surface/75 backdrop-blur-xl border border-line text-body hover:border-line-strong'
     }`;
 
   return (
-    <div className="min-h-screen bg-gray-50 px-4 py-6">
+    <div className="min-h-screen px-4 py-6">
       <div className="max-w-2xl mx-auto">
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition mb-5"
+          className="flex items-center gap-1.5 text-sm text-muted hover:text-strong transition mb-5"
         >
           <ArrowLeftIcon className="w-4 h-4" /> Kembali
         </button>
 
-        <h1 className="text-xl font-bold text-gray-900 tracking-tight mb-4">Riwayat Absensi</h1>
+        <h1 className="text-xl font-bold text-strong tracking-tight mb-4">Riwayat Absensi</h1>
 
         {pesan && (
-          <div className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3 mb-3 font-medium">
+          <div className="text-sm text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-100 dark:border-emerald-500/30 rounded-xl px-4 py-3 mb-3 font-medium">
             ✓ {pesan}
           </div>
         )}
 
         {/* Pilih periode */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-soft p-4 mb-3">
-          <p className="text-xs font-medium text-gray-500 mb-2">Periode</p>
+        <div className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft p-4 mb-3">
+          <p className="text-xs font-medium text-muted mb-2">Periode</p>
           <div className="flex flex-wrap gap-1.5">
             {PRESET.map((p) => (
               <button
@@ -185,7 +185,7 @@ export default function History() {
             <div className="grid grid-cols-2 gap-3 mt-3">
               {modePeriode === 'bulan' && (
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1.5">Bulan</label>
+                  <label className="block text-xs font-medium text-muted mb-1.5">Bulan</label>
                   <select
                     value={pilihan.bulan}
                     onChange={(e) => setPilihan({ ...pilihan, bulan: Number(e.target.value) })}
@@ -198,7 +198,7 @@ export default function History() {
                 </div>
               )}
               <div className={modePeriode === 'tahun' ? 'col-span-2' : ''}>
-                <label className="block text-xs font-medium text-gray-500 mb-1.5">Tahun</label>
+                <label className="block text-xs font-medium text-muted mb-1.5">Tahun</label>
                 <select
                   value={pilihan.tahun}
                   onChange={(e) => setPilihan({ ...pilihan, tahun: Number(e.target.value) })}
@@ -215,7 +215,7 @@ export default function History() {
           {modePeriode === 'khusus' && (
             <div className="grid grid-cols-2 gap-3 mt-3">
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1.5">Dari</label>
+                <label className="block text-xs font-medium text-muted mb-1.5">Dari</label>
                 <input
                   type="date"
                   value={khusus.start_date}
@@ -224,7 +224,7 @@ export default function History() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1.5">Sampai</label>
+                <label className="block text-xs font-medium text-muted mb-1.5">Sampai</label>
                 <input
                   type="date"
                   value={khusus.end_date}
@@ -236,7 +236,7 @@ export default function History() {
           )}
 
           {(rentang.start_date || rentang.end_date) && (
-            <p className="text-[11px] text-gray-400 mt-2.5">
+            <p className="text-[11px] text-faint mt-2.5">
               {rentang.start_date ? formatTanggalHari(rentang.start_date) : 'awal'} —{' '}
               {rentang.end_date ? formatTanggalHari(rentang.end_date) : 'sekarang'}
             </p>
@@ -247,16 +247,16 @@ export default function History() {
         {rekap && (
           <div className="mb-3">
             <div className="grid grid-cols-4 gap-2">
-              <KartuRekap label="Hadir" nilai={rekap.hadir} warna="text-emerald-600"
+              <KartuRekap label="Hadir" nilai={rekap.hadir} warna="text-emerald-600 dark:text-emerald-400"
                 aktif={status === 'hadir'} onClick={() => setStatus(status === 'hadir' ? '' : 'hadir')} />
-              <KartuRekap label="Terlambat" nilai={rekap.terlambat} warna="text-amber-600"
+              <KartuRekap label="Terlambat" nilai={rekap.terlambat} warna="text-amber-600 dark:text-amber-400"
                 aktif={status === 'terlambat'} onClick={() => setStatus(status === 'terlambat' ? '' : 'terlambat')} />
-              <KartuRekap label="Izin" nilai={rekap.izin} warna="text-blue-600"
+              <KartuRekap label="Izin" nilai={rekap.izin} warna="text-blue-600 dark:text-blue-400"
                 aktif={status === 'izin'} onClick={() => setStatus(status === 'izin' ? '' : 'izin')} />
               <KartuRekap label="Alpha" nilai={rekap.alpha} warna="text-red-500"
                 aktif={status === 'alpha'} onClick={() => setStatus(status === 'alpha' ? '' : 'alpha')} />
             </div>
-            <p className="text-[11px] text-gray-400 mt-2">
+            <p className="text-[11px] text-faint mt-2">
               Kehadiran {rekap.rate}% dari {rekap.hari_efektif} hari efektif.
               {' '}Izin tidak mengurangi angka ini.
             </p>
@@ -273,31 +273,31 @@ export default function History() {
         </div>
 
         {/* Daftar riwayat */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-soft overflow-hidden">
+        <div className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft overflow-hidden">
           {items.map((item) => (
-            <div key={item.id} className="px-5 py-4 border-b border-gray-50 last:border-b-0 hover:bg-gray-50/60 transition">
+            <div key={item.id} className="px-5 py-4 border-b border-line last:border-b-0 hover:bg-surface-2/60 transition">
               <div className="flex justify-between items-center mb-1.5">
-                <p className="text-sm font-semibold text-gray-900">{formatTanggalHari(item.date)}</p>
+                <p className="text-sm font-semibold text-strong">{formatTanggalHari(item.date)}</p>
                 <span className="flex items-center gap-1.5">
                   <WfaBadge mode={item.work_mode} />
                   <StatusBadge status={item.status} />
                 </span>
               </div>
-              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
-                <span>Masuk: <span className="font-medium text-gray-700">{formatJam(item.check_in_time)}</span></span>
-                <span>Pulang: <span className="font-medium text-gray-700">{formatJam(item.check_out_time)}</span></span>
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
+                <span>Masuk: <span className="font-medium text-body">{formatJam(item.check_in_time)}</span></span>
+                <span>Pulang: <span className="font-medium text-body">{formatJam(item.check_out_time)}</span></span>
                 {item.photo_in_url && (
-                  <a href={urlFoto(item.photo_in_url, tokenFoto)} target="_blank" rel="noreferrer" className="text-primary-600 font-medium hover:underline">
+                  <a href={urlFoto(item.photo_in_url, tokenFoto)} target="_blank" rel="noreferrer" className="text-primary-600 dark:text-primary-400 font-medium hover:underline">
                     Foto masuk
                   </a>
                 )}
                 {item.photo_out_url && (
-                  <a href={urlFoto(item.photo_out_url, tokenFoto)} target="_blank" rel="noreferrer" className="text-primary-600 font-medium hover:underline">
+                  <a href={urlFoto(item.photo_out_url, tokenFoto)} target="_blank" rel="noreferrer" className="text-primary-600 dark:text-primary-400 font-medium hover:underline">
                     Foto pulang
                   </a>
                 )}
               </div>
-              {item.reason && <p className="text-xs text-gray-400 mt-1 italic">{item.reason}</p>}
+              {item.reason && <p className="text-xs text-faint mt-1 italic">{item.reason}</p>}
 
               {/* Jalur resmi untuk jam yang keliru atau lupa absen pulang.
                   Hari yang berstatus izin tidak menawarkan koreksi jam --
@@ -306,8 +306,8 @@ export default function History() {
                 ajuanPerTanggal[item.date] ? (
                   <p className="text-[11px] mt-1.5">
                     <span className={
-                      ajuanPerTanggal[item.date].status === 'pending' ? 'text-amber-600'
-                        : ajuanPerTanggal[item.date].status === 'approved' ? 'text-emerald-600'
+                      ajuanPerTanggal[item.date].status === 'pending' ? 'text-amber-600 dark:text-amber-400'
+                        : ajuanPerTanggal[item.date].status === 'approved' ? 'text-emerald-600 dark:text-emerald-400'
                         : 'text-red-500'
                     }>
                       Koreksi {
@@ -317,13 +317,13 @@ export default function History() {
                       }
                     </span>
                     {ajuanPerTanggal[item.date].admin_note && (
-                      <span className="text-gray-400"> — {ajuanPerTanggal[item.date].admin_note}</span>
+                      <span className="text-faint"> — {ajuanPerTanggal[item.date].admin_note}</span>
                     )}
                   </p>
                 ) : (
                   <button
                     onClick={() => setKoreksi(item)}
-                    className="text-[11px] font-semibold text-primary-600 hover:text-primary-700 transition mt-1.5"
+                    className="text-[11px] font-semibold text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 dark:text-primary-300 transition mt-1.5"
                   >
                     Ajukan koreksi
                   </button>
@@ -333,7 +333,7 @@ export default function History() {
           ))}
 
           {items.length === 0 && !loading && (
-            <p className="text-sm text-gray-400 px-5 py-10 text-center">
+            <p className="text-sm text-faint px-5 py-10 text-center">
               Tidak ada catatan absensi pada periode dan saringan ini.
             </p>
           )}
@@ -343,7 +343,7 @@ export default function History() {
           <button
             onClick={() => fetchHistory(items.length, true)}
             disabled={loading}
-            className="w-full mt-4 bg-white border border-gray-200 text-gray-700 py-3 rounded-2xl text-sm font-semibold shadow-soft transition hover:border-gray-300 disabled:opacity-50"
+            className="w-full mt-4 bg-surface/75 backdrop-blur-xl border border-line text-body py-3 rounded-2xl text-sm font-semibold shadow-soft transition hover:border-line-strong disabled:opacity-50"
           >
             {loading ? 'Memuat...' : 'Muat Lebih Banyak'}
           </button>

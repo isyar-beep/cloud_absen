@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { useAuthStore } from '../store/authStore';
+import ThemeToggle from '../components/ThemeToggle';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -33,52 +34,57 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen relative flex items-center justify-center bg-gray-50 px-4 overflow-hidden">
-      {/* Dekorasi latar: lingkaran blur lembut */}
-      <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-primary-200/50 blur-3xl" />
-      <div className="absolute -bottom-40 -right-24 w-[28rem] h-[28rem] rounded-full bg-indigo-200/40 blur-3xl" />
-      <div className="absolute top-1/3 right-1/4 w-40 h-40 rounded-full bg-sky-200/30 blur-2xl" />
+    // Dekorasi latar dulu digambar di sini sebagai tiga lingkaran blur.
+    // Sekarang noda cahaya itu milik body (lihat index.css), jadi seluruh
+    // halaman memakai latar yang sama dan tidak perlu diulang per halaman.
+    <div className="min-h-screen relative flex items-center justify-center px-4 overflow-hidden">
+      {/* Pemilih tema sudah tersedia sebelum login: pegawai yang membuka
+          aplikasi di ruangan gelap tidak perlu disilaukan dulu baru bisa
+          mengaturnya. */}
+      <div className="absolute top-4 right-4">
+        <ThemeToggle ringkas />
+      </div>
 
       <div className="relative w-full max-w-sm">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 text-white text-2xl font-bold mb-4 shadow-glow">
             CA
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Cloud Absen</h1>
-          <p className="text-sm text-gray-500 mt-1.5">Absensi modern, cukup dari genggaman</p>
+          <h1 className="text-2xl font-bold text-strong tracking-tight">Cloud Absen</h1>
+          <p className="text-sm text-muted mt-1.5">Absensi modern, cukup dari genggaman</p>
         </div>
 
         <form
           onSubmit={handleSubmit}
-          className="bg-white/80 backdrop-blur-xl rounded-3xl border border-white/60 shadow-soft p-7 space-y-4"
+          className="bg-surface/80 backdrop-blur-2xl rounded-3xl border border-line shadow-glass p-7 space-y-4"
         >
           {error && (
-            <div className="flex items-start gap-2 text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-3.5 py-2.5">
+            <div className="flex items-start gap-2 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/15 border border-red-100 dark:border-red-500/30 rounded-xl px-3.5 py-2.5">
               {error}
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
+            <label className="block text-sm font-medium text-body mb-1.5">Email</label>
             <input
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="nama@company.com"
-              className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm transition focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/40 focus:border-primary-400"
+              className="w-full px-3.5 py-2.5 bg-surface-2 border border-line rounded-xl text-sm transition focus:outline-none focus:bg-surface/75 backdrop-blur-xl focus:ring-2 focus:ring-primary-500/40 focus:border-primary-400"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
+            <label className="block text-sm font-medium text-body mb-1.5">Password</label>
             <input
               type="password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm transition focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/40 focus:border-primary-400"
+              className="w-full px-3.5 py-2.5 bg-surface-2 border border-line rounded-xl text-sm transition focus:outline-none focus:bg-surface/75 backdrop-blur-xl focus:ring-2 focus:ring-primary-500/40 focus:border-primary-400"
             />
           </div>
 
@@ -91,7 +97,7 @@ export default function Login() {
           </button>
         </form>
 
-        <p className="text-center text-xs text-gray-400 mt-6">
+        <p className="text-center text-xs text-faint mt-6">
           © {new Date().getFullYear()} Cloud Absen — Sistem Absensi Karyawan
         </p>
       </div>

@@ -81,18 +81,18 @@ export default function AdminWfa() {
     : 0;
 
   const inputClass =
-    'w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm transition focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/40';
-  const labelClass = 'block text-xs font-medium text-gray-500 mb-1.5';
+    'w-full px-3.5 py-2.5 bg-surface-2 border border-line rounded-xl text-sm transition focus:outline-none focus:bg-surface/75 backdrop-blur-xl focus:ring-2 focus:ring-primary-500/40';
+  const labelClass = 'block text-xs font-medium text-muted mb-1.5';
 
   return (
     <div>
       {pesan && (
-        <div className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3 mb-4 font-medium">
+        <div className="text-sm text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-100 dark:border-emerald-500/30 rounded-xl px-4 py-3 mb-4 font-medium">
           ✓ {pesan}
         </div>
       )}
       {error && !tampilForm && (
-        <div className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-3 mb-4">
+        <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/15 border border-red-100 dark:border-red-500/30 rounded-xl px-4 py-3 mb-4">
           {error}
         </div>
       )}
@@ -109,7 +109,7 @@ export default function AdminWfa() {
               className={`text-sm px-4 py-2 rounded-full font-medium transition ${
                 saringan === f.key
                   ? 'bg-primary-600 text-white shadow-glow'
-                  : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-300'
+                  : 'bg-surface/75 backdrop-blur-xl border border-line text-body hover:border-line-strong'
               }`}
             >
               {f.label}
@@ -126,10 +126,10 @@ export default function AdminWfa() {
       </div>
 
       {tampilForm && (
-        <form onSubmit={simpan} className="bg-white rounded-2xl border border-gray-100 shadow-soft p-5 mb-6 space-y-4">
-          <p className="text-sm font-semibold text-gray-900">Penetapan WFA Baru</p>
+        <form onSubmit={simpan} className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft p-5 mb-6 space-y-4">
+          <p className="text-sm font-semibold text-strong">Penetapan WFA Baru</p>
           {error && (
-            <div className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-2.5">
+            <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/15 border border-red-100 dark:border-red-500/30 rounded-xl px-4 py-2.5">
               {error}
             </div>
           )}
@@ -183,7 +183,7 @@ export default function AdminWfa() {
           </div>
 
           {jumlahHari > 0 && (
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted">
               Mencakup <span className="font-semibold">{jumlahHari} hari kalender</span>.
               Pegawai tetap absen berfoto seperti biasa — catatan absensinya
               ditandai WFA. Absensi yang sudah tercatat di rentang ini ikut ditandai.
@@ -194,14 +194,14 @@ export default function AdminWfa() {
             <button
               type="submit"
               disabled={loading}
-              className="bg-gray-900 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition hover:bg-gray-800 disabled:opacity-50"
+              className="bg-ink text-on-ink px-5 py-2.5 rounded-xl text-sm font-semibold transition hover:bg-ink/90 disabled:opacity-50"
             >
               {loading ? 'Menyimpan...' : 'Simpan'}
             </button>
             <button
               type="button"
               onClick={() => setTampilForm(false)}
-              className="text-sm text-gray-500 px-3 hover:text-gray-700 transition"
+              className="text-sm text-muted px-3 hover:text-body transition"
             >
               Batal
             </button>
@@ -213,41 +213,41 @@ export default function AdminWfa() {
         {daftar.map((w) => (
           <div
             key={w.id}
-            className={`bg-white rounded-2xl border shadow-soft p-4 flex flex-wrap items-center justify-between gap-3 ${
-              w.sedang_berjalan ? 'border-violet-200' : 'border-gray-100'
+            className={`bg-surface/75 backdrop-blur-xl rounded-2xl border shadow-soft p-4 flex flex-wrap items-center justify-between gap-3 ${
+              w.sedang_berjalan ? 'border-violet-200 dark:border-violet-500/35' : 'border-line'
             }`}
           >
             <div className="flex items-center gap-3 min-w-0">
               <Avatar name={w.name} src={w.avatar_url} size={38} />
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <p className="text-sm font-semibold text-gray-900 truncate">{w.name}</p>
+                  <p className="text-sm font-semibold text-strong truncate">{w.name}</p>
                   {w.sedang_berjalan && (
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-violet-50 text-violet-700 border border-violet-100">
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-violet-50 dark:bg-violet-500/15 text-violet-700 dark:text-violet-300 border border-violet-100 dark:border-violet-500/30">
                       BERJALAN
                     </span>
                   )}
                   {w.sudah_lewat && (
-                    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-gray-50 text-gray-400 border border-gray-100">
+                    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-surface-2 text-faint border border-line">
                       selesai
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-gray-500 mt-0.5">
+                <p className="text-xs text-muted mt-0.5">
                   {formatTanggalHari(w.start_date)}
                   {w.start_date !== w.end_date && ` — ${formatTanggalHari(w.end_date)}`}
                 </p>
-                {w.note && <p className="text-xs text-gray-400 mt-0.5 italic truncate">{w.note}</p>}
+                {w.note && <p className="text-xs text-faint mt-0.5 italic truncate">{w.note}</p>}
               </div>
             </div>
 
             <div className="flex items-center gap-3 shrink-0">
-              <span className="text-[11px] text-gray-400">
+              <span className="text-[11px] text-faint">
                 oleh {w.created_by_name || '—'}
               </span>
               <button
                 onClick={() => hapus(w)}
-                className="text-xs font-semibold text-red-500 hover:text-red-600 transition"
+                className="text-xs font-semibold text-red-500 hover:text-red-600 dark:text-red-400 transition"
               >
                 Batalkan
               </button>
@@ -256,8 +256,8 @@ export default function AdminWfa() {
         ))}
 
         {daftar.length === 0 && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-soft px-5 py-12 text-center">
-            <p className="text-sm text-gray-400">
+          <div className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft px-5 py-12 text-center">
+            <p className="text-sm text-faint">
               {saringan === 'aktif'
                 ? 'Tidak ada pegawai yang sedang WFA hari ini.'
                 : 'Belum ada penetapan WFA.'}
@@ -266,7 +266,7 @@ export default function AdminWfa() {
         )}
       </div>
 
-      <p className="text-xs text-gray-400 mt-5">
+      <p className="text-xs text-faint mt-5">
         Catatan: sistem ini merekam koordinat saat absen, tapi belum
         membandingkannya dengan titik kantor. Jadi penandaan WFA saat ini
         berfungsi untuk pelaporan, bukan untuk melonggarkan pembatasan lokasi.

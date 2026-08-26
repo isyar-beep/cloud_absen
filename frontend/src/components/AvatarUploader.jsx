@@ -85,7 +85,7 @@ export default function AvatarUploader({ name, src, onChange }) {
         className="relative rounded-full ring-2 ring-white/70 transition hover:ring-white disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-white"
       >
         <Avatar name={name} src={src} size={52} />
-        <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-white text-primary-600 text-[10px] font-bold flex items-center justify-center shadow">
+        <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-surface/75 backdrop-blur-xl text-primary-600 dark:text-primary-400 text-[10px] font-bold flex items-center justify-center shadow">
           {proses ? '…' : '+'}
         </span>
       </button>
