@@ -1,4 +1,6 @@
 import { useColorScheme } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { create } from 'zustand';
 
 // ============================================================
 // Warna aplikasi mobile, terang & gelap.
@@ -8,16 +10,23 @@ import { useColorScheme } from 'react-native';
 // dari satu tempat ini lewat useWarna(), dan StyleSheet yang bergantung
 // tema dibangun di dalam komponen.
 //
-// Temanya mengikuti setelan sistem HP dan tidak punya sakelar sendiri.
-// Alasannya: aplikasi ini dibuka sebentar-sebentar untuk absen, bukan
-// ditunggui berjam-jam. Menyediakan sakelar berarti pengguna harus
-// mengatur dua tempat (HP dan aplikasi) untuk satu keinginan yang sama.
-// Web memang punya sakelar, karena di sana browser tidak selalu
-// meneruskan setelan sistem dengan andal.
+// Tiga pilihan: Terang, Sistem, Gelap -- sama seperti di web. Awalnya
+// mobile hanya mengikuti setelan HP tanpa sakelar sendiri, dengan alasan
+// aplikasi ini cuma dibuka sebentar untuk absen. Ternyata keliru: pegawai
+// yang HP-nya disetel gelap sepanjang waktu tetap ingin membaca layar
+// absensi dalam mode terang saat di lapangan, dan tidak semua orang tahu
+// di mana setelan tampilan HP-nya berada.
 // ============================================================
 
 const TERANG = {
   gelap: false,
+
+  // Teks di atas permukaan BERWARNA (tombol biru, hero, bilah kamera).
+  // Selalu putih di kedua tema -- warnanya ditentukan oleh latar birunya,
+  // bukan oleh tema. Dulu tempat ini memakai `permukaan`, yang benar untuk
+  // latar kartu tapi membuat teks tombol jadi gelap-di-atas-biru begitu
+  // mode gelap menyala.
+  teksDiWarna: '#ffffff',
 
   latar: '#f4f6fb',
   permukaan: '#ffffff',
@@ -29,10 +38,12 @@ const TERANG = {
   teks: '#0f172a',
   teksBadan: '#334155',
   teksRedup: '#64748b',
-  teksSamar: '#94a3b8',
+  // Dulu #94a3b8 -- hanya 2.56:1 di atas permukaan putih, di bawah ambang
+  // 3:1 untuk teks pembantu. Terbaca sebagai "tulisan yang hampir hilang"
+  // pada label kecil dan placeholder.
+  teksSamar: '#7c8798',
 
   utama: '#2563eb',
-  utamaTeks: '#ffffff',
   heroAwal: '#2563eb',
 
   kontras: '#111827',
@@ -74,6 +85,8 @@ const TERANG = {
 const GELAP = {
   gelap: true,
 
+  teksDiWarna: '#ffffff',
+
   latar: '#090d18',
   permukaan: '#192030',
   permukaan2: '#20293b',
@@ -87,7 +100,6 @@ const GELAP = {
   teksSamar: '#718096',
 
   utama: '#2563eb',
-  utamaTeks: '#ffffff',
   heroAwal: '#1e40af',
 
   kontras: '#f1f5f9',
@@ -123,8 +135,48 @@ const GELAP = {
   titikSelesai: '#60a5fa',
 };
 
+const KUNCI = 'cloud_absen_tema';
+
+export const PILIHAN_TEMA = [
+  { key: 'terang', label: 'Terang' },
+  { key: 'sistem', label: 'Sistem' },
+  { key: 'gelap', label: 'Gelap' },
+];
+
+export const useThemeStore = create((set) => ({
+  pilihan: 'sistem',
+
+  // Dipanggil sekali dari App sebelum layar pertama digambar. Kalau
+  // dibaca setelahnya, aplikasi sempat berkedip dengan tema yang salah.
+  muat: async () => {
+    try {
+      const nilai = await AsyncStorage.getItem(KUNCI);
+      if (nilai === 'terang' || nilai === 'gelap' || nilai === 'sistem') {
+        set({ pilihan: nilai });
+      }
+    } catch {
+      // Penyimpanan tidak terbaca -- pakai 'sistem' seperti bawaan.
+    }
+  },
+
+  setTema: async (pilihan) => {
+    set({ pilihan });
+    try {
+      await AsyncStorage.setItem(KUNCI, pilihan);
+    } catch {
+      // Pilihannya tetap berlaku selama aplikasi terbuka, hanya tidak
+      // tersimpan untuk pembukaan berikutnya.
+    }
+  },
+}));
+
+// Palet yang sedang berlaku. Ikut berubah saat pilihan diganti maupun saat
+// setelan HP berubah (kalau pilihannya 'sistem').
 export function useWarna() {
-  return useColorScheme() === 'dark' ? GELAP : TERANG;
+  const pilihan = useThemeStore((s) => s.pilihan);
+  const sistem = useColorScheme();
+  const gelap = pilihan === 'gelap' || (pilihan === 'sistem' && sistem === 'dark');
+  return gelap ? GELAP : TERANG;
 }
 
 export { TERANG, GELAP };

@@ -273,7 +273,7 @@ const buatGaya = (w) => StyleSheet.create({
   },
   filterChipActive: { backgroundColor: w.utama, borderColor: w.utama },
   filterText: { fontSize: 12, color: w.teksBadan, fontWeight: '500' },
-  filterTextActive: { color: w.permukaan },
+  filterTextActive: { color: w.teksDiWarna },
   rekapRow: { flexDirection: 'row', gap: 8, marginBottom: 6 },
   rekapCard: {
     flex: 1, backgroundColor: w.permukaan, borderRadius: 12, paddingVertical: 8,

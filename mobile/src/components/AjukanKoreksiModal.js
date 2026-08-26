@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, ScrollView,
+  KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useWarna } from '../theme';
 import api from '../services/api';
@@ -61,7 +62,13 @@ export default function AjukanKoreksiModal({ baris, onTutup, onKirim }) {
 
   return (
     <Modal visible transparent animationType="slide" onRequestClose={onTutup}>
-      <View style={styles.latar}>
+      {/* Panel ini menempel di tepi bawah layar, jadi papan ketik menutupinya
+          seluruhnya tanpa KeyboardAvoidingView -- pegawai mengetik tanpa bisa
+          melihat kolom yang sedang diisinya. */}
+      <KeyboardAvoidingView
+        style={styles.latar}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
         <View style={styles.panel}>
           <ScrollView keyboardShouldPersistTaps="handled">
             <Text style={styles.judul}>Ajukan Koreksi Absensi</Text>
@@ -84,6 +91,7 @@ export default function AjukanKoreksiModal({ baris, onTutup, onKirim }) {
                   value={jamMasuk}
                   onChangeText={setJamMasuk}
                   placeholder="08:00"
+          placeholderTextColor={w.teksSamar}
                   keyboardType="numbers-and-punctuation"
                   maxLength={5}
                 />
@@ -95,6 +103,7 @@ export default function AjukanKoreksiModal({ baris, onTutup, onKirim }) {
                   value={jamPulang}
                   onChangeText={setJamPulang}
                   placeholder="17:00"
+          placeholderTextColor={w.teksSamar}
                   keyboardType="numbers-and-punctuation"
                   maxLength={5}
                 />
@@ -108,6 +117,7 @@ export default function AjukanKoreksiModal({ baris, onTutup, onKirim }) {
               value={alasan}
               onChangeText={setAlasan}
               placeholder="mis. Lupa absen pulang karena rapat sampai sore"
+          placeholderTextColor={w.teksSamar}
               multiline
               numberOfLines={3}
             />
@@ -130,7 +140,7 @@ export default function AjukanKoreksiModal({ baris, onTutup, onKirim }) {
             <Text style={styles.petunjuk}>Absensi baru berubah setelah admin menyetujui.</Text>
           </ScrollView>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -167,7 +177,7 @@ const buatGaya = (w) => StyleSheet.create({
     paddingVertical: 13, alignItems: 'center',
   },
   tombolMati: { opacity: 0.5 },
-  tombolUtamaTeks: { color: w.permukaan, fontWeight: '700', fontSize: 14 },
+  tombolUtamaTeks: { color: w.teksDiWarna, fontWeight: '700', fontSize: 14 },
   tombolBatal: { paddingHorizontal: 8, paddingVertical: 13 },
   tombolBatalTeks: { color: w.teksRedup, fontWeight: '600', fontSize: 13 },
 });

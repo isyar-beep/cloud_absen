@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert, Image } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useWarna } from '../theme';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Location from 'expo-location';
@@ -26,6 +27,7 @@ export default function CameraScreen({ route, navigation }) {
   const [lokasi, setLokasi] = useState(null);
   const [lokasiStatus, setLokasiStatus] = useState('mencari'); // mencari | ada | gagal
   const w = useWarna();
+  const insets = useSafeAreaInsets();
   const styles = useMemo(() => buatGaya(w), [w]);
 
   // Lokasi diminta sejak layar dibuka, bukan saat tombol kirim ditekan.
@@ -131,7 +133,7 @@ export default function CameraScreen({ route, navigation }) {
   if (photo) {
     return (
       <View style={styles.container}>
-        <View style={styles.topBar}>
+        <View style={[styles.topBar, { paddingTop: insets.top + 12 }]}>
           <Text style={styles.topBarText}>{JUDUL[mode] || 'Absensi'}</Text>
         </View>
         <Image source={{ uri: photo }} style={styles.preview} />
@@ -160,8 +162,11 @@ export default function CameraScreen({ route, navigation }) {
   return (
     <View style={styles.container}>
       <CameraView style={styles.camera} facing="front" ref={cameraRef} />
-      <View style={styles.topBar}>
-        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={10}>
+      <View style={[styles.topBar, { paddingTop: insets.top + 12 }]}>
+        <TouchableOpacity
+          style={styles.topBarTombol}
+          onPress={() => navigation.goBack()}
+        >
           <Text style={styles.topBarKembali}>Batal</Text>
         </TouchableOpacity>
         <Text style={styles.topBarText}>{JUDUL[mode] || 'Absensi'}</Text>
@@ -184,12 +189,15 @@ const buatGaya = (w) => StyleSheet.create({
   topBar: {
     position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingTop: 48, paddingBottom: 12, paddingHorizontal: 16,
+    paddingBottom: 12, paddingHorizontal: 12,
     backgroundColor: 'rgba(0,0,0,0.35)',
   },
-  topBarText: { color: w.permukaan, fontSize: 15, fontWeight: '700' },
-  topBarKembali: { color: w.permukaan, fontSize: 13, fontWeight: '600' },
-  topBarSpacer: { width: 34 },
+  topBarText: { color: w.teksDiWarna, fontSize: 15, fontWeight: '700' },
+  topBarKembali: { color: w.teksDiWarna, fontSize: 13, fontWeight: '600' },
+  // Tinggi ketuk minimal supaya "Batal" bisa ditekan dengan ibu jari,
+  // bukan hanya dengan ujung kuku.
+  topBarTombol: { minHeight: 40, justifyContent: 'center', paddingHorizontal: 8 },
+  topBarSpacer: { width: 56 },
 
   lokasiMengambang: {
     position: 'absolute', bottom: 120, left: 16, right: 16,
@@ -198,11 +206,11 @@ const buatGaya = (w) => StyleSheet.create({
   },
   lokasiRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   titik: { width: 7, height: 7, borderRadius: 4 },
-  lokasiTeks: { color: w.permukaan, fontSize: 12, flexShrink: 1, fontWeight: '500' },
+  lokasiTeks: { color: w.teksDiWarna, fontSize: 12, flexShrink: 1, fontWeight: '500' },
   ulangi: { color: w.utama, fontSize: 12, fontWeight: '600' },
 
   captureButton: {
-    position: 'absolute', bottom: 32, alignSelf: 'center',
+    position: 'absolute', bottom: 44, alignSelf: 'center',
     width: 70, height: 70, borderRadius: 35, backgroundColor: w.permukaan,
     borderWidth: 4, borderColor: w.garisTebal,
   },
@@ -219,7 +227,7 @@ const buatGaya = (w) => StyleSheet.create({
     flex: 1, backgroundColor: w.permukaan2, borderRadius: 12,
     paddingVertical: 14, alignItems: 'center',
   },
-  buttonText: { color: w.permukaan, fontWeight: '600', fontSize: 14 },
+  buttonText: { color: w.teksDiWarna, fontWeight: '600', fontSize: 14 },
   secondaryButtonText: { color: w.teksBadan, fontWeight: '600', fontSize: 14 },
-  permissionText: { color: w.permukaan, textAlign: 'center', margin: 24, fontSize: 14 },
+  permissionText: { color: w.teksDiWarna, textAlign: 'center', margin: 24, fontSize: 14 },
 });

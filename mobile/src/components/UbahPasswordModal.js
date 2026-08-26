@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, ScrollView,
+  KeyboardAvoidingView, Platform,
 } from 'react-native';
 import api from '../services/api';
 import { useWarna } from '../theme';
@@ -59,7 +60,13 @@ export default function UbahPasswordModal({ onTutup, onSelesai }) {
 
   return (
     <Modal visible transparent animationType="slide" onRequestClose={onTutup}>
-      <View style={styles.latar}>
+      {/* Panel ini menempel di tepi bawah layar, jadi papan ketik menutupinya
+          seluruhnya tanpa KeyboardAvoidingView -- pegawai mengetik tanpa bisa
+          melihat kolom yang sedang diisinya. */}
+      <KeyboardAvoidingView
+        style={styles.latar}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
         <View style={styles.panel}>
           <ScrollView keyboardShouldPersistTaps="handled">
             <Text style={styles.judul}>Ubah Password</Text>
@@ -113,7 +120,7 @@ export default function UbahPasswordModal({ onTutup, onSelesai }) {
             </View>
           </ScrollView>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -143,7 +150,7 @@ const buatGaya = (w) => StyleSheet.create({
     paddingVertical: 13, alignItems: 'center',
   },
   tombolMati: { opacity: 0.5 },
-  tombolUtamaTeks: { color: w.utamaTeks, fontWeight: '700', fontSize: 14 },
+  tombolUtamaTeks: { color: w.teksDiWarna, fontWeight: '700', fontSize: 14 },
   tombolBatal: { paddingHorizontal: 8, paddingVertical: 13 },
   tombolBatalTeks: { color: w.teksRedup, fontWeight: '600', fontSize: 13 },
 });

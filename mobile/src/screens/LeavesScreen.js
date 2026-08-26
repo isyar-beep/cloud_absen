@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert,
+  KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useWarna } from '../theme';
 import * as DocumentPicker from 'expo-document-picker';
@@ -113,7 +114,13 @@ export default function LeavesScreen() {
   }
 
   return (
-    <ScrollView style={styles.container}>
+    // Formulir ini punya empat kolom isian; tanpa KeyboardAvoidingView,
+    // papan ketik menutupi kolom Alasan yang letaknya paling bawah.
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+    <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
       <Text style={styles.sectionTitle}>Ajukan Izin / Sakit / Cuti</Text>
       <View style={styles.card}>
         <Text style={styles.label}>Jenis pengajuan</Text>
@@ -136,6 +143,7 @@ export default function LeavesScreen() {
             <TextInput
               style={styles.input}
               placeholder="2026-07-25"
+          placeholderTextColor={w.teksSamar}
               value={form.start_date}
               onChangeText={(v) => setForm({ ...form, start_date: v })}
             />
@@ -145,6 +153,7 @@ export default function LeavesScreen() {
             <TextInput
               style={styles.input}
               placeholder="2026-07-26"
+          placeholderTextColor={w.teksSamar}
               value={form.end_date}
               onChangeText={(v) => setForm({ ...form, end_date: v })}
             />
@@ -154,6 +163,7 @@ export default function LeavesScreen() {
         <TextInput
           style={[styles.input, styles.textarea]}
           placeholder="Contoh: keperluan keluarga, sakit, dll."
+          placeholderTextColor={w.teksSamar}
           multiline
           numberOfLines={3}
           value={form.reason}
@@ -224,6 +234,7 @@ export default function LeavesScreen() {
       )}
       <View style={{ height: 24 }} />
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -242,7 +253,7 @@ const buatGaya = (w) => StyleSheet.create({
   },
   jenisChipActive: { backgroundColor: w.utama, borderColor: w.utama },
   jenisText: { fontSize: 13, fontWeight: '600', color: w.teksBadan },
-  jenisTextActive: { color: w.permukaan },
+  jenisTextActive: { color: w.teksDiWarna },
   lampiran: { fontSize: 11, color: w.teksRedup, marginTop: 4, fontStyle: 'italic' },
   berkasPilih: {
     borderWidth: 1, borderColor: w.utama, borderStyle: 'dashed', borderRadius: 10,
@@ -261,11 +272,14 @@ const buatGaya = (w) => StyleSheet.create({
   label: { fontSize: 12, color: w.teksBadan, marginBottom: 4, fontWeight: '500' },
   input: {
     borderWidth: 1, borderColor: w.garisTebal, borderRadius: 10,
-    paddingHorizontal: 12, paddingVertical: 10, marginBottom: 10, fontSize: 14, backgroundColor: w.permukaan,
+    paddingHorizontal: 12, paddingVertical: 11, marginBottom: 10, fontSize: 14,
+    backgroundColor: w.permukaan,
+    // Tanpa ini teksnya hitam bawaan sistem -- tidak terbaca di mode gelap.
+    color: w.teks,
   },
   textarea: { minHeight: 70, textAlignVertical: 'top' },
   button: { backgroundColor: w.utama, borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
-  buttonText: { color: w.permukaan, fontWeight: '600', fontSize: 14 },
+  buttonText: { color: w.teksDiWarna, fontWeight: '600', fontSize: 14 },
   leaveHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
   leaveDate: { fontSize: 14, color: w.teks, fontWeight: '500', flex: 1 },
   badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },

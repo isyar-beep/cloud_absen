@@ -2,7 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView, RefreshControl,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useWarna } from '../theme';
+import PilihTema from '../components/PilihTema';
 import api from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { unregisterPushToken } from '../services/notifications';
@@ -61,6 +63,7 @@ export default function DashboardScreen({ navigation }) {
   const [ubahPassword, setUbahPassword] = useState(false);
   const [pesan, setPesan] = useState('');
   const w = useWarna();
+  const insets = useSafeAreaInsets();
   const styles = useMemo(() => buatGaya(w), [w]);
 
   // Ketiga permintaan dijalankan terpisah dengan allSettled, bukan
@@ -142,8 +145,12 @@ export default function DashboardScreen({ navigation }) {
       contentContainerStyle={{ paddingBottom: 28 }}
       refreshControl={<RefreshControl refreshing={memuat} onRefresh={ambilData} />}
     >
-      {/* Kepala berwarna, sejajar dengan tampilan web */}
-      <View style={styles.hero}>
+      {/* Kepala berwarna, sejajar dengan tampilan web.
+          paddingTop mengikuti tinggi bilah status HP. Tanpa itu isinya
+          menyelinap ke bawah jam dan ikon sinyal, dan tombol Keluar
+          berhimpitan dengan area tarik-turun notifikasi -- menekannya
+          justru membuka panel notifikasi HP. */}
+      <View style={[styles.hero, { paddingTop: insets.top + 16 }]}>
         <View style={styles.heroRow}>
           <View style={styles.heroTeks}>
             <Text style={styles.heroTanggal}>{tanggalHariIni}</Text>
@@ -155,7 +162,11 @@ export default function DashboardScreen({ navigation }) {
               </Text>
             ) : null}
           </View>
-          <TouchableOpacity onPress={handleLogout} hitSlop={10}>
+        </View>
+
+        <View style={styles.heroAksi}>
+          <PilihTema diAtasWarna />
+          <TouchableOpacity style={styles.logoutTombol} onPress={handleLogout}>
             <Text style={styles.logout}>Keluar</Text>
           </TouchableOpacity>
         </View>
@@ -344,13 +355,27 @@ export default function DashboardScreen({ navigation }) {
 const buatGaya = (w) => StyleSheet.create({
   container: { flex: 1, backgroundColor: w.latar },
 
-  hero: { backgroundColor: w.utama, paddingTop: 20, paddingBottom: 56, paddingHorizontal: 16 },
+  hero: { backgroundColor: w.utama, paddingBottom: 56, paddingHorizontal: 16 },
   heroRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  heroTeks: { flex: 1, paddingRight: 12 },
-  heroTanggal: { fontSize: 12, color: w.utamaTeks },
-  heroNama: { fontSize: 19, fontWeight: '700', color: w.permukaan, marginTop: 2 },
-  heroShift: { fontSize: 12, color: w.utamaTeks, marginTop: 4 },
-  logout: { fontSize: 13, color: w.utamaTeks, fontWeight: '600' },
+  heroTeks: { flex: 1 },
+  heroTanggal: { fontSize: 12, color: 'rgba(255,255,255,0.85)' },
+  heroNama: { fontSize: 19, fontWeight: '700', color: w.teksDiWarna, marginTop: 2 },
+  heroShift: { fontSize: 12, color: 'rgba(255,255,255,0.85)', marginTop: 4 },
+
+  // Tombol keluar dan pemilih tema turun ke barisnya sendiri, jauh dari
+  // sudut layar. Di sudut kanan atas, ibu jari yang meleset sedikit saja
+  // menarik panel notifikasi HP alih-alih menekan tombolnya.
+  heroAksi: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    marginTop: 16,
+  },
+  logoutTombol: {
+    minHeight: 40, justifyContent: 'center', paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)',
+  },
+  logout: { fontSize: 13, color: w.teksDiWarna, fontWeight: '700' },
 
   isi: { paddingHorizontal: 16, marginTop: -42 },
   pesan: {
@@ -405,7 +430,7 @@ const buatGaya = (w) => StyleSheet.create({
     backgroundColor: w.teks, borderRadius: 14, paddingVertical: 15, alignItems: 'center',
   },
   tombolMati: { opacity: 0.4 },
-  tombolTeks: { color: w.permukaan, fontWeight: '700', fontSize: 14 },
+  tombolTeks: { color: w.teksDiWarna, fontWeight: '700', fontSize: 14 },
   tombolCatatan: { fontSize: 11, color: w.teksRedup, textAlign: 'center', marginTop: 6 },
 
   judulBagian: { fontSize: 14, fontWeight: '700', color: w.teks, marginTop: 22, marginBottom: 10 },
