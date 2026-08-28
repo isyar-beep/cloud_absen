@@ -63,9 +63,9 @@ export default function LoginScreen({ navigation }) {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.logo}>
-          <Text style={styles.logoText}>CA</Text>
+          <Text style={styles.logoText}>AK</Text>
         </View>
-        <Text style={styles.title}>Cloud Absen</Text>
+        <Text style={styles.title}>Absensi Konsultan</Text>
         <Text style={styles.subtitle}>Masuk ke akun Anda untuk melanjutkan</Text>
 
         <Text style={styles.label}>Email</Text>
@@ -102,6 +102,9 @@ export default function LoginScreen({ navigation }) {
           <Text style={styles.buttonText}>{loading ? 'Memproses...' : 'Masuk'}</Text>
         </TouchableOpacity>
 
+        <Text style={styles.hakCipta}>
+          © {new Date().getFullYear()} by : PERCIPKAR — Sistem Absensi Konsultan
+        </Text>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -115,7 +118,10 @@ const buatGaya = (w) => StyleSheet.create({
     alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginBottom: 16,
   },
   logoText: { color: w.teksDiWarna, fontSize: 20, fontWeight: '600' },
-  title: { fontSize: 22, fontWeight: '600', textAlign: 'center', color: w.teks },
+  title: {
+    fontSize: 21, fontWeight: '700', textAlign: 'center',
+    color: w.teks, textTransform: 'uppercase',
+  },
   subtitle: { fontSize: 13, color: w.teksRedup, textAlign: 'center', marginTop: 4, marginBottom: 28 },
 
   label: { fontSize: 12, fontWeight: '600', color: w.teksRedup, marginBottom: 6 },
@@ -137,4 +143,8 @@ const buatGaya = (w) => StyleSheet.create({
   // zIndex: ScrollView digambar setelahnya, jadi tanpa ini tombol tertimpa
   // dan ketukan jatuh ke daftar di belakangnya.
   temaPojok: { position: 'absolute', right: 20, zIndex: 10 },
+
+  hakCipta: {
+    fontSize: 11, color: w.teksSamar, textAlign: 'center', marginTop: 24,
+  },
 });

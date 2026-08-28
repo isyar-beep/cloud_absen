@@ -48,9 +48,9 @@ export default function Login() {
       <div className="relative w-full max-w-sm">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 text-white text-2xl font-bold mb-4 shadow-glow">
-            CA
+            AK
           </div>
-          <h1 className="text-2xl font-bold text-strong tracking-tight">Cloud Absen</h1>
+          <h1 className="text-2xl font-bold text-strong uppercase">Absensi Konsultan</h1>
           <p className="text-sm text-muted mt-1.5">Absensi modern, cukup dari genggaman</p>
         </div>
 
@@ -98,7 +98,7 @@ export default function Login() {
         </form>
 
         <p className="text-center text-xs text-faint mt-6">
-          © {new Date().getFullYear()} Cloud Absen — Sistem Absensi Karyawan
+          © {new Date().getFullYear()} by : PERCIPKAR — Sistem Absensi Konsultan
         </p>
       </div>
     </div>
