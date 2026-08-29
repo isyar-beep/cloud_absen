@@ -171,6 +171,30 @@ function jendelaAbsen(shiftMentah, sekarang = new Date()) {
   };
 }
 
+// Apakah jendela absen untuk SATU tanggal shift tertentu sudah tertutup?
+//
+// Bedanya dengan jendelaAbsen(): di sana tanggal shiftnya masih dicari dari
+// jam sekarang, sedangkan di sini tanggalnya sudah diketahui -- dibaca dari
+// baris absensi yang tersimpan -- dan yang ditanyakan hanya apakah waktunya
+// sudah lewat.
+//
+// Dipakai untuk membedakan "belum absen pulang karena masih bekerja" dari
+// "belum absen pulang karena lupa".
+function jendelaTanggal(shiftMentah, tanggalShift, sekarang = new Date()) {
+  const cocok = String(tanggalShift ?? '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!cocok) return { masukTutup: false, pulangTutup: false };
+
+  const shift = { ...SHIFT_DEFAULT, ...(shiftMentah || {}) };
+  const kejadian = kejadianShift(
+    shift,
+    new Date(Number(cocok[1]), Number(cocok[2]) - 1, Number(cocok[3]))
+  );
+  return {
+    masukTutup: sekarang > kejadian.masukTutup,
+    pulangTutup: sekarang > kejadian.pulangTutup,
+  };
+}
+
 // Ambil shift seorang pegawai berikut pengaturan jendelanya.
 async function shiftPegawai(query, userId) {
   const hasil = await query(
@@ -217,6 +241,7 @@ async function jendelaSemuaPegawai(query, sekarang = new Date()) {
 
 module.exports = {
   jendelaAbsen,
+  jendelaTanggal,
   jendelaSemuaPegawai,
   shiftPegawai,
   lintasTengahMalam,

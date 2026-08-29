@@ -168,6 +168,30 @@ export default function Dashboard() {
           </div>
         )}
 
+        {/* Absen pulang yang tidak pernah terisi.
+            Muncul hanya kalau ada -- kotak yang selamanya menampilkan angka 0
+            cuma memakan ruang tanpa memberi tahu apa pun. Sengaja di luar
+            kisi statistik: ini bukan capaian yang diukur, melainkan pekerjaan
+            yang menunggu diselesaikan, jadi diberi jalan keluarnya sekalian. */}
+        {stats?.total_tidak_lengkap > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-2xl px-4 py-3.5 mb-5">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">
+                {stats.total_tidak_lengkap} hari tanpa absen pulang
+              </p>
+              <p className="text-xs text-amber-700/80 dark:text-amber-300/80 mt-0.5">
+                Kehadiran Anda tetap terhitung. Ajukan koreksi bila jam pulangnya perlu dilengkapi.
+              </p>
+            </div>
+            <button
+              onClick={() => navigate('/history')}
+              className="text-xs font-semibold text-amber-800 dark:text-amber-200 underline underline-offset-2 shrink-0"
+            >
+              Lihat riwayat
+            </button>
+          </div>
+        )}
+
         {/* Trend Chart */}
         {trend.length > 0 && (
           <div className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft p-5 mb-5">
@@ -215,7 +239,7 @@ export default function Dashboard() {
                     : 'Tidak ada jam masuk'}
                 </p>
               </div>
-              <StatusBadge status={item.status} />
+              <StatusBadge status={item.status} kurang={item.kurang} />
             </div>
           ))}
           {history.length === 0 && (

@@ -144,8 +144,13 @@ export default function AdminGallery() {
     return items.filter((r) => r[kolom]);
   }, [items, hanyaSatuJenis, filter.jenis]);
 
+  // Memakai penilaian server, bukan menghitung ulang dari ada-tidaknya foto.
+  // Aturan "sudah lewat jam pulang atau belum" itu milik shift, dan
+  // menyalinnya ke sini berarti hitungan galeri bisa berselisih dengan
+  // riwayat. Efeknya juga memperbaiki: pegawai yang shiftnya masih berjalan
+  // tidak lagi terhitung "belum absen pulang".
   const jumlahPulangKosong = useMemo(
-    () => items.filter((r) => r.photo_in_url && !r.photo_out_url).length,
+    () => items.filter((r) => r.kurang === 'pulang').length,
     [items]
   );
 
@@ -336,14 +341,15 @@ export default function AdminGallery() {
                       itulah yang biasanya ditelusuri admin. */}
                   <span className="flex items-center gap-1.5 shrink-0">
                     <WfaBadge mode={r.work_mode} />
-                    {r.photo_in_url && !r.photo_out_url && !hanyaSatuJenis ? (
-                      <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full bg-red-50 dark:bg-red-500/15 text-red-700 dark:text-red-300 ring-1 ring-inset ring-red-600/20">
-                        <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                        Pulang kosong
-                      </span>
-                    ) : (
-                      <StatusBadge status={r.status} />
-                    )}
+                    {/* Sebelumnya lencana status DIGANTI oleh tanda "Pulang
+                        kosong", sehingga pegawai yang terlambat sekaligus
+                        lupa absen pulang kehilangan keterangan terlambatnya.
+                        Sekarang keduanya tampil berdampingan.
+
+                        Saat disaring ke satu jenis foto saja, tandanya
+                        disembunyikan: admin memang sedang melihat foto masuk
+                        saja, jadi "pulang kosong" bukan temuan. */}
+                    <StatusBadge status={r.status} kurang={hanyaSatuJenis ? null : r.kurang} />
                   </span>
                 </div>
               </div>
@@ -425,7 +431,7 @@ export default function AdminGallery() {
                 </div>
                 <div className="flex justify-between gap-4 py-2">
                   <dt className="text-muted">Status</dt>
-                  <dd><StatusBadge status={detail.row.status} /></dd>
+                  <dd><StatusBadge status={detail.row.status} kurang={detail.row.kurang} /></dd>
                 </div>
               </dl>
 

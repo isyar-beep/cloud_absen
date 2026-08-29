@@ -145,7 +145,7 @@ export default function AdminHistory() {
                   <td className="px-5 py-3.5 text-body">{formatJam(item.check_out_time)}</td>
                   <td className="px-5 py-3.5">
                     <span className="flex items-center gap-1.5">
-                      <StatusBadge status={item.status} />
+                      <StatusBadge status={item.status} kurang={item.kurang} />
                       <WfaBadge mode={item.work_mode} />
                     </span>
                   </td>

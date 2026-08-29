@@ -307,6 +307,24 @@ export default function DashboardScreen({ navigation }) {
           </View>
         )}
 
+        {/* Absen pulang yang tidak pernah terisi. Muncul hanya kalau ada --
+            kotak yang selamanya menampilkan angka 0 cuma memakan ruang.
+            Sengaja di luar kisi statistik: ini bukan capaian yang diukur,
+            melainkan pekerjaan yang menunggu diselesaikan. */}
+        {stats?.total_tidak_lengkap > 0 ? (
+          <TouchableOpacity
+            style={styles.peringatanKurang}
+            onPress={() => navigation.navigate('History')}
+          >
+            <Text style={styles.peringatanJudul}>
+              {stats.total_tidak_lengkap} hari tanpa absen pulang
+            </Text>
+            <Text style={styles.peringatanTeks}>
+              Kehadiran Anda tetap terhitung. Ketuk untuk mengajukan koreksi.
+            </Text>
+          </TouchableOpacity>
+        ) : null}
+
         {/* Riwayat terbaru */}
         <View style={styles.judulRow}>
           <Text style={styles.judulBagian}>Riwayat Terbaru</Text>
@@ -316,7 +334,12 @@ export default function DashboardScreen({ navigation }) {
         </View>
         <View style={styles.card}>
           {history.map((item, i) => {
-            const s = w.status[item.status] || w.status.hadir;
+            // Ikut menguning kalau catatannya tidak lengkap, sama seperti di
+            // layar Riwayat dan di web. Rinciannya ada di sana; di sini
+            // warnanya saja yang memberi tahu ada yang perlu dilihat.
+            const s = item.kurang
+              ? w.status.terlambat
+              : (w.status[item.status] || w.status.hadir);
             return (
               <View key={item.id} style={[styles.riwayatBaris, i > 0 && styles.riwayatGaris]}>
                 <View>
@@ -437,6 +460,13 @@ const buatGaya = (w) => StyleSheet.create({
   tautan: { fontSize: 12, color: w.utama, fontWeight: '600', marginTop: 12 },
 
   statGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 2 },
+  peringatanKurang: {
+    marginTop: 12, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 14,
+    backgroundColor: w.status.terlambat.latar,
+    borderWidth: 1, borderColor: w.status.terlambat.teks,
+  },
+  peringatanJudul: { fontSize: 13, fontWeight: '700', color: w.status.terlambat.teks },
+  peringatanTeks: { fontSize: 11, color: w.status.terlambat.teks, opacity: 0.85, marginTop: 2 },
   statCard: {
     width: '47.5%', flexGrow: 1, backgroundColor: w.permukaan, borderRadius: 14,
     borderWidth: 1, borderColor: w.garis, paddingVertical: 14, paddingHorizontal: 14,

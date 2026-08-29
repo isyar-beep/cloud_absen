@@ -280,7 +280,7 @@ export default function History() {
                 <p className="text-sm font-semibold text-strong">{formatTanggalHari(item.date)}</p>
                 <span className="flex items-center gap-1.5">
                   <WfaBadge mode={item.work_mode} />
-                  <StatusBadge status={item.status} />
+                  <StatusBadge status={item.status} kurang={item.kurang} />
                 </span>
               </div>
               <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">

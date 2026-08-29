@@ -6,6 +6,7 @@ const { jendelaAbsen, jendelaSemuaPegawai, shiftPegawai } = require('../utils/sh
 const { cekHariKerja } = require('../utils/workday');
 const { wfaBerlaku } = require('./wfaController');
 const { hitungRate } = require('../utils/attendanceRate');
+const { KOLOM_SHIFT_SQL, tandaiKelengkapan } = require('../utils/kelengkapan');
 
 // POST /api/attendance/check-in -- pengguna absen masuk dengan foto
 async function checkIn(req, res, next) {
@@ -251,14 +252,17 @@ async function getMyHistory(req, res, next) {
     params.push(limit, offset);
     const result = await query(
       `SELECT a.id, a.date, a.check_in_time, a.check_out_time, a.status, a.reason,
-              a.photo_in_url, a.photo_out_url, a.work_mode
+              a.photo_in_url, a.photo_out_url, a.work_mode,
+              ${KOLOM_SHIFT_SQL}
        FROM attendance a
+       JOIN users u ON a.user_id = u.id
+       LEFT JOIN shifts s ON u.shift_id = s.id
        WHERE ${conditions.join(' AND ')}
        ORDER BY a.date DESC
        LIMIT $${params.length - 1} OFFSET $${params.length}`,
       params
     );
-    res.json(result.rows);
+    res.json(tandaiKelengkapan(result.rows));
   } catch (err) {
     next(err);
   }
@@ -363,14 +367,17 @@ async function getUserHistory(req, res, next) {
     params.push(limit, offset);
     const result = await query(
       `SELECT a.id, a.date, a.check_in_time, a.check_out_time, a.status, a.reason,
-              a.photo_in_url, a.photo_out_url, a.work_mode
+              a.photo_in_url, a.photo_out_url, a.work_mode,
+              ${KOLOM_SHIFT_SQL}
        FROM attendance a
+       JOIN users u ON a.user_id = u.id
+       LEFT JOIN shifts s ON u.shift_id = s.id
        WHERE ${conditions.join(' AND ')}
        ORDER BY a.date DESC
        LIMIT $${params.length - 1} OFFSET $${params.length}`,
       params
     );
-    res.json(result.rows);
+    res.json(tandaiKelengkapan(result.rows));
   } catch (err) {
     next(err);
   }
@@ -410,16 +417,18 @@ async function getAllHistory(req, res, next) {
       `SELECT a.id, a.date, a.check_in_time, a.check_out_time, a.status, a.reason,
               a.photo_in_url, a.photo_out_url, a.work_mode,
               a.latitude, a.longitude,
-              u.id AS user_id, u.name, u.avatar_url, d.name AS department
+              u.id AS user_id, u.name, u.avatar_url, d.name AS department,
+              ${KOLOM_SHIFT_SQL}
        FROM attendance a
        JOIN users u ON a.user_id = u.id
        LEFT JOIN departments d ON u.department_id = d.id
+       LEFT JOIN shifts s ON u.shift_id = s.id
        WHERE ${conditions.join(' AND ')}
        ORDER BY a.date ${urutan}, u.name ASC
        LIMIT $${params.length - 1} OFFSET $${params.length}`,
       params
     );
-    res.json(result.rows);
+    res.json(tandaiKelengkapan(result.rows));
   } catch (err) {
     next(err);
   }

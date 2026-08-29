@@ -2,6 +2,7 @@ const { query } = require('../config/db');
 const { todayLocal } = require('../utils/date');
 const { hitungRate } = require('../utils/attendanceRate');
 const { jendelaSemuaPegawai } = require('../utils/shiftWindow');
+const { KOLOM_SHIFT_SQL, kekuranganAbsen } = require('../utils/kelengkapan');
 
 // GET /api/stats/me -- statistik personal pengguna (bulan berjalan)
 async function getMyStats(req, res, next) {
@@ -29,11 +30,37 @@ async function getMyStats(req, res, next) {
 
     const row = result.rows[0];
 
+    // Catatan yang sudah absen masuk tapi tidak pernah absen pulang. Dihitung
+    // di JavaScript, bukan SQL, karena batas "sudah lewat jam pulang" itu
+    // aturan shift -- dan aturan itu tinggal di utils/shiftWindow.js. Menyalin
+    // hitungannya ke SQL berarti punya dua sumber yang bisa berselisih.
+    // Jumlah barisnya paling banyak sebulan, jadi murah.
+    const calon = await query(
+      `SELECT a.date, a.check_in_time, a.check_out_time, a.status,
+              ${KOLOM_SHIFT_SQL}
+       FROM attendance a
+       JOIN users u ON a.user_id = u.id
+       LEFT JOIN shifts s ON u.shift_id = s.id
+       WHERE a.user_id = $1
+         AND EXTRACT(MONTH FROM a.date) = $2
+         AND EXTRACT(YEAR FROM a.date) = $3
+         AND a.check_in_time IS NOT NULL
+         AND a.check_out_time IS NULL`,
+      [userId, targetMonth, targetYear]
+    );
+    const sekarang = new Date();
+    const totalTidakLengkap = calon.rows
+      .filter((r) => kekuranganAbsen(r, sekarang) === 'pulang').length;
+
     res.json({
       total_hadir: Number(row.total_hadir) + Number(row.total_terlambat),
       total_terlambat: Number(row.total_terlambat),
       total_izin: Number(row.total_izin),
       total_alpha: Number(row.total_alpha),
+      // Tidak ikut menurunkan attendance_rate: orangnya terbukti datang,
+      // yang kurang cuma catatannya. Angkanya berdiri sendiri supaya bisa
+      // ditindaklanjuti lewat koreksi tanpa mencemari angka kehadiran.
+      total_tidak_lengkap: totalTidakLengkap,
       avg_work_hours: row.avg_work_hours ? Number(row.avg_work_hours).toFixed(1) : 0,
       attendance_rate: hitungRate({
         hadir: row.total_hadir,

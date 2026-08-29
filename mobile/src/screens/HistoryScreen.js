@@ -19,6 +19,8 @@ const LABEL_STATUS = {
   alpha: 'Alpha',
 };
 
+const LABEL_KURANG = { pulang: 'Pulang kosong', masuk: 'Masuk kosong' };
+
 // Preset periode. Dropdown bulan/tahun dan rentang khusus sengaja tidak
 // dibawa ke mobile: di layar sempit, empat preset ini sudah menutup hampir
 // semua kebutuhan, dan pemilih tanggal butuh paket tambahan.
@@ -120,8 +122,14 @@ export default function HistoryScreen() {
   }, {});
 
   function renderItem({ item }) {
-    const info = w.status[item.status] || w.status.hadir;
     const label = LABEL_STATUS[item.status] || LABEL_STATUS.hadir;
+    const tandaKurang = LABEL_KURANG[item.kurang];
+    // Catatan yang tidak lengkap ikut menguning walau statusnya hijau --
+    // sama seperti di web. Warna menjawab "perlu dilihat?", tulisan di
+    // sebelahnya menjawab "kenapa?". Kehadirannya sendiri tetap terhitung.
+    const info = tandaKurang
+      ? w.status.terlambat
+      : (w.status[item.status] || w.status.hadir);
     const pengajuan = ajuanPerTanggal[item.date];
     const ket = pengajuan ? TEKS_KOREKSI[pengajuan.status] : null;
 
@@ -129,8 +137,20 @@ export default function HistoryScreen() {
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <Text style={styles.date}>{formatTanggalHari(item.date)}</Text>
-          <View style={[styles.badge, { backgroundColor: info.latar }]}>
-            <Text style={[styles.badgeText, { color: info.teks }]}>{label}</Text>
+          <View style={styles.lencanaRow}>
+            <View style={[styles.badge, { backgroundColor: info.latar }]}>
+              <Text style={[styles.badgeText, { color: info.teks }]}>{label}</Text>
+            </View>
+            {tandaKurang ? (
+              // Bergaris tepi tanpa isi: bentuknya membedakan catatan dari
+              // status, supaya hari yang terlambat SEKALIGUS tidak lengkap
+              // tidak tampil sebagai dua gumpalan kuning yang mirip.
+              <View style={[styles.badgeGaris, { borderColor: w.status.terlambat.teks }]}>
+                <Text style={[styles.badgeGarisText, { color: w.status.terlambat.teks }]}>
+                  {tandaKurang}
+                </Text>
+              </View>
+            ) : null}
           </View>
         </View>
         <Text style={styles.times}>
@@ -289,8 +309,19 @@ const buatGaya = (w) => StyleSheet.create({
   },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
   date: { fontSize: 14, fontWeight: '500', color: w.teks },
+  // Boleh melipat ke baris berikutnya: tanggal panjang ditambah dua lencana
+  // tidak selalu muat sebaris di layar sempit.
+  lencanaRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    flexShrink: 1, flexWrap: 'wrap', justifyContent: 'flex-end',
+  },
   badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
   badgeText: { fontSize: 11, fontWeight: '600' },
+  badgeGaris: {
+    paddingHorizontal: 7, paddingVertical: 2,
+    borderRadius: 999, borderWidth: 1,
+  },
+  badgeGarisText: { fontSize: 10, fontWeight: '600' },
   times: { fontSize: 12, color: w.teksRedup },
   reason: { fontSize: 12, color: w.teksSamar, marginTop: 2 },
   koreksiTombol: { fontSize: 11, fontWeight: '700', color: w.utama, marginTop: 6 },
