@@ -46,7 +46,7 @@ async function sendLowAttendanceWarning(req, res, next) {
        LEFT JOIN attendance a ON a.user_id = u.id
          AND EXTRACT(MONTH FROM a.date) = $1
          AND EXTRACT(YEAR FROM a.date) = $2
-       WHERE u.role != 'admin' AND u.is_active = TRUE
+       WHERE u.role = 'staff' AND u.is_active = TRUE
        GROUP BY u.id, u.name, u.email
        HAVING COUNT(a.*) FILTER (WHERE a.status IN ('hadir','terlambat','alpha')) > 0
           AND (COUNT(a.*) FILTER (WHERE a.status IN ('hadir','terlambat'))::float

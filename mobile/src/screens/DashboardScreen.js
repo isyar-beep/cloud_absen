@@ -170,6 +170,14 @@ export default function DashboardScreen({ navigation }) {
                 {shift.lintas_hari ? ' (+1 hari)' : ''}
               </Text>
             ) : null}
+            {/* Satu pegawai hanya aktif di satu proyek, jadi tidak ada yang
+                perlu dipilih saat absen -- namanya cukup ditampilkan supaya
+                pegawai tahu kehadirannya tercatat untuk pekerjaan yang mana. */}
+            {info?.proyek ? (
+              <Text style={styles.heroProyek} numberOfLines={1}>
+                {info.proyek.name}{info.proyek.location ? ` · ${info.proyek.location}` : ''}
+              </Text>
+            ) : null}
           </View>
 
           {/* Satu pintu ke seluruh pengaturan akun: foto profil, tema,
@@ -389,6 +397,7 @@ const buatGaya = (w) => StyleSheet.create({
   heroTeks: { flex: 1 },
   heroTanggal: { fontSize: 12, color: 'rgba(255,255,255,0.85)' },
   heroNama: { fontSize: 19, fontWeight: '700', color: w.teksDiWarna, marginTop: 2 },
+  heroProyek: { fontSize: 12, color: w.teksDiWarna, opacity: 0.78, marginTop: 2 },
   heroShift: { fontSize: 12, color: 'rgba(255,255,255,0.85)', marginTop: 4 },
 
   // Avatar diberi cincin putih tipis supaya tetap terlihat sebagai tombol

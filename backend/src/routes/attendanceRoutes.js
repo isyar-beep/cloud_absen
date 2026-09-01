@@ -23,9 +23,9 @@ router.get('/history', authenticate, getMyHistory);
 router.get('/history/summary', authenticate, getMyHistorySummary);
 
 // Endpoint khusus admin
-router.get('/today-all', authenticate, authorize('admin'), getTodayAll);
-router.get('/all', authenticate, authorize('admin'), getAllHistory);
-router.get('/user/:userId', authenticate, authorize('admin'), getUserHistory);
+router.get('/today-all', authenticate, authorize('admin', 'konsultan'), getTodayAll);
+router.get('/all', authenticate, authorize('admin', 'konsultan'), getAllHistory);
+router.get('/user/:userId', authenticate, authorize('admin', 'konsultan'), getUserHistory);
 router.put('/:id/edit', authenticate, authorize('admin'), adminEditAbsensi);
 router.get('/:id/edits', authenticate, authorize('admin'), getRiwayatEdit);
 router.post('/mark-alpha', authenticate, authorize('admin'), markAlpha);

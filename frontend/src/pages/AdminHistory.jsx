@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import api from '../api/axios';
 import { urlFoto, useTokenFoto } from '../api/fileUrl';
-import AdminHeader from '../components/AdminHeader';
+import AdminSidebar from '../components/AdminSidebar';
 import StatusBadge from '../components/StatusBadge';
 import WfaBadge from '../components/WfaBadge';
 import EditAbsensiModal from '../components/EditAbsensiModal';
@@ -14,7 +14,13 @@ export default function AdminHistory() {
   const tokenFoto = useTokenFoto();
   const [items, setItems] = useState([]);
   const [users, setUsers] = useState([]);
-  const [filter, setFilter] = useState({ start_date: '', end_date: '', status: '', user_id: '' });
+  const [filter, setFilter] = useState(() => ({
+    start_date: '', end_date: '', status: '', user_id: '',
+    // Dibaca dari alamat supaya tautan "Riwayat" di kartu proyek langsung
+    // membuka halaman ini dalam keadaan tersaring.
+    project_id: new URLSearchParams(window.location.search).get('project_id') || '',
+  }));
+  const [projects, setProjects] = useState([]);
   const [hasMore, setHasMore] = useState(false);
   const [edit, setEdit] = useState(null);
   const [pesan, setPesan] = useState('');
@@ -24,6 +30,7 @@ export default function AdminHistory() {
   // tabelnya ada, tapi belum ada pegawai yang di-assign ke departemen mana
   // pun, sehingga saringan itu selalu mengembalikan tabel kosong.
   useEffect(() => {
+    api.get('/projects').then((res) => setProjects(res.data)).catch(() => {});
     api.get('/users')
       .then((res) => setUsers(res.data.filter((u) => u.role !== 'admin')))
       .catch(console.error);
@@ -57,8 +64,8 @@ export default function AdminHistory() {
     'w-full px-2.5 py-2 bg-surface-2 border border-line rounded-xl text-sm transition focus:outline-none focus:bg-surface/75 backdrop-blur-xl focus:ring-2 focus:ring-primary-500/40';
 
   return (
-    <div className="min-h-screen">
-      <AdminHeader />
+    <div className="min-h-screen lg:pl-64">
+      <AdminSidebar />
 
       <div className="max-w-6xl mx-auto px-4 py-7">
         <div className="mb-6">
@@ -85,6 +92,19 @@ export default function AdminHistory() {
               onChange={(e) => setFilter({ ...filter, end_date: e.target.value })}
               className={inputClass}
             />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-muted mb-1.5">Proyek</label>
+            <select
+              value={filter.project_id}
+              onChange={(e) => setFilter({ ...filter, project_id: e.target.value })}
+              className={inputClass}
+            >
+              <option value="">Semua proyek</option>
+              {projects.map((pr) => (
+                <option key={pr.id} value={pr.id}>{pr.name}</option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="block text-xs font-medium text-muted mb-1.5">Pegawai</label>
@@ -140,7 +160,15 @@ export default function AdminHistory() {
               {items.map((item) => (
                 <tr key={item.id} className="border-b border-line last:border-b-0 hover:bg-surface-2/60 transition">
                   <td className="px-5 py-3.5 text-strong font-medium whitespace-nowrap">{formatTanggal(item.date)}</td>
-                  <td className="px-5 py-3.5 text-strong">{item.name}</td>
+                  <td className="px-5 py-3.5 text-strong">
+                    {item.name}
+                    {/* Proyek yang TERCAP pada baris ini, bukan penugasan
+                        pegawai saat ini -- pegawai yang sudah dimutasi tetap
+                        terbaca di proyek tempat kehadirannya terjadi. */}
+                    {item.project_name && (
+                      <span className="block text-[11px] text-faint font-normal mt-0.5">{item.project_name}</span>
+                    )}
+                  </td>
                   <td className="px-5 py-3.5 text-body">{formatJam(item.check_in_time)}</td>
                   <td className="px-5 py-3.5 text-body">{formatJam(item.check_out_time)}</td>
                   <td className="px-5 py-3.5">

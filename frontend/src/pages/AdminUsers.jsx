@@ -1,18 +1,21 @@
 import { useEffect, useState } from 'react';
 import api from '../api/axios';
-import AdminHeader from '../components/AdminHeader';
+import AdminSidebar from '../components/AdminSidebar';
 import { useDialog } from '../components/Dialog';
 import { useAuthStore } from '../store/authStore';
 import { PlusIcon } from '../components/Icons';
 import Avatar from '../components/Avatar';
+
+const LABEL_PERAN = { admin: 'Admin (Dinas)', konsultan: 'Konsultan', staff: 'Pegawai' };
 
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);
   const { konfirmasi } = useDialog();
   const user = useAuthStore((s) => s.user);
   const [shifts, setShifts] = useState([]);
+  const [projects, setProjects] = useState([]);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'staff', shift_id: '' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'staff', shift_id: '', project_id: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   // Dibedakan dari `error` (kegagalan form) -- ini kegagalan memuat daftar.
@@ -23,6 +26,11 @@ export default function AdminUsers() {
   useEffect(() => {
     fetchUsers();
     api.get('/shifts').then((res) => setShifts(res.data)).catch(console.error);
+    // Proyek yang sudah selesai tidak ditawarkan sebagai penugasan baru,
+    // tapi tetap terbaca pada pegawai yang sudah terlanjur di sana.
+    api.get('/projects')
+      .then((res) => setProjects(res.data.filter((x) => x.status === 'berjalan')))
+      .catch(console.error);
   }, []);
 
   async function fetchUsers() {
@@ -43,8 +51,12 @@ export default function AdminUsers() {
     setError('');
     setLoading(true);
     try {
-      await api.post('/users', { ...form, shift_id: form.shift_id || null });
-      setForm({ name: '', email: '', password: '', role: 'staff', shift_id: '' });
+      await api.post('/users', {
+        ...form,
+        shift_id: form.shift_id || null,
+        project_id: form.project_id || null,
+      });
+      setForm({ name: '', email: '', password: '', role: 'staff', shift_id: '', project_id: '' });
       setShowForm(false);
       fetchUsers();
     } catch (err) {
@@ -75,13 +87,18 @@ export default function AdminUsers() {
     fetchUsers();
   }
 
+  async function changeProject(userItem, projectId) {
+    await api.put(`/users/${userItem.id}`, { project_id: projectId ? Number(projectId) : null });
+    fetchUsers();
+  }
+
   const inputClass =
     'px-3.5 py-2.5 bg-surface-2 border border-line rounded-xl text-sm transition focus:outline-none focus:bg-surface/75 backdrop-blur-xl focus:ring-2 focus:ring-primary-500/40 focus:border-primary-300';
   const labelClass = 'block text-xs font-medium text-muted mb-1.5';
 
   return (
-    <div className="min-h-screen">
-      <AdminHeader />
+    <div className="min-h-screen lg:pl-64">
+      <AdminSidebar />
 
       <div className="max-w-4xl mx-auto px-4 py-7">
         <div className="flex justify-between items-center mb-6 gap-3">
@@ -152,10 +169,26 @@ export default function AdminUsers() {
                   onChange={(e) => setForm({ ...form, role: e.target.value })}
                   className={`${inputClass} w-full`}
                 >
-                  <option value="staff">Staff</option>
-                  <option value="admin">Admin</option>
+                  <option value="staff">Pegawai</option>
+                  <option value="konsultan">Konsultan</option>
+                  <option value="admin">Admin (Dinas)</option>
                 </select>
               </div>
+              {form.role === 'staff' && (
+                <div className="sm:col-span-2">
+                  <label className={labelClass}>Proyek penugasan</label>
+                  <select
+                    value={form.project_id}
+                    onChange={(e) => setForm({ ...form, project_id: e.target.value })}
+                    className={`${inputClass} w-full`}
+                  >
+                    <option value="">Belum ditugaskan</option>
+                    {projects.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name}{p.location ? ` — ${p.location}` : ''}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div className="sm:col-span-2">
                 <label className={labelClass}>Shift kerja</label>
                 <select
@@ -195,6 +228,7 @@ export default function AdminUsers() {
               <tr className="border-b border-line">
                 <th className="text-left px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Pengguna</th>
                 <th className="text-left px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Role</th>
+                <th className="text-left px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Proyek</th>
                 <th className="text-left px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Shift</th>
                 <th className="text-left px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Status</th>
                 <th className="text-right px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Aksi</th>
@@ -216,10 +250,37 @@ export default function AdminUsers() {
                     <span className={`text-xs font-medium px-2.5 py-1 rounded-full ring-1 ring-inset ${
                       u.role === 'admin'
                         ? 'bg-violet-50 dark:bg-violet-500/15 text-violet-700 dark:text-violet-300 ring-violet-600/20'
-                        : 'bg-surface-2 text-body ring-line-strong/40'
+                        : u.role === 'konsultan'
+                          ? 'bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 ring-amber-600/20'
+                          : 'bg-surface-2 text-body ring-line-strong/40'
                     }`}>
-                      {u.role === 'admin' ? 'Admin' : 'Staff'}
+                      {LABEL_PERAN[u.role] || u.role}
                     </span>
+                  </td>
+                  <td className="px-5 py-3.5">
+                    {/* Penugasan proyek hanya bermakna untuk pegawai. Konsultan
+                        ditunjuk sebagai penanggung jawab lewat halaman Proyek,
+                        dan admin tidak absen sama sekali. */}
+                    {u.role === 'staff' ? (
+                      <select
+                        value={u.project_id || ''}
+                        onChange={(e) => changeProject(u, e.target.value)}
+                        className="text-xs bg-surface-2 border border-line rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500/40"
+                      >
+                        <option value="">Belum ditugaskan</option>
+                        {projects.map((pr) => (
+                          <option key={pr.id} value={pr.id}>{pr.name}</option>
+                        ))}
+                        {/* Proyek yang sudah selesai tidak ada di daftar di atas;
+                            tanpa baris ini, penugasan lama tampil kosong seolah
+                            pegawainya tidak pernah ditugaskan. */}
+                        {u.project_id && !projects.some((pr) => pr.id === u.project_id) && (
+                          <option value={u.project_id}>{u.project_name} (selesai)</option>
+                        )}
+                      </select>
+                    ) : (
+                      <span className="text-xs text-faint">—</span>
+                    )}
                   </td>
                   <td className="px-5 py-3.5">
                     <select

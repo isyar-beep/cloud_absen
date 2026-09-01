@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import api from '../api/axios';
 import { urlFoto, useTokenFoto } from '../api/fileUrl';
-import AdminHeader from '../components/AdminHeader';
+import AdminSidebar from '../components/AdminSidebar';
 import Avatar from '../components/Avatar';
 import StatusBadge from '../components/StatusBadge';
 import Koordinat from '../components/Koordinat';
@@ -78,6 +78,7 @@ export default function AdminGallery() {
   const tokenFoto = useTokenFoto();
 
   const [users, setUsers] = useState([]);
+  const [projects, setProjects] = useState([]);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
@@ -92,6 +93,9 @@ export default function AdminGallery() {
       start_date: tanggalIso(mulai),
       end_date: tanggalIso(kini),
       user_id: '',
+      // Dibaca dari alamat supaya tautan "Lihat foto" di kartu proyek
+      // membuka galeri dalam keadaan sudah tersaring.
+      project_id: new URLSearchParams(window.location.search).get('project_id') || '',
       jenis: 'semua',
       status: '',
       sort: 'desc',
@@ -100,8 +104,9 @@ export default function AdminGallery() {
 
   useEffect(() => {
     api.get('/users')
-      .then((res) => setUsers(res.data.filter((u) => u.role !== 'admin')))
+      .then((res) => setUsers(res.data.filter((u) => u.role === 'staff')))
       .catch(() => {});
+    api.get('/projects').then((res) => setProjects(res.data)).catch(() => {});
   }, []);
 
   const muat = useCallback(async (offset = 0, tambah = false) => {
@@ -117,6 +122,7 @@ export default function AdminGallery() {
       if (filter.start_date) params.start_date = filter.start_date;
       if (filter.end_date) params.end_date = filter.end_date;
       if (filter.user_id) params.user_id = filter.user_id;
+      if (filter.project_id) params.project_id = filter.project_id;
       if (filter.status) params.status = filter.status;
 
       const res = await api.get('/attendance/all', { params });
@@ -162,6 +168,12 @@ export default function AdminGallery() {
         bersih: () => setFilter((f) => ({ ...f, user_id: '' })),
       });
     }
+    if (filter.project_id) {
+      daftar.push({
+        teks: projects.find((p) => String(p.id) === String(filter.project_id))?.name || 'Proyek',
+        bersih: () => setFilter((f) => ({ ...f, project_id: '' })),
+      });
+    }
     if (filter.jenis !== 'semua') {
       daftar.push({
         teks: JENIS.find((j) => j.id === filter.jenis).label,
@@ -172,7 +184,7 @@ export default function AdminGallery() {
       daftar.push({ teks: `Status: ${filter.status}`, bersih: () => setFilter((f) => ({ ...f, status: '' })) });
     }
     return daftar;
-  }, [filter, users]);
+  }, [filter, users, projects]);
 
   function resetFilter() {
     const kini = new Date();
@@ -182,6 +194,7 @@ export default function AdminGallery() {
       start_date: tanggalIso(mulai),
       end_date: tanggalIso(kini),
       user_id: '',
+      project_id: '',
       jenis: 'semua',
       status: '',
       sort: 'desc',
@@ -215,8 +228,8 @@ export default function AdminGallery() {
   const labelClass = 'block text-xs font-medium text-muted mb-1.5';
 
   return (
-    <div className="min-h-screen">
-      <AdminHeader />
+    <div className="min-h-screen lg:pl-64">
+      <AdminSidebar />
 
       <div className="max-w-6xl mx-auto px-4 py-7">
         <div className="mb-5">
@@ -240,6 +253,19 @@ export default function AdminGallery() {
               <input type="date" value={filter.end_date}
                 onChange={(e) => setFilter({ ...filter, end_date: e.target.value })}
                 className={inputClass} />
+            </div>
+            <div>
+              <label className={labelClass}>Proyek</label>
+              <select
+                value={filter.project_id}
+                onChange={(e) => setFilter({ ...filter, project_id: e.target.value })}
+                className={inputClass}
+              >
+                <option value="">Semua proyek</option>
+                {projects.map((pr) => (
+                  <option key={pr.id} value={pr.id}>{pr.name}</option>
+                ))}
+              </select>
             </div>
             <div>
               <label className={labelClass}>Pegawai</label>

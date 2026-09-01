@@ -7,6 +7,7 @@ const { cekHariKerja } = require('../utils/workday');
 const { wfaBerlaku } = require('./wfaController');
 const { hitungRate } = require('../utils/attendanceRate');
 const { KOLOM_SHIFT_SQL, tandaiKelengkapan } = require('../utils/kelengkapan');
+const { batasiPerAbsensi, proyekKonsultan, bolehAksesPegawai } = require('../utils/lingkupProyek');
 
 // POST /api/attendance/check-in -- pengguna absen masuk dengan foto
 async function checkIn(req, res, next) {
@@ -75,6 +76,14 @@ async function checkIn(req, res, next) {
     const wfa = await wfaBerlaku(userId, tanggal);
     const modeKerja = wfa ? 'wfa' : 'wfo';
 
+    // Proyek DICAP di baris absensi, bukan dibaca belakangan dari penugasan
+    // pegawai. Kalau pegawai ini dipindahkan ke proyek lain bulan depan,
+    // kehadirannya hari ini harus tetap tercatat di proyek tempat ia
+    // sebenarnya bekerja hari ini -- kalau tidak, laporan yang sudah
+    // diserahkan ke dinas berubah sendiri tanpa ada yang mengubahnya.
+    const penugasan = await query('SELECT project_id FROM users WHERE id = $1', [userId]);
+    const proyekId = penugasan.rows[0]?.project_id || null;
+
     const waktuMasuk = sekarangLokalSql(sekarang);
 
     // Baris "alpha" bisa sudah dibuat penanda otomatis tengah malam padahal
@@ -84,16 +93,17 @@ async function checkIn(req, res, next) {
       ? await query(
           `UPDATE attendance
            SET check_in_time = $1, status = $2, photo_in_url = $3,
-               latitude = $4, longitude = $5, reason = NULL, work_mode = $6
-           WHERE id = $7
-           RETURNING id, date, check_in_time, status, photo_in_url, work_mode`,
-          [waktuMasuk, status, photoUrl, latitude || null, longitude || null, modeKerja, lama.id]
+               latitude = $4, longitude = $5, reason = NULL, work_mode = $6,
+               project_id = $7
+           WHERE id = $8
+           RETURNING id, date, check_in_time, status, photo_in_url, work_mode, project_id`,
+          [waktuMasuk, status, photoUrl, latitude || null, longitude || null, modeKerja, proyekId, lama.id]
         )
       : await query(
-          `INSERT INTO attendance (user_id, date, check_in_time, status, photo_in_url, latitude, longitude, work_mode)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-           RETURNING id, date, check_in_time, status, photo_in_url, work_mode`,
-          [userId, tanggal, waktuMasuk, status, photoUrl, latitude || null, longitude || null, modeKerja]
+          `INSERT INTO attendance (user_id, date, check_in_time, status, photo_in_url, latitude, longitude, work_mode, project_id)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+           RETURNING id, date, check_in_time, status, photo_in_url, work_mode, project_id`,
+          [userId, tanggal, waktuMasuk, status, photoUrl, latitude || null, longitude || null, modeKerja, proyekId]
         );
 
     res.status(201).json({ message: 'Absen masuk berhasil.', attendance: result.rows[0] });
@@ -177,6 +187,14 @@ async function getTodayStatus(req, res, next) {
     const shift = await shiftPegawai(query, req.user.id);
     const jendela = jendelaAbsen(shift);
 
+    // Nama proyek ikut dikirim supaya pegawai tahu kehadirannya tercatat
+    // untuk pekerjaan yang mana -- satu-satunya hal yang berubah di layar
+    // mereka, karena satu pegawai hanya aktif di satu proyek.
+    const proyek = await query(
+      'SELECT p.name, p.location FROM users u JOIN projects p ON u.project_id = p.id WHERE u.id = $1',
+      [req.user.id]
+    );
+
     // Untuk shift malam, kedua tanggal ini bisa berbeda saat pergantian
     // hari. Yang ditampilkan adalah shift yang absen masuknya sudah ada
     // tapi belum absen pulang; kalau tidak ada, pakai tanggal shift masuk.
@@ -209,6 +227,7 @@ async function getTodayStatus(req, res, next) {
       absensi,
       tanggal_shift: tanggalShift,
       hari_ini: todayLocal(),
+      proyek: proyek.rows[0] || null,
       hari_kerja: hariKerja,
       wfa: wfa ? { aktif: true, catatan: wfa.note } : { aktif: false, catatan: null },
       ...jendela,
@@ -319,7 +338,15 @@ async function getTodayAll(req, res, next) {
     // untuk shift malam yang mulai pukul 22:00 tadi malam, catatannya ada
     // di tanggal kemarin dan tanpa ini ia tampil "belum absen" padahal
     // sedang bekerja.
-    const daftar = await jendelaSemuaPegawai(query);
+    let daftar = await jendelaSemuaPegawai(query);
+
+    // Konsultan hanya melihat pegawai di proyek yang dipegangnya. Disaring
+    // di sini, bukan di kueri, karena jendelaSemuaPegawai dipakai bersama
+    // papan pantau dan pengingat -- keduanya perlu daftar lengkap.
+    if (req.user.role === 'konsultan') {
+      const milik = await proyekKonsultan(req.user.id);
+      daftar = daftar.filter((d) => milik.includes(d.pegawai.project_id));
+    }
     if (daftar.length === 0) return res.json([]);
 
     const ids = daftar.map((d) => d.pegawai.id);
@@ -359,6 +386,9 @@ async function getTodayAll(req, res, next) {
 // GET /api/attendance/user/:userId -- admin lihat riwayat absensi pengguna tertentu
 async function getUserHistory(req, res, next) {
   try {
+    if (!(await bolehAksesPegawai(req.user, req.params.userId))) {
+      return res.status(403).json({ message: 'Pegawai ini bukan bagian dari proyek Anda.' });
+    }
     const { limit = 30, offset = 0 } = req.query;
     const conditions = ['a.user_id = $1'];
     const params = [req.params.userId];
@@ -387,11 +417,23 @@ async function getUserHistory(req, res, next) {
 // Filter: ?start_date=&end_date=&status=&department_id= + paginasi limit/offset
 async function getAllHistory(req, res, next) {
   try {
-    const { limit = 50, offset = 0, department_id, user_id, sort, with_photo } = req.query;
-    const conditions = ["u.role != 'admin'"];
+    const { limit = 50, offset = 0, department_id, user_id, project_id, sort, with_photo } = req.query;
+    const conditions = ["u.role = 'staff'"];
     const params = [];
     buildHistoryFilter(req.query, conditions, params);
 
+    // Konsultan hanya melihat absensi yang tercap pada proyeknya. Balas
+    // kosong kalau dia belum dipasangkan ke proyek mana pun -- membiarkan
+    // syaratnya hilang berarti membuka seluruh data.
+    if (!(await batasiPerAbsensi(req.user, conditions, params))) return res.json([]);
+
+    // Penyaring proyek untuk admin. Memakai proyek yang TERCAP di baris
+    // absensi, bukan penugasan pegawai saat ini, supaya riwayat lama tetap
+    // terbaca di proyek tempat kehadiran itu sebenarnya terjadi.
+    if (project_id) {
+      params.push(project_id);
+      conditions.push(`a.project_id = $${params.length}`);
+    }
     if (department_id) {
       params.push(department_id);
       conditions.push(`u.department_id = $${params.length}`);
@@ -418,11 +460,13 @@ async function getAllHistory(req, res, next) {
               a.photo_in_url, a.photo_out_url, a.work_mode,
               a.latitude, a.longitude,
               u.id AS user_id, u.name, u.avatar_url, d.name AS department,
+              a.project_id, pr.name AS project_name,
               ${KOLOM_SHIFT_SQL}
        FROM attendance a
        JOIN users u ON a.user_id = u.id
        LEFT JOIN departments d ON u.department_id = d.id
        LEFT JOIN shifts s ON u.shift_id = s.id
+       LEFT JOIN projects pr ON a.project_id = pr.id
        WHERE ${conditions.join(' AND ')}
        ORDER BY a.date ${urutan}, u.name ASC
        LIMIT $${params.length - 1} OFFSET $${params.length}`,
@@ -477,11 +521,14 @@ async function markAlpha(req, res, next) {
     //
     // COALESCE menjaga pegawai yang belum punya shift tetap Senin-Jumat.
     const result = await query(
-      `INSERT INTO attendance (user_id, date, status)
-       SELECT u.id, $1::date, 'alpha'
+      // project_id ikut dicatat: tanpa itu baris alpha tidak bermilik proyek,
+      // dan konsultan hanya akan melihat pegawai yang hadir -- justru yang
+      // TIDAK hadir yang paling perlu dia ketahui.
+      `INSERT INTO attendance (user_id, date, status, project_id)
+       SELECT u.id, $1::date, 'alpha', u.project_id
        FROM users u
        LEFT JOIN shifts s ON u.shift_id = s.id
-       WHERE u.role != 'admin' AND u.is_active = TRUE
+       WHERE u.role = 'staff' AND u.is_active = TRUE
          AND NOT EXISTS (SELECT 1 FROM attendance a WHERE a.user_id = u.id AND a.date = $1::date)
          AND EXTRACT(DOW FROM $1::date)::SMALLINT = ANY(COALESCE(s.work_days, '{1,2,3,4,5}'::SMALLINT[]))
          AND NOT EXISTS (SELECT 1 FROM holidays h WHERE h.date = $1::date)

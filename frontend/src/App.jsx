@@ -15,6 +15,7 @@ import AdminHolidays from './pages/AdminHolidays';
 import AdminStats from './pages/AdminStats';
 import AdminGallery from './pages/AdminGallery';
 import AdminLeaves from './pages/AdminLeaves';
+import AdminProjects from './pages/AdminProjects';
 import ProtectedRoute from './components/ProtectedRoute';
 
 export default function App() {
@@ -69,15 +70,23 @@ export default function App() {
         <Route
           path="/admin"
           element={
-            <ProtectedRoute allowedRole="admin">
+            <ProtectedRoute allowedRole={['admin', 'konsultan']}>
               <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/projects"
+          element={
+            <ProtectedRoute allowedRole={['admin', 'konsultan']}>
+              <AdminProjects />
             </ProtectedRoute>
           }
         />
         <Route
           path="/admin/users"
           element={
-            <ProtectedRoute allowedRole="admin">
+            <ProtectedRoute allowedRole={['admin', 'konsultan']}>
               <AdminUsers />
             </ProtectedRoute>
           }
@@ -93,7 +102,7 @@ export default function App() {
         <Route
           path="/admin/stats"
           element={
-            <ProtectedRoute allowedRole="admin">
+            <ProtectedRoute allowedRole={['admin', 'konsultan']}>
               <AdminStats />
             </ProtectedRoute>
           }
@@ -101,7 +110,7 @@ export default function App() {
         <Route
           path="/admin/gallery"
           element={
-            <ProtectedRoute allowedRole="admin">
+            <ProtectedRoute allowedRole={['admin', 'konsultan']}>
               <AdminGallery />
             </ProtectedRoute>
           }
@@ -117,7 +126,7 @@ export default function App() {
         <Route
           path="/admin/leaves"
           element={
-            <ProtectedRoute allowedRole="admin">
+            <ProtectedRoute allowedRole={['admin', 'konsultan']}>
               <AdminLeaves />
             </ProtectedRoute>
           }
@@ -125,7 +134,7 @@ export default function App() {
         <Route
           path="/admin/history"
           element={
-            <ProtectedRoute allowedRole="admin">
+            <ProtectedRoute allowedRole={['admin', 'konsultan']}>
               <AdminHistory />
             </ProtectedRoute>
           }

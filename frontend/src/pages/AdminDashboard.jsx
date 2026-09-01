@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../api/axios';
-import AdminHeader from '../components/AdminHeader';
+import AdminSidebar from '../components/AdminSidebar';
 import { useDialog } from '../components/Dialog';
 import StatusBadge from '../components/StatusBadge';
 import {
@@ -114,8 +114,8 @@ export default function AdminDashboard() {
     : [];
 
   return (
-    <div className="min-h-screen">
-      <AdminHeader />
+    <div className="min-h-screen lg:pl-64">
+      <AdminSidebar />
 
       <div className="max-w-6xl mx-auto px-4 py-7">
         <div className="mb-6">

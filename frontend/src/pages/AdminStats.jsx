@@ -4,7 +4,7 @@ import {
   XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid,
 } from 'recharts';
 import api from '../api/axios';
-import AdminHeader from '../components/AdminHeader';
+import AdminSidebar from '../components/AdminSidebar';
 import { useGrafikTema } from '../utils/grafik';
 
 const WARNA = { hadir: '#10b981', terlambat: '#f59e0b', izin: '#3b82f6', alpha: '#ef4444' };
@@ -150,8 +150,8 @@ export default function AdminStats() {
   const labelClass = 'block text-xs font-medium text-muted mb-1.5';
 
   return (
-    <div className="min-h-screen">
-      <AdminHeader />
+    <div className="min-h-screen lg:pl-64">
+      <AdminSidebar />
 
       <div className="max-w-5xl mx-auto px-4 py-7">
         <div className="mb-6">

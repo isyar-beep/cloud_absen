@@ -53,10 +53,12 @@ async function getProfile(req, res, next) {
   try {
     const result = await query(
       `SELECT u.id, u.name, u.email, u.role, u.avatar_url, d.name AS department,
-              s.name AS shift_name, s.start_time AS shift_start, s.end_time AS shift_end
+              s.name AS shift_name, s.start_time AS shift_start, s.end_time AS shift_end,
+              p.name AS project_name, p.location AS project_location
        FROM users u
        LEFT JOIN departments d ON u.department_id = d.id
        LEFT JOIN shifts s ON u.shift_id = s.id
+       LEFT JOIN projects p ON u.project_id = p.id
        WHERE u.id = $1`,
       [req.user.id]
     );

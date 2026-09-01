@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../api/axios';
-import AdminHeader from '../components/AdminHeader';
+import AdminSidebar from '../components/AdminSidebar';
 import { useDialog } from '../components/Dialog';
 import { PlusIcon } from '../components/Icons';
 import { tanggalLokal } from '../utils/tanggal';
@@ -58,8 +58,8 @@ export default function AdminHolidays() {
   const labelClass = 'block text-xs font-medium text-muted mb-1.5';
 
   return (
-    <div className="min-h-screen">
-      <AdminHeader />
+    <div className="min-h-screen lg:pl-64">
+      <AdminSidebar />
 
       <div className="max-w-3xl mx-auto px-4 py-7">
         <div className="flex justify-between items-center mb-6 gap-3">

@@ -10,7 +10,7 @@ router.post('/', authenticate, uploadDocument.single('document'), createLeave);
 router.get('/me', authenticate, getMyLeaves);
 
 // Endpoint khusus admin
-router.get('/', authenticate, authorize('admin'), getAllLeaves);
-router.put('/:id/review', authenticate, authorize('admin'), reviewLeave);
+router.get('/', authenticate, authorize('admin', 'konsultan'), getAllLeaves);
+router.put('/:id/review', authenticate, authorize('admin', 'konsultan'), reviewLeave);
 
 module.exports = router;

@@ -12,6 +12,7 @@
 // ============================================================
 const { query, pool } = require('../config/db');
 const { jendelaAbsen, shiftPegawai } = require('../utils/shiftWindow');
+const { batasiPerPegawai, bolehAksesPegawai } = require('../utils/lingkupProyek');
 
 const STATUS_VALID = ['hadir', 'terlambat', 'izin', 'alpha'];
 
@@ -253,6 +254,11 @@ async function getSemuaKoreksi(req, res, next) {
       kondisi.push(`c.status = $${params.length}`);
     }
 
+    // Konsultan hanya meninjau pengajuan pegawai di proyeknya. Balas kosong
+    // kalau dia belum dipasangkan ke proyek mana pun -- syarat yang tidak
+    // jadi ditambahkan berarti seluruh pengajuan terbuka.
+    if (!(await batasiPerPegawai(req.user, kondisi, params))) return res.json([]);
+
     const hasil = await query(
       `SELECT c.id, to_char(c.date, 'YYYY-MM-DD') AS date,
               c.requested_check_in, c.requested_check_out, c.reason,
@@ -281,6 +287,17 @@ async function reviewKoreksi(req, res, next) {
     const { status, admin_note } = req.body;
     if (!['approved', 'rejected'].includes(status)) {
       return res.status(400).json({ message: 'Keputusan harus approved atau rejected.' });
+    }
+
+    // Konsultan hanya boleh memutuskan pengajuan pegawai di proyeknya.
+    // Alamat ini menerima nomor dari luar dan tidak melewati penyaring
+    // daftar mana pun, jadi kepemilikannya harus diperiksa di sini.
+    const pemilik = await query('SELECT user_id FROM correction_requests WHERE id = $1', [req.params.id]);
+    if (pemilik.rows.length === 0) {
+      return res.status(404).json({ message: 'Pengajuan tidak ditemukan.' });
+    }
+    if (!(await bolehAksesPegawai(req.user, pemilik.rows[0].user_id))) {
+      return res.status(403).json({ message: 'Pengajuan ini bukan dari pegawai di proyek Anda.' });
     }
 
     await klien.query('BEGIN');

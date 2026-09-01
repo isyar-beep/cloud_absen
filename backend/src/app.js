@@ -18,6 +18,7 @@ const notificationRoutes = require('./routes/notificationRoutes');
 const shiftRoutes = require('./routes/shiftRoutes');
 const holidayRoutes = require('./routes/holidayRoutes');
 const photoRoutes = require('./routes/photoRoutes');
+const projectRoutes = require('./routes/projectRoutes');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -82,6 +83,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/shifts', shiftRoutes);
 app.use('/api/holidays', holidayRoutes);
 app.use('/api/photos', photoRoutes);
+app.use('/api/projects', projectRoutes);
 
 // 404 handler
 app.use((req, res) => {

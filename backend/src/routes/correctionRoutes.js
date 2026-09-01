@@ -13,7 +13,7 @@ router.post('/', authenticate, ajukanKoreksi);
 router.get('/me', authenticate, getKoreksiSaya);
 
 // Endpoint khusus admin
-router.get('/', authenticate, authorize('admin'), getSemuaKoreksi);
-router.put('/:id/review', authenticate, authorize('admin'), reviewKoreksi);
+router.get('/', authenticate, authorize('admin', 'konsultan'), getSemuaKoreksi);
+router.put('/:id/review', authenticate, authorize('admin', 'konsultan'), reviewKoreksi);
 
 module.exports = router;

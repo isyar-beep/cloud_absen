@@ -84,6 +84,15 @@ export default function Dashboard() {
                   {profile.shift_name} · {profile.shift_start}–{profile.shift_end}
                 </p>
               )}
+              {/* Satu pegawai hanya aktif di satu proyek, jadi tidak ada yang
+                  perlu dipilih saat absen — namanya cukup ditampilkan supaya
+                  pegawai tahu kehadirannya tercatat untuk pekerjaan yang mana. */}
+              {profile?.project_name && (
+                <p className="text-xs text-primary-100/75 mt-0.5">
+                  {profile.project_name}
+                  {profile.project_location ? ` · ${profile.project_location}` : ''}
+                </p>
+              )}
               <div className="mt-4">
                 <AvatarUploader
                   name={user?.name}

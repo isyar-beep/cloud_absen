@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../api/axios';
-import AdminHeader from '../components/AdminHeader';
+import AdminSidebar from '../components/AdminSidebar';
 import { useDialog } from '../components/Dialog';
 import { PlusIcon } from '../components/Icons';
 import AdminWfa from './AdminWfa';
@@ -132,8 +132,8 @@ export default function AdminShifts() {
   const labelClass = 'block text-xs font-medium text-muted mb-1.5';
 
   return (
-    <div className="min-h-screen">
-      <AdminHeader />
+    <div className="min-h-screen lg:pl-64">
+      <AdminSidebar />
 
       <div className="max-w-4xl mx-auto px-4 py-7">
         <div className="mb-5">

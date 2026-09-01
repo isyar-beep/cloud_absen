@@ -1,5 +1,6 @@
 const bcrypt = require('bcryptjs');
 const { query } = require('../config/db');
+const { batasiPerPegawai, bolehAksesPegawai } = require('../utils/lingkupProyek');
 
 // GET /api/departments -- daftar departemen (untuk dropdown filter/form)
 async function getDepartments(req, res, next) {
@@ -14,14 +15,25 @@ async function getDepartments(req, res, next) {
 // GET /api/users -- daftar semua pengguna (admin only)
 async function getAllUsers(req, res, next) {
   try {
+    // Konsultan hanya melihat pegawai di proyeknya. Balas kosong kalau dia
+    // belum dipasangkan ke proyek mana pun -- syarat yang tidak jadi
+    // ditambahkan berarti seluruh daftar pegawai terbuka.
+    const conditions = ['TRUE'];
+    const params = [];
+    if (!(await batasiPerPegawai(req.user, conditions, params))) return res.json([]);
+
     const result = await query(
       `SELECT u.id, u.name, u.email, u.role, u.is_active, u.avatar_url,
               d.id AS department_id, d.name AS department,
-              s.id AS shift_id, s.name AS shift_name, s.start_time AS shift_start, s.end_time AS shift_end
+              s.id AS shift_id, s.name AS shift_name, s.start_time AS shift_start, s.end_time AS shift_end,
+              u.project_id, p.name AS project_name
        FROM users u
        LEFT JOIN departments d ON u.department_id = d.id
        LEFT JOIN shifts s ON u.shift_id = s.id
-       ORDER BY u.name ASC`
+       LEFT JOIN projects p ON u.project_id = p.id
+       WHERE ${conditions.join(' AND ')}
+       ORDER BY u.name ASC`,
+      params
     );
     res.json(result.rows.map((u) => ({
       ...u,
@@ -36,6 +48,10 @@ async function getAllUsers(req, res, next) {
 // GET /api/users/:id
 async function getUserById(req, res, next) {
   try {
+    // Menyaring daftar saja tidak cukup: alamat ini menerima nomor dari luar.
+    if (!(await bolehAksesPegawai(req.user, req.params.id))) {
+      return res.status(403).json({ message: 'Pegawai ini bukan bagian dari proyek Anda.' });
+    }
     const result = await query(
       `SELECT u.id, u.name, u.email, u.role, u.is_active,
               d.id AS department_id, d.name AS department,
@@ -58,7 +74,7 @@ async function getUserById(req, res, next) {
 // POST /api/users -- admin membuat akun pengguna baru
 async function createUser(req, res, next) {
   try {
-    const { name, email, password, role, department_id, shift_id } = req.body;
+    const { name, email, password, role, department_id, shift_id, project_id } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'Nama, email, dan password wajib diisi.' });
@@ -66,8 +82,8 @@ async function createUser(req, res, next) {
     if (password.length < 6) {
       return res.status(400).json({ message: 'Password minimal 6 karakter.' });
     }
-    if (role && !['admin', 'staff'].includes(role)) {
-      return res.status(400).json({ message: "Role harus 'admin' atau 'staff'." });
+    if (role && !['admin', 'konsultan', 'staff'].includes(role)) {
+      return res.status(400).json({ message: "Role harus 'admin', 'konsultan', atau 'staff'." });
     }
 
     const existing = await query('SELECT id FROM users WHERE email = $1', [email]);
@@ -78,10 +94,14 @@ async function createUser(req, res, next) {
     const passwordHash = await bcrypt.hash(password, 10);
 
     const result = await query(
-      `INSERT INTO users (name, email, password_hash, role, department_id, shift_id)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING id, name, email, role, department_id, shift_id`,
-      [name, email, passwordHash, role || 'staff', department_id || null, shift_id || null]
+      `INSERT INTO users (name, email, password_hash, role, department_id, shift_id, project_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING id, name, email, role, department_id, shift_id, project_id`,
+      [name, email, passwordHash, role || 'staff', department_id || null, shift_id || null,
+       // Penugasan proyek hanya bermakna untuk pegawai. Admin dan konsultan
+       // tidak absen, jadi dibiarkan kosong daripada menyimpan nilai yang
+       // tidak pernah dibaca lalu membingungkan waktu ditelusuri.
+       (role || 'staff') === 'staff' ? (project_id || null) : null]
     );
 
     res.status(201).json({ message: 'Pengguna berhasil dibuat.', user: result.rows[0] });
@@ -128,16 +148,19 @@ async function alasanTolakPerubahanAdmin({ targetId, pelakuId, menurunkan, menon
 // PUT /api/users/:id -- admin edit data pengguna
 async function updateUser(req, res, next) {
   try {
-    const { name, email, role, department_id, is_active, shift_id } = req.body;
+    const { name, email, role, department_id, is_active, shift_id, project_id } = req.body;
 
-    if (role && !['admin', 'staff'].includes(role)) {
-      return res.status(400).json({ message: "Role harus 'admin' atau 'staff'." });
+    if (role && !['admin', 'konsultan', 'staff'].includes(role)) {
+      return res.status(400).json({ message: "Role harus 'admin', 'konsultan', atau 'staff'." });
     }
 
     const tolak = await alasanTolakPerubahanAdmin({
       targetId: Number(req.params.id),
       pelakuId: req.user.id,
-      menurunkan: role === 'staff',
+      // Bukan cuma 'staff': turun ke 'konsultan' sama-sama menghilangkan
+      // akses admin, dan tanpa ini admin bisa mengunci dirinya sendiri
+      // lewat peran yang baru ditambahkan.
+      menurunkan: !!role && role !== 'admin',
       menonaktifkan: is_active === false,
     });
     if (tolak) return res.status(400).json({ message: tolak });
@@ -145,6 +168,9 @@ async function updateUser(req, res, next) {
     // shift_id boleh sengaja di-null-kan (lepas shift), jadi tidak pakai COALESCE --
     // hanya diubah kalau key-nya memang dikirim di body.
     const ubahShift = 'shift_id' in req.body;
+    // Sama seperti shift: proyek boleh sengaja dikosongkan (dilepas dari
+    // penugasan), jadi hanya diubah kalau key-nya memang dikirim.
+    const ubahProyek = 'project_id' in req.body;
 
     const result = await query(
       `UPDATE users
@@ -154,10 +180,12 @@ async function updateUser(req, res, next) {
            department_id = COALESCE($4, department_id),
            is_active = COALESCE($5, is_active),
            shift_id = CASE WHEN $6 THEN $7 ELSE shift_id END,
+           project_id = CASE WHEN $8 THEN $9 ELSE project_id END,
            updated_at = NOW()
-       WHERE id = $8
-       RETURNING id, name, email, role, department_id, is_active, shift_id`,
-      [name, email, role, department_id, is_active, ubahShift, shift_id, req.params.id]
+       WHERE id = $10
+       RETURNING id, name, email, role, department_id, is_active, shift_id, project_id`,
+      [name, email, role, department_id, is_active, ubahShift, shift_id,
+       ubahProyek, project_id || null, req.params.id]
     );
 
     if (result.rows.length === 0) {

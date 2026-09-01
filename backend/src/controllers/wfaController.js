@@ -98,7 +98,7 @@ async function buatWfa(req, res, next) {
     }
 
     const pegawai = await query(
-      `SELECT id, name FROM users WHERE id = $1 AND role != 'admin' AND is_active = TRUE`,
+      `SELECT id, name FROM users WHERE id = $1 AND role = 'staff' AND is_active = TRUE`,
       [Number(user_id)]
     );
     if (pegawai.rows.length === 0) {

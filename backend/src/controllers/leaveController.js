@@ -1,6 +1,7 @@
 const { pool, query } = require('../config/db');
 const { sendPushNotifications } = require('../utils/pushNotification');
 const { uploadDokumenIzin } = require('../utils/uploadPhoto');
+const { batasiPerPegawai, bolehAksesPegawai } = require('../utils/lingkupProyek');
 
 // Jenis pengajuan. Ketiganya berujung pada status absensi 'izin' -- yang
 // dibedakan hanya keterangannya untuk HRD. Mengubah daftar status absensi
@@ -127,6 +128,11 @@ async function getAllLeaves(req, res, next) {
     if (filterStatus) { params.push(filterStatus); kondisi.push(`l.status = $${params.length}`); }
     if (filterJenis) { params.push(filterJenis); kondisi.push(`l.type = $${params.length}`); }
 
+    // Konsultan hanya meninjau pengajuan pegawai di proyeknya. Balas kosong
+    // kalau dia belum dipasangkan ke proyek mana pun -- syarat yang tidak
+    // jadi ditambahkan berarti seluruh pengajuan terbuka.
+    if (!(await batasiPerPegawai(req.user, kondisi, params))) return res.json([]);
+
     const result = await query(
       `SELECT l.id, l.type,
               to_char(l.start_date, 'YYYY-MM-DD') AS start_date,
@@ -159,6 +165,17 @@ async function reviewLeave(req, res, next) {
 
     if (!['approved', 'rejected'].includes(status)) {
       return res.status(400).json({ message: "Status review harus 'approved' atau 'rejected'." });
+    }
+
+    // Konsultan hanya boleh memutuskan pengajuan pegawai di proyeknya.
+    // Alamat ini menerima nomor dari luar dan tidak melewati penyaring
+    // daftar mana pun, jadi kepemilikannya harus diperiksa di sini.
+    const pemilik = await query('SELECT user_id FROM leave_requests WHERE id = $1', [req.params.id]);
+    if (pemilik.rows.length === 0) {
+      return res.status(404).json({ message: 'Pengajuan tidak ditemukan.' });
+    }
+    if (!(await bolehAksesPegawai(req.user, pemilik.rows[0].user_id))) {
+      return res.status(403).json({ message: 'Pengajuan ini bukan dari pegawai di proyek Anda.' });
     }
 
     await client.query('BEGIN');

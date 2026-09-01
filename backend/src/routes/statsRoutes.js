@@ -16,10 +16,10 @@ router.get('/me', authenticate, getMyStats);
 router.get('/me/trend', authenticate, getMyTrend);
 
 // Statistik perusahaan (khusus admin)
-router.get('/overview', authenticate, authorize('admin'), getOverview);
-router.get('/department', authenticate, authorize('admin'), getDepartmentStats);
-router.get('/ranking', authenticate, authorize('admin'), getRanking);
-router.get('/breakdown', authenticate, authorize('admin'), getBreakdown);
-router.get('/monthly-series', authenticate, authorize('admin'), getMonthlySeries);
+router.get('/overview', authenticate, authorize('admin', 'konsultan'), getOverview);
+router.get('/department', authenticate, authorize('admin', 'konsultan'), getDepartmentStats);
+router.get('/ranking', authenticate, authorize('admin', 'konsultan'), getRanking);
+router.get('/breakdown', authenticate, authorize('admin', 'konsultan'), getBreakdown);
+router.get('/monthly-series', authenticate, authorize('admin', 'konsultan'), getMonthlySeries);
 
 module.exports = router;

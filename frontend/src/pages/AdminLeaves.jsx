@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../api/axios';
-import AdminHeader from '../components/AdminHeader';
+import AdminSidebar from '../components/AdminSidebar';
 import StatusBadge from '../components/StatusBadge';
 import JenisBadge from '../components/JenisBadge';
 import Avatar from '../components/Avatar';
@@ -60,8 +60,8 @@ export default function AdminLeaves() {
   ];
 
   return (
-    <div className="min-h-screen">
-      <AdminHeader />
+    <div className="min-h-screen lg:pl-64">
+      <AdminSidebar />
 
       <div className="max-w-4xl mx-auto px-4 py-7">
         <div className="mb-5">

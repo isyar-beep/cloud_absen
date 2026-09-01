@@ -4,7 +4,7 @@ const { exportExcel, exportPdf } = require('../controllers/reportController');
 const { authenticate, authorize } = require('../middleware/auth');
 
 // Export laporan hanya untuk admin
-router.get('/attendance/excel', authenticate, authorize('admin'), exportExcel);
-router.get('/attendance/pdf', authenticate, authorize('admin'), exportPdf);
+router.get('/attendance/excel', authenticate, authorize('admin', 'konsultan'), exportExcel);
+router.get('/attendance/pdf', authenticate, authorize('admin', 'konsultan'), exportPdf);
 
 module.exports = router;

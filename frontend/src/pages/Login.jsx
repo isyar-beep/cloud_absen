@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { useAuthStore } from '../store/authStore';
 import ThemeToggle from '../components/ThemeToggle';
+import { BERANDA_PERAN } from '../components/ProtectedRoute';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -21,11 +22,10 @@ export default function Login() {
       const res = await api.post('/auth/login', { email, password });
       login(res.data.user, res.data.token);
 
-      if (res.data.user.role === 'admin') {
-        navigate('/admin');
-      } else {
-        navigate('/dashboard');
-      }
+      // Konsultan mendarat di halaman pemantauan, bukan halaman pegawai --
+      // ia menyelia, tidak absen. Peta perannya ada di ProtectedRoute
+      // supaya tidak ada dua daftar yang bisa berselisih.
+      navigate(BERANDA_PERAN[res.data.user.role] || '/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || 'Gagal login. Coba lagi.');
     } finally {

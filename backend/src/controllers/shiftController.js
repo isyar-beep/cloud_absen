@@ -87,10 +87,10 @@ async function getAllShifts(req, res, next) {
               s.checkout_open_minutes, s.checkout_close_minutes,
               COUNT(u.id) AS jumlah_pegawai
        FROM shifts s
-       -- role != 'admin': admin ikut ter-assign shift oleh migration 003,
+       -- role = 'staff': admin ikut ter-assign shift oleh migration 003, dan
        -- tapi ia bukan pegawai yang absen. Ikut dihitung, kolom "Pegawai"
        -- di daftar shift dan angka di dialog penghapusan sama-sama meleset.
-       LEFT JOIN users u ON u.shift_id = s.id AND u.is_active = TRUE AND u.role != 'admin'
+       LEFT JOIN users u ON u.shift_id = s.id AND u.is_active = TRUE AND u.role = 'staff'
        GROUP BY s.id
        ORDER BY s.start_time ASC`
     );

@@ -3,6 +3,7 @@ const { todayLocal } = require('../utils/date');
 const { hitungRate } = require('../utils/attendanceRate');
 const { jendelaSemuaPegawai } = require('../utils/shiftWindow');
 const { KOLOM_SHIFT_SQL, kekuranganAbsen } = require('../utils/kelengkapan');
+const { batasiPerPegawai, proyekKonsultan } = require('../utils/lingkupProyek');
 
 // GET /api/stats/me -- statistik personal pengguna (bulan berjalan)
 async function getMyStats(req, res, next) {
@@ -101,8 +102,26 @@ async function getOverview(req, res, next) {
   try {
     const today = todayLocal();
 
+    // Konsultan hanya melihat angka proyeknya sendiri. Tanpa penyaring ini
+    // ia melihat KPI seluruh dinas -- bocor dalam bentuk angka gabungan,
+    // yang justru sulit disadari karena tidak ada nama yang tampil.
+    const kondisiPegawai = [`role = 'staff'`, 'is_active = TRUE'];
+    const paramPegawai = [];
+    if (req.user.role === 'konsultan') {
+      const milik = await proyekKonsultan(req.user.id);
+      if (milik.length === 0) {
+        return res.json({
+          total_pegawai: 0, hadir_hari_ini: 0, terlambat_hari_ini: 0,
+          alpha_hari_ini: 0, izin_hari_ini: 0,
+        });
+      }
+      paramPegawai.push(milik);
+      kondisiPegawai.push(`project_id = ANY($${paramPegawai.length}::int[])`);
+    }
+
     const totalPegawai = await query(
-      `SELECT COUNT(*) FROM users WHERE role != 'admin' AND is_active = TRUE`
+      `SELECT COUNT(*) FROM users WHERE ${kondisiPegawai.join(' AND ')}`,
+      paramPegawai
     );
 
     // Dihitung per TANGGAL SHIFT tiap pegawai, bukan tanggal kalender.
@@ -114,7 +133,11 @@ async function getOverview(req, res, next) {
     // lama menghitung langsung dari tabel attendance tanpa menoleh ke tabel
     // users, sehingga catatan milik pegawai yang sudah dinonaktifkan tetap
     // ikut menambah angka KPI.
-    const daftar = await jendelaSemuaPegawai(query);
+    let daftar = await jendelaSemuaPegawai(query);
+    if (req.user.role === 'konsultan') {
+      const milik = await proyekKonsultan(req.user.id);
+      daftar = daftar.filter((d) => milik.includes(d.pegawai.project_id));
+    }
     const ids = daftar.map((d) => d.pegawai.id);
     const tanggalShift = daftar.map((d) => d.jendela.tanggal_shift_pulang);
 
@@ -150,19 +173,30 @@ async function getDepartmentStats(req, res, next) {
     const targetMonth = month || new Date().getMonth() + 1;
     const targetYear = year || new Date().getFullYear();
 
+    // Konsultan melihat rekap departemen hanya untuk pegawai di proyeknya.
+    const paramsDept = [targetMonth, targetYear];
+    let filterProyek = '';
+    if (req.user.role === 'konsultan') {
+      const milik = await proyekKonsultan(req.user.id);
+      if (milik.length === 0) return res.json([]);
+      paramsDept.push(milik);
+      filterProyek = `AND u.project_id = ANY($${paramsDept.length}::int[])`;
+    }
+
     const result = await query(
       `SELECT d.name AS department,
               COUNT(a.*) FILTER (WHERE a.status = 'hadir') AS hadir,
               COUNT(a.*) FILTER (WHERE a.status = 'terlambat') AS terlambat,
               COUNT(a.*) FILTER (WHERE a.status = 'alpha') AS alpha
        FROM departments d
-       LEFT JOIN users u ON u.department_id = d.id AND u.role != 'admin' AND u.is_active = TRUE
+       LEFT JOIN users u ON u.department_id = d.id AND u.role = 'staff' AND u.is_active = TRUE
+         ${filterProyek}
        LEFT JOIN attendance a ON a.user_id = u.id
          AND EXTRACT(MONTH FROM a.date) = $1
          AND EXTRACT(YEAR FROM a.date) = $2
        GROUP BY d.name
        ORDER BY d.name`,
-      [targetMonth, targetYear]
+      paramsDept
     );
 
     const stats = result.rows.map((row) => ({
@@ -183,6 +217,12 @@ async function getRanking(req, res, next) {
     const targetMonth = month || new Date().getMonth() + 1;
     const targetYear = year || new Date().getFullYear();
 
+    const kondisi = [`u.role = 'staff'`, 'u.is_active = TRUE'];
+    const paramLingkup = [targetMonth, targetYear];
+    if (!(await batasiPerPegawai(req.user, kondisi, paramLingkup))) {
+      return res.json({ top_performers: [], at_risk: [] });
+    }
+
     const result = await query(
       // HAVING memakai hari efektif, bukan seluruh catatan: pegawai yang
       // sebulan penuh izin resmi tidak boleh muncul sebagai 0% dan masuk
@@ -196,14 +236,14 @@ async function getRanking(req, res, next) {
        LEFT JOIN attendance a ON a.user_id = u.id
          AND EXTRACT(MONTH FROM a.date) = $1
          AND EXTRACT(YEAR FROM a.date) = $2
-       WHERE u.role != 'admin' AND u.is_active = TRUE
+       WHERE ${kondisi.join(' AND ')}
        GROUP BY u.id, u.name
        HAVING COUNT(a.*) FILTER (WHERE a.status IN ('hadir','terlambat','alpha')) > 0
        ORDER BY (
          COUNT(a.*) FILTER (WHERE a.status IN ('hadir','terlambat'))::float
          / COUNT(a.*) FILTER (WHERE a.status IN ('hadir','terlambat','alpha'))
        ) DESC`,
-      [targetMonth, targetYear]
+      paramLingkup
     );
 
     const ranked = result.rows.map((row) => ({
@@ -227,7 +267,7 @@ async function getRanking(req, res, next) {
 async function getBreakdown(req, res, next) {
   try {
     const { user_id, month, year } = req.query;
-    const conditions = [`u.role != 'admin'`];
+    const conditions = [`u.role = 'staff'`];
     const params = [];
 
     if (user_id) {
@@ -240,6 +280,12 @@ async function getBreakdown(req, res, next) {
       // Tanpa pilihan orang, angkanya harus sama cakupannya dengan ranking,
       // KPI, dan laporan bulanan: pegawai aktif saja.
       conditions.push('u.is_active = TRUE');
+    }
+    if (!(await batasiPerPegawai(req.user, conditions, params))) {
+      return res.json({
+        hadir: 0, terlambat: 0, izin: 0, alpha: 0,
+        total_record: 0, hari_efektif: 0, attendance_rate: '0.0',
+      });
     }
     if (month && year) {
       params.push(month);
@@ -283,7 +329,7 @@ async function getBreakdown(req, res, next) {
 async function getMonthlySeries(req, res, next) {
   try {
     const { user_id } = req.query;
-    const conditions = [`u.role != 'admin'`];
+    const conditions = [`u.role = 'staff'`];
     const params = [];
 
     if (user_id) {
@@ -297,6 +343,8 @@ async function getMonthlySeries(req, res, next) {
       // KPI, dan laporan bulanan: pegawai aktif saja.
       conditions.push('u.is_active = TRUE');
     }
+
+    if (!(await batasiPerPegawai(req.user, conditions, params))) return res.json([]);
 
     const result = await query(
       `SELECT

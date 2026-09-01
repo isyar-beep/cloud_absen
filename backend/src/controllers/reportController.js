@@ -3,6 +3,16 @@ const PDFDocument = require('pdfkit');
 const { query } = require('../config/db');
 const { hitungRate } = require('../utils/attendanceRate');
 const { zonaWaktu } = require('../utils/date');
+const { proyekKonsultan } = require('../utils/lingkupProyek');
+
+// Proyek yang boleh masuk laporan ini. null = tanpa batas (admin/dinas);
+// larik = hanya proyek tersebut. Penyaring project_id dari query dipakai
+// admin untuk menarik laporan satu proyek tertentu.
+async function lingkupLaporan(req) {
+  if (req.user.role === 'konsultan') return proyekKonsultan(req.user.id);
+  const dipilih = Number(req.query.project_id);
+  return Number.isInteger(dipilih) && dipilih > 0 ? [dipilih] : null;
+}
 
 const NAMA_BULAN = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -11,9 +21,43 @@ const NAMA_BULAN = [
 
 // Ambil data rekap per pegawai + detail absensi untuk satu bulan.
 // Dipakai bersama oleh export Excel dan PDF supaya query tidak duplikat.
-async function ambilDataLaporan(month, year, departmentId) {
-  const filterDepartemen = departmentId ? 'AND u.department_id = $3' : '';
-  const params = departmentId ? [month, year, departmentId] : [month, year];
+async function ambilDataLaporan(month, year, departmentId, lingkupProyek = null) {
+  const params = [month, year];
+
+  let filterDepartemen = '';
+  if (departmentId) {
+    params.push(departmentId);
+    filterDepartemen = `AND u.department_id = $${params.length}`;
+  }
+
+  // Laporan per proyek adalah berkas pertanggungjawaban yang diserahkan ke
+  // pemberi kerja, jadi disaring lewat proyek yang TERCAP di baris absensi --
+  // bukan penugasan pegawai saat ini. Pegawai yang sudah dimutasi tetap
+  // muncul di laporan bulan saat ia masih bekerja di proyek itu.
+  let filterProyek = '';
+  let filterProyekRekap = '';
+  let filterPegawai = '';
+  if (lingkupProyek && lingkupProyek.length > 0) {
+    params.push(lingkupProyek);
+    const n = params.length;
+    filterProyek = `AND a.project_id = ANY($${n}::int[])`;
+    filterProyekRekap = filterProyek;
+    // Siapa yang MASUK ke dalam laporan: pegawai yang sekarang ditugaskan di
+    // proyek ini, ditambah siapa pun yang bulan itu absennya tercap di proyek
+    // ini. Bagian kedua penting untuk pegawai yang dimutasi di tengah bulan --
+    // kehadirannya sudah terjadi di sini dan tidak boleh hilang dari
+    // pertanggungjawaban hanya karena ia kini bertugas di tempat lain.
+    filterPegawai = `AND (
+      u.project_id = ANY($${n}::int[])
+      OR EXISTS (
+        SELECT 1 FROM attendance ax
+        WHERE ax.user_id = u.id
+          AND ax.project_id = ANY($${n}::int[])
+          AND EXTRACT(MONTH FROM ax.date) = $1
+          AND EXTRACT(YEAR FROM ax.date) = $2
+      )
+    )`;
+  }
 
   const rekap = await query(
     `SELECT u.id, u.name, d.name AS department,
@@ -27,7 +71,8 @@ async function ambilDataLaporan(month, year, departmentId) {
      LEFT JOIN attendance a ON a.user_id = u.id
        AND EXTRACT(MONTH FROM a.date) = $1
        AND EXTRACT(YEAR FROM a.date) = $2
-     WHERE u.role != 'admin' AND u.is_active = TRUE ${filterDepartemen}
+       ${filterProyekRekap}
+     WHERE u.role = 'staff' AND u.is_active = TRUE ${filterDepartemen} ${filterPegawai}
      GROUP BY u.id, u.name, d.name
      ORDER BY u.name ASC`,
     params
@@ -41,7 +86,7 @@ async function ambilDataLaporan(month, year, departmentId) {
      LEFT JOIN departments d ON u.department_id = d.id
      WHERE EXTRACT(MONTH FROM a.date) = $1
        AND EXTRACT(YEAR FROM a.date) = $2
-       AND u.role != 'admin' AND u.is_active = TRUE ${filterDepartemen}
+       AND u.role = 'staff' AND u.is_active = TRUE ${filterDepartemen} ${filterProyek}
      ORDER BY a.date ASC, u.name ASC`,
     params
   );
@@ -76,7 +121,11 @@ async function exportExcel(req, res, next) {
     const year = Number(req.query.year) || new Date().getFullYear();
     const departmentId = req.query.department_id || null;
 
-    const { rekap, detail } = await ambilDataLaporan(month, year, departmentId);
+    const lingkup = await lingkupLaporan(req);
+    if (lingkup && lingkup.length === 0) {
+      return res.status(403).json({ message: 'Anda belum ditugaskan pada proyek mana pun.' });
+    }
+    const { rekap, detail } = await ambilDataLaporan(month, year, departmentId, lingkup);
 
     const workbook = new ExcelJS.Workbook();
     const judul = `Laporan Absensi ${NAMA_BULAN[month - 1]} ${year}`;
@@ -151,7 +200,11 @@ async function exportPdf(req, res, next) {
     const year = Number(req.query.year) || new Date().getFullYear();
     const departmentId = req.query.department_id || null;
 
-    const { rekap } = await ambilDataLaporan(month, year, departmentId);
+    const lingkup = await lingkupLaporan(req);
+    if (lingkup && lingkup.length === 0) {
+      return res.status(403).json({ message: 'Anda belum ditugaskan pada proyek mana pun.' });
+    }
+    const { rekap } = await ambilDataLaporan(month, year, departmentId, lingkup);
 
     const namaFile = `laporan-absensi-${year}-${String(month).padStart(2, '0')}.pdf`;
     res.setHeader('Content-Type', 'application/pdf');
