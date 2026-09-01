@@ -60,30 +60,33 @@ async function ambilDataLaporan(month, year, departmentId, lingkupProyek = null)
   }
 
   const rekap = await query(
-    `SELECT u.id, u.name, d.name AS department,
+    `SELECT u.id, u.name, pj.name AS department,
             COUNT(a.*) FILTER (WHERE a.status = 'hadir') AS hadir,
             COUNT(a.*) FILTER (WHERE a.status = 'terlambat') AS terlambat,
             COUNT(a.*) FILTER (WHERE a.status = 'izin') AS izin,
             COUNT(a.*) FILTER (WHERE a.status = 'alpha') AS alpha,
             COUNT(a.*) AS total_record
      FROM users u
-     LEFT JOIN departments d ON u.department_id = d.id
+     LEFT JOIN projects pj ON u.project_id = pj.id
      LEFT JOIN attendance a ON a.user_id = u.id
        AND EXTRACT(MONTH FROM a.date) = $1
        AND EXTRACT(YEAR FROM a.date) = $2
        ${filterProyekRekap}
      WHERE u.role = 'staff' AND u.is_active = TRUE ${filterDepartemen} ${filterPegawai}
-     GROUP BY u.id, u.name, d.name
+     GROUP BY u.id, u.name, pj.name
      ORDER BY u.name ASC`,
     params
   );
 
   const detail = await query(
     `SELECT a.date, a.check_in_time, a.check_out_time, a.status, a.reason,
-            u.name, d.name AS department
+            u.name, COALESCE(pr.name, pj.name) AS department
      FROM attendance a
      JOIN users u ON a.user_id = u.id
-     LEFT JOIN departments d ON u.department_id = d.id
+     LEFT JOIN projects pj ON u.project_id = pj.id
+     -- Rincian memakai proyek yang TERCAP di baris absensi; penugasan
+     -- pegawai saat ini hanya dipakai kalau barisnya belum bercap.
+     LEFT JOIN projects pr ON a.project_id = pr.id
      WHERE EXTRACT(MONTH FROM a.date) = $1
        AND EXTRACT(YEAR FROM a.date) = $2
        AND u.role = 'staff' AND u.is_active = TRUE ${filterDepartemen} ${filterProyek}
@@ -136,7 +139,7 @@ async function exportExcel(req, res, next) {
     sheetRekap.getRow(1).font = { bold: true, size: 14 };
     sheetRekap.addRow([]);
     const headerRekap = sheetRekap.addRow([
-      'No', 'Nama', 'Departemen', 'Hadir', 'Terlambat', 'Izin', 'Alpha', 'Tingkat Kehadiran (%)',
+      'No', 'Nama', 'Proyek', 'Hadir', 'Terlambat', 'Izin', 'Alpha', 'Tingkat Kehadiran (%)',
     ]);
     headerRekap.font = { bold: true };
 
@@ -161,7 +164,7 @@ async function exportExcel(req, res, next) {
     // Sheet 2: Detail harian
     const sheetDetail = workbook.addWorksheet('Detail');
     const headerDetail = sheetDetail.addRow([
-      'Tanggal', 'Nama', 'Departemen', 'Jam Masuk', 'Jam Pulang', 'Status', 'Keterangan',
+      'Tanggal', 'Nama', 'Proyek', 'Jam Masuk', 'Jam Pulang', 'Status', 'Keterangan',
     ]);
     headerDetail.font = { bold: true };
 
@@ -223,7 +226,7 @@ async function exportPdf(req, res, next) {
     const kolom = [
       { label: 'No', x: 40, width: 25 },
       { label: 'Nama', x: 65, width: 150 },
-      { label: 'Departemen', x: 215, width: 90 },
+      { label: 'Proyek', x: 215, width: 90 },
       { label: 'Hadir', x: 305, width: 40 },
       { label: 'Telat', x: 345, width: 40 },
       { label: 'Izin', x: 385, width: 35 },

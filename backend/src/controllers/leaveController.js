@@ -139,11 +139,11 @@ async function getAllLeaves(req, res, next) {
               to_char(l.end_date, 'YYYY-MM-DD') AS end_date,
               l.reason, l.status, l.admin_note, l.created_at, l.reviewed_at,
               l.document_url, l.document_name,
-              u.id AS user_id, u.name, u.avatar_url, d.name AS department,
+              u.id AS user_id, u.name, u.avatar_url, pj.name AS project_name,
               r.name AS reviewed_by_name
        FROM leave_requests l
        JOIN users u ON l.user_id = u.id
-       LEFT JOIN departments d ON u.department_id = d.id
+       LEFT JOIN projects pj ON u.project_id = pj.id
        LEFT JOIN users r ON l.reviewed_by = r.id
        ${kondisi.length ? `WHERE ${kondisi.join(' AND ')}` : ''}
        ORDER BY (l.status = 'pending') DESC, l.created_at DESC`,

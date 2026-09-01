@@ -47,13 +47,13 @@ async function getSemuaWfa(req, res, next) {
               to_char(w.start_date, 'YYYY-MM-DD') AS start_date,
               to_char(w.end_date, 'YYYY-MM-DD') AS end_date,
               w.note, w.created_at,
-              u.name, u.avatar_url, d.name AS department,
+              u.name, u.avatar_url, pj.name AS project_name,
               pembuat.name AS created_by_name,
               (CURRENT_DATE BETWEEN w.start_date AND w.end_date) AS sedang_berjalan,
               (w.end_date < CURRENT_DATE) AS sudah_lewat
        FROM wfa_assignments w
        JOIN users u ON w.user_id = u.id
-       LEFT JOIN departments d ON u.department_id = d.id
+       LEFT JOIN projects pj ON u.project_id = pj.id
        LEFT JOIN users pembuat ON w.created_by = pembuat.id
        ${kondisi.length ? `WHERE ${kondisi.join(' AND ')}` : ''}
        ORDER BY w.start_date DESC

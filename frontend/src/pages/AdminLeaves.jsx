@@ -149,7 +149,7 @@ export default function AdminLeaves() {
                   <Avatar name={item.name} src={item.avatar_url} size={34} />
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-strong truncate">{item.name}</p>
-                    <p className="text-xs text-faint">{item.department || '—'}</p>
+                    <p className="text-xs text-faint">{item.project_name || '—'}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">

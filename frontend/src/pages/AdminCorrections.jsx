@@ -113,7 +113,7 @@ export default function AdminCorrections() {
                 <Avatar name={item.name} src={item.avatar_url} size={34} />
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-strong truncate">{item.name}</p>
-                  <p className="text-xs text-faint">{item.department || '—'}</p>
+                  <p className="text-xs text-faint">{item.project_name || '—'}</p>
                 </div>
               </div>
               <StatusBadge status={item.status} />

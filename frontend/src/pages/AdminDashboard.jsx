@@ -224,7 +224,7 @@ export default function AdminDashboard() {
                   <Avatar name={item.name} src={item.avatar_url} />
                   <div className="min-w-0 mr-auto">
                     <p className="text-sm font-medium text-strong truncate">{item.name}</p>
-                    <p className="text-xs text-faint truncate">{item.department || '—'}</p>
+                    <p className="text-xs text-faint truncate">{item.project_name || '—'}</p>
                   </div>
                   {item.status ? (
                     <StatusBadge status={item.status} />

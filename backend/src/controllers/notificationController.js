@@ -171,7 +171,7 @@ async function daftarBelumCheckin(idTerpilih = null) {
       id: d.pegawai.id,
       name: d.pegawai.name,
       avatar_url: d.pegawai.avatar_url,
-      department: d.pegawai.department,
+      project_name: d.pegawai.project_name,
       push_token: d.pegawai.push_token,
       bisa_dikirimi: !!d.pegawai.push_token,
       shift_name: d.jendela.shift.nama,

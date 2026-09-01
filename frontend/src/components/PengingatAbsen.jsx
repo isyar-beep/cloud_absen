@@ -151,7 +151,7 @@ export default function PengingatAbsen() {
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-medium text-strong truncate">{r.name}</p>
                   <p className="text-[11px] text-faint truncate">
-                    {r.department || 'Tanpa departemen'}
+                    {r.project_name || 'Tanpa proyek'}
                     {r.shift_name && ` · ${r.shift_name} ${String(r.shift_start).slice(0, 5)}`}
                   </p>
                 </div>

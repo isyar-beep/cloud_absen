@@ -440,7 +440,7 @@ export default function AdminGallery() {
               <dl className="mt-4 text-sm">
                 {[
                   ['ID pegawai', `#${detail.row.user_id}`],
-                  ['Departemen', detail.row.department || '—'],
+                  ['Proyek', detail.row.project_name || '—'],
                   ['Jam masuk', formatJamDetik(detail.row.check_in_time)],
                   ['Jam pulang', formatJamDetik(detail.row.check_out_time)],
                 ].map(([k, v]) => (

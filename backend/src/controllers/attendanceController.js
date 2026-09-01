@@ -356,11 +356,11 @@ async function getTodayAll(req, res, next) {
       `SELECT a.id, a.check_in_time, a.check_out_time, a.status, a.work_mode,
               to_char(p.tanggal, 'YYYY-MM-DD') AS tanggal_shift,
               u.id AS user_id, u.name, u.avatar_url,
-              d.name AS department
+              pj.name AS project_name
        FROM unnest($1::int[], $2::date[]) AS p(uid, tanggal)
        JOIN users u ON u.id = p.uid
        LEFT JOIN attendance a ON a.user_id = u.id AND a.date = p.tanggal
-       LEFT JOIN departments d ON u.department_id = d.id
+       LEFT JOIN projects pj ON u.project_id = pj.id
        ORDER BY a.check_in_time ASC NULLS LAST, u.name ASC`,
       [ids, tanggal]
     );
@@ -459,13 +459,15 @@ async function getAllHistory(req, res, next) {
       `SELECT a.id, a.date, a.check_in_time, a.check_out_time, a.status, a.reason,
               a.photo_in_url, a.photo_out_url, a.work_mode,
               a.latitude, a.longitude,
-              u.id AS user_id, u.name, u.avatar_url, d.name AS department,
+              u.id AS user_id, u.name, u.avatar_url,
               a.project_id, pr.name AS project_name,
               ${KOLOM_SHIFT_SQL}
        FROM attendance a
        JOIN users u ON a.user_id = u.id
-       LEFT JOIN departments d ON u.department_id = d.id
        LEFT JOIN shifts s ON u.shift_id = s.id
+       -- Proyek diambil dari yang TERCAP di baris absensi, bukan dari
+       -- penugasan pegawai saat ini: riwayat harus tetap menunjuk tempat
+       -- kehadiran itu sungguh terjadi.
        LEFT JOIN projects pr ON a.project_id = pr.id
        WHERE ${conditions.join(' AND ')}
        ORDER BY a.date ${urutan}, u.name ASC

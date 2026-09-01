@@ -263,11 +263,11 @@ async function getSemuaKoreksi(req, res, next) {
       `SELECT c.id, to_char(c.date, 'YYYY-MM-DD') AS date,
               c.requested_check_in, c.requested_check_out, c.reason,
               c.status, c.admin_note, c.reviewed_at, c.created_at,
-              u.id AS user_id, u.name, u.avatar_url, d.name AS department,
+              u.id AS user_id, u.name, u.avatar_url, pj.name AS project_name,
               a.check_in_time, a.check_out_time, a.status AS status_absensi
        FROM correction_requests c
        JOIN users u ON c.user_id = u.id
-       LEFT JOIN departments d ON u.department_id = d.id
+       LEFT JOIN projects pj ON u.project_id = pj.id
        LEFT JOIN attendance a ON a.user_id = c.user_id AND a.date = c.date
        ${kondisi.length ? `WHERE ${kondisi.join(' AND ')}` : ''}
        ORDER BY c.status = 'pending' DESC, c.created_at DESC

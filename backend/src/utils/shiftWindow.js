@@ -223,13 +223,13 @@ async function shiftPegawai(query, userId) {
 async function jendelaSemuaPegawai(query, sekarang = new Date()) {
   const hasil = await query(
     `SELECT u.id, u.name, u.avatar_url, u.push_token, u.project_id,
-            d.name AS department,
+            pj.name AS project_name,
             s.name AS shift_nama, s.start_time, s.end_time, s.work_days,
             s.checkin_open_minutes, s.checkin_close_minutes,
             s.checkout_open_minutes, s.checkout_close_minutes
      FROM users u
      LEFT JOIN shifts s ON u.shift_id = s.id
-     LEFT JOIN departments d ON u.department_id = d.id
+     LEFT JOIN projects pj ON u.project_id = pj.id
      WHERE u.is_active = TRUE AND u.role = 'staff'
      ORDER BY u.name ASC`
   );
