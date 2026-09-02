@@ -61,7 +61,7 @@ function IsiDialog({ isi, onJawab }) {
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="dialog-judul"
-        className="bg-surface/90 backdrop-blur-2xl border border-line rounded-2xl shadow-glass w-full max-w-sm overflow-hidden animate-[muncul_140ms_ease-out]"
+        className="kaca-pekat border border-line rounded-2xl shadow-glass w-full max-w-sm overflow-hidden animate-[muncul_140ms_ease-out]"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-5">

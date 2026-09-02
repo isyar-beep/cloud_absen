@@ -218,7 +218,7 @@ export default function Attendance() {
             sebelum menekan tombol. Untuk shift malam, tanggal shift bisa
             berbeda dari tanggal hari ini -- itu disebut terang-terangan. */}
         {shift && (
-          <div className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft p-4 mb-4">
+          <div className="kartu-kaca p-4 mb-4">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-xs text-muted">Shift Anda</p>
@@ -287,7 +287,7 @@ export default function Attendance() {
         )}
 
         {/* Status ringkas hari ini */}
-        <div className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft p-5 mb-5 grid grid-cols-2 gap-4">
+        <div className="kartu-kaca p-5 mb-5 grid grid-cols-2 gap-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-primary-50 dark:bg-primary-500/15 text-primary-600 dark:text-primary-400 flex items-center justify-center">
               <ClockIcon className="w-5 h-5" />

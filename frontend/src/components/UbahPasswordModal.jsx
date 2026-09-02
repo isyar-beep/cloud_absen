@@ -62,7 +62,7 @@ export default function UbahPasswordModal({ onTutup, onSelesai }) {
       onClick={onTutup}
     >
       <div
-        className="bg-surface/90 backdrop-blur-2xl border border-line rounded-2xl shadow-glass w-full max-w-sm"
+        className="kaca-pekat border border-line rounded-2xl shadow-glass w-full max-w-sm"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-5 py-4 border-b border-line">

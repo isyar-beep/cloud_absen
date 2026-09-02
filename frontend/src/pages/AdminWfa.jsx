@@ -131,7 +131,7 @@ export default function AdminWfa() {
       </div>
 
       {tampilForm && (
-        <form onSubmit={simpan} className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft p-5 mb-6 space-y-4">
+        <form onSubmit={simpan} className="kartu-kaca p-5 mb-6 space-y-4">
           <p className="text-sm font-semibold text-strong">Penetapan WFA Baru</p>
           {error && (
             <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/15 border border-red-100 dark:border-red-500/30 rounded-xl px-4 py-2.5">
@@ -218,7 +218,7 @@ export default function AdminWfa() {
         {daftar.map((w) => (
           <div
             key={w.id}
-            className={`bg-surface/75 backdrop-blur-xl rounded-2xl border shadow-soft p-4 flex flex-wrap items-center justify-between gap-3 ${
+            className={`kartu-kaca p-4 flex flex-wrap items-center justify-between gap-3 ${
               w.sedang_berjalan ? 'border-violet-200 dark:border-violet-500/35' : 'border-line'
             }`}
           >
@@ -261,7 +261,7 @@ export default function AdminWfa() {
         ))}
 
         {daftar.length === 0 && (
-          <div className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft px-5 py-12 text-center">
+          <div className="kartu-kaca px-5 py-12 text-center">
             <p className="text-sm text-faint">
               {saringan === 'aktif'
                 ? 'Tidak ada pegawai yang sedang WFA hari ini.'

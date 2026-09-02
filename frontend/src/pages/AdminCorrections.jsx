@@ -107,7 +107,7 @@ export default function AdminCorrections() {
 
       <div className="space-y-3">
         {items.map((item) => (
-          <div key={item.id} className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft p-5">
+          <div key={item.id} className="kartu-kaca p-5">
             <div className="flex justify-between items-start gap-3 mb-3">
               <div className="flex items-center gap-2.5 min-w-0">
                 <Avatar name={item.name} src={item.avatar_url} size={34} />
@@ -202,7 +202,7 @@ export default function AdminCorrections() {
         ))}
 
         {items.length === 0 && (
-          <div className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft px-5 py-12 text-center">
+          <div className="kartu-kaca px-5 py-12 text-center">
             <p className="text-sm text-faint">
               {saringan === 'pending'
                 ? 'Tidak ada pengajuan koreksi yang menunggu keputusan Anda.'

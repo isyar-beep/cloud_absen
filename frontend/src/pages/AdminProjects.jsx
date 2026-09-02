@@ -3,7 +3,7 @@ import api from '../api/axios';
 import AdminSidebar from '../components/AdminSidebar';
 import { useDialog } from '../components/Dialog';
 import { useAuthStore } from '../store/authStore';
-import { BriefcaseIcon, PlusIcon, UsersIcon } from '../components/Icons';
+import { BriefcaseIcon, PlusIcon, UsersIcon, CheckBadgeIcon, AlertIcon } from '../components/Icons';
 import { formatTanggal } from '../utils/tanggal';
 
 const FORM_KOSONG = {
@@ -140,7 +140,7 @@ export default function AdminProjects() {
   }), [proyek]);
 
   return (
-    <div className="min-h-screen lg:pl-64">
+    <div className="min-h-screen transition-[padding] duration-200 lg:pl-[var(--lebar-sidebar)]">
       <AdminSidebar />
 
       <div className="max-w-6xl mx-auto px-4 py-7">
@@ -178,18 +178,28 @@ export default function AdminProjects() {
         {proyek.length > 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
             {[
-              { label: 'Total Proyek', nilai: ringkasan.total },
-              { label: 'Berjalan', nilai: ringkasan.berjalan },
-              { label: 'Total Pegawai', nilai: ringkasan.pegawai },
-              { label: 'Belum Absen Hari Ini', nilai: ringkasan.belum, tekan: ringkasan.belum > 0 },
+              { label: 'Total Proyek', nilai: ringkasan.total, icon: BriefcaseIcon,
+                chip: 'bg-primary-50 dark:bg-primary-500/15 text-primary-600 dark:text-primary-400' },
+              { label: 'Berjalan', nilai: ringkasan.berjalan, icon: CheckBadgeIcon,
+                chip: 'bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' },
+              { label: 'Total Pegawai', nilai: ringkasan.pegawai, icon: UsersIcon,
+                chip: 'bg-violet-50 dark:bg-violet-500/15 text-violet-600 dark:text-violet-400' },
+              { label: 'Belum Absen Hari Ini', nilai: ringkasan.belum, icon: AlertIcon,
+                chip: 'bg-amber-50 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400',
+                tekan: ringkasan.belum > 0 },
             ].map((k) => (
-              <div key={k.label} className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft px-4 py-3.5">
-                <p className={`text-2xl font-bold tabular-nums leading-none ${
-                  k.tekan ? 'text-amber-600 dark:text-amber-400' : 'text-strong'
-                }`}>
-                  {k.nilai}
-                </p>
-                <p className="text-[11.5px] text-muted mt-1.5">{k.label}</p>
+              <div key={k.label} className="kartu-kaca px-4 py-3.5 flex items-center gap-3.5">
+                <span className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${k.chip}`}>
+                  <k.icon className="w-5 h-5" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-[11.5px] text-muted truncate">{k.label}</p>
+                  <p className={`text-2xl font-bold tabular-nums leading-tight mt-0.5 ${
+                    k.tekan ? 'text-amber-600 dark:text-amber-400' : 'text-strong'
+                  }`}>
+                    {k.nilai}
+                  </p>
+                </div>
               </div>
             ))}
           </div>
@@ -197,7 +207,7 @@ export default function AdminProjects() {
 
         {/* Form tambah / ubah */}
         {formTampil && adminPenuh && (
-          <form onSubmit={simpan} className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft p-5 mb-6">
+          <form onSubmit={simpan} className="kartu-kaca p-5 mb-6">
             <p className="text-sm font-semibold text-strong mb-4">
               {sedangUbah ? `Ubah proyek: ${sedangUbah.name}` : 'Proyek baru'}
             </p>
@@ -291,7 +301,7 @@ export default function AdminProjects() {
         )}
 
         {!memuat && proyek.length === 0 && !galat && (
-          <div className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft py-20 text-center">
+          <div className="kartu-kaca py-20 text-center">
             <BriefcaseIcon className="w-9 h-9 mx-auto text-faint mb-3" />
             <p className="text-sm font-medium text-body">Belum ada proyek</p>
             <p className="text-xs text-faint mt-1">
@@ -304,7 +314,7 @@ export default function AdminProjects() {
 
         <div className="grid sm:grid-cols-2 gap-4">
           {proyek.map((p) => (
-            <div key={p.id} className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft overflow-hidden">
+            <div key={p.id} className="kartu-kaca overflow-hidden">
               <div className="px-5 pt-4 pb-3.5">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">

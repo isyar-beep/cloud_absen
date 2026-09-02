@@ -132,7 +132,7 @@ export default function AdminShifts() {
   const labelClass = 'block text-xs font-medium text-muted mb-1.5';
 
   return (
-    <div className="min-h-screen lg:pl-64">
+    <div className="min-h-screen transition-[padding] duration-200 lg:pl-[var(--lebar-sidebar)]">
       <AdminSidebar />
 
       <div className="max-w-4xl mx-auto px-4 py-7">
@@ -179,7 +179,7 @@ export default function AdminShifts() {
         </div>
 
         {showForm && (
-          <form onSubmit={handleSubmit} className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft p-5 mb-6 space-y-4">
+          <form onSubmit={handleSubmit} className="kartu-kaca p-5 mb-6 space-y-4">
             <p className="text-sm font-semibold text-strong">{editingId ? 'Edit Shift' : 'Shift Baru'}</p>
             {error && (
               <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/15 border border-red-100 dark:border-red-500/30 rounded-xl px-4 py-2.5">
@@ -316,7 +316,7 @@ export default function AdminShifts() {
           </form>
         )}
 
-        <div className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft overflow-x-auto">
+        <div className="kartu-kaca overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-line">

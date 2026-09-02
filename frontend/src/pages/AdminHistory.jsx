@@ -64,7 +64,7 @@ export default function AdminHistory() {
     'w-full px-2.5 py-2 bg-surface-2 border border-line rounded-xl text-sm transition focus:outline-none focus:bg-surface/75 backdrop-blur-xl focus:ring-2 focus:ring-primary-500/40';
 
   return (
-    <div className="min-h-screen lg:pl-64">
+    <div className="min-h-screen transition-[padding] duration-200 lg:pl-[var(--lebar-sidebar)]">
       <AdminSidebar />
 
       <div className="max-w-6xl mx-auto px-4 py-7">
@@ -74,7 +74,7 @@ export default function AdminHistory() {
         </div>
 
         {/* Filter */}
-        <div className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft p-4 mb-5 grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="kartu-kaca p-4 mb-5 grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(11rem,1fr))]">
           <div>
             <label className="block text-xs font-medium text-muted mb-1.5">Dari tanggal</label>
             <input
@@ -142,7 +142,7 @@ export default function AdminHistory() {
         )}
 
         {/* Tabel riwayat */}
-        <div className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft overflow-x-auto">
+        <div className="kartu-kaca overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-line">

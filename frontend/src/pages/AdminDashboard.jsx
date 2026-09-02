@@ -114,7 +114,7 @@ export default function AdminDashboard() {
     : [];
 
   return (
-    <div className="min-h-screen lg:pl-64">
+    <div className="min-h-screen transition-[padding] duration-200 lg:pl-[var(--lebar-sidebar)]">
       <AdminSidebar />
 
       <div className="max-w-6xl mx-auto px-4 py-7">
@@ -129,7 +129,7 @@ export default function AdminDashboard() {
         {overview && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             {kpiCards.map((card) => (
-              <div key={card.label} className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft p-5 flex items-center gap-4">
+              <div key={card.label} className="kartu-kaca p-5 flex items-center gap-4">
                 <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${card.chip}`}>
                   <card.icon className="w-6 h-6" />
                 </div>
@@ -143,7 +143,7 @@ export default function AdminDashboard() {
         )}
 
         {/* Export laporan */}
-        <div className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft p-5 mb-6 flex flex-wrap items-center justify-between gap-4">
+        <div className="kartu-kaca p-5 mb-6 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 rounded-xl bg-primary-50 dark:bg-primary-500/15 text-primary-600 dark:text-primary-400 flex items-center justify-center shrink-0">
               <DownloadIcon className="w-5 h-5" />
@@ -193,7 +193,7 @@ export default function AdminDashboard() {
 
         {/* Tindakan admin: normalnya dijalankan terjadwal lewat cron di server,
             tombol ini untuk menjalankan manual / keperluan demo */}
-        <div className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft p-5 mb-6">
+        <div className="kartu-kaca p-5 mb-6">
           <p className="text-sm font-semibold text-strong">Tindakan Admin</p>
           <p className="text-xs text-muted mt-0.5">
             Penandaan alpha berjalan otomatis terjadwal di server tiap dini hari.
@@ -207,7 +207,7 @@ export default function AdminDashboard() {
 
         <div className="grid lg:grid-cols-2 gap-6">
           {/* Real-time board */}
-          <div className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft overflow-hidden">
+          <div className="kartu-kaca overflow-hidden">
             <div className="flex items-center justify-between px-5 pt-4 pb-2">
               <p className="text-sm font-semibold text-strong">Status Absensi Hari Ini</p>
               <span className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-medium">
@@ -243,7 +243,7 @@ export default function AdminDashboard() {
 
           {/* Ranking */}
           <div className="space-y-6">
-            <div className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft p-5">
+            <div className="kartu-kaca p-5">
               <p className="text-sm font-semibold text-strong mb-4">Top Performers</p>
               <div className="space-y-3">
                 {ranking.top_performers.map((r, i) => (
@@ -271,7 +271,7 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            <div className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft p-5">
+            <div className="kartu-kaca p-5">
               <p className="text-sm font-semibold text-strong mb-4">Perlu Perhatian</p>
               <div className="space-y-3">
                 {ranking.at_risk.map((r) => (

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import Avatar from './Avatar';
@@ -6,6 +6,7 @@ import ThemeToggle from './ThemeToggle';
 import {
   HomeIcon, BriefcaseIcon, ChartIcon, ClockIcon, PhotoIcon, DocumentIcon,
   UsersIcon, ClipboardIcon, CalendarIcon, LogoutIcon, MenuIcon, CloseIcon,
+  ChevronLeftIcon,
 } from './Icons';
 
 // Menu dikelompokkan menurut cara orang memakainya, bukan menurut urutan
@@ -45,18 +46,20 @@ const KELOMPOK = [
 
 const LABEL_PERAN = { admin: 'Dinas', konsultan: 'Konsultan', staff: 'Pegawai' };
 
-function Isi({ user, aktifKah, onPindah, onKeluar }) {
+function Isi({ user, aktifKah, onPindah, onKeluar, lipat = false, onLipat }) {
   return (
     <div className="flex flex-col h-full">
       {/* Identitas aplikasi */}
-      <div className="flex items-center gap-2.5 px-5 h-16 shrink-0 border-b border-line/70">
+      <div className={`flex items-center h-16 shrink-0 border-b border-line/70 ${lipat ? 'justify-center px-2' : 'gap-2.5 px-5'}`}>
         <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 text-white text-sm font-bold flex items-center justify-center shadow-glow shrink-0">
           AK
         </div>
-        <div className="min-w-0">
-          <p className="text-sm font-semibold text-strong truncate leading-tight">Absensi Konsultan</p>
-          <p className="text-[11px] text-faint truncate">PERCIPKAR</p>
-        </div>
+        {!lipat && (
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-strong truncate leading-tight">Absensi Konsultan</p>
+            <p className="text-[11px] text-faint truncate">PERCIPKAR</p>
+          </div>
+        )}
       </div>
 
       {/* Menu */}
@@ -66,9 +69,15 @@ function Isi({ user, aktifKah, onPindah, onKeluar }) {
           if (terlihat.length === 0) return null;
           return (
             <div key={kelompok.judul}>
-              <p className="px-2.5 mb-1.5 text-[10.5px] font-semibold uppercase tracking-[0.09em] text-faint">
-                {kelompok.judul}
-              </p>
+              {lipat ? (
+                // Saat terlipat, judul kelompok diganti garis pemisah: ruangnya
+                // tidak cukup untuk teks, tapi pengelompokannya tetap terbaca.
+                <div className="h-px bg-line/70 mx-2 mb-2" aria-hidden="true" />
+              ) : (
+                <p className="px-2.5 mb-1.5 text-[10.5px] font-semibold uppercase tracking-[0.09em] text-faint">
+                  {kelompok.judul}
+                </p>
+              )}
               <div className="space-y-0.5">
                 {terlihat.map((item) => {
                   const aktif = aktifKah(item);
@@ -78,14 +87,17 @@ function Isi({ user, aktifKah, onPindah, onKeluar }) {
                       to={item.to}
                       onClick={onPindah}
                       aria-current={aktif ? 'page' : undefined}
-                      className={`flex items-center gap-3 px-2.5 h-10 rounded-xl text-sm transition ${
+                      title={lipat ? item.label : undefined}
+                      className={`flex items-center h-10 rounded-xl text-sm transition ${
+                        lipat ? 'justify-center px-0' : 'gap-3 px-2.5'
+                      } ${
                         aktif
                           ? 'bg-primary-50 dark:bg-primary-500/15 text-primary-700 dark:text-primary-300 font-semibold'
                           : 'text-body hover:bg-surface-2 hover:text-strong font-medium'
                       }`}
                     >
                       <item.icon className={`w-[18px] h-[18px] shrink-0 ${aktif ? '' : 'text-muted'}`} />
-                      <span className="truncate">{item.label}</span>
+                      {!lipat && <span className="truncate">{item.label}</span>}
                     </Link>
                   );
                 })}
@@ -95,14 +107,17 @@ function Isi({ user, aktifKah, onPindah, onKeluar }) {
         })}
       </nav>
 
-      {/* Kartu pengguna */}
+      {/* Kartu pengguna. Saat terlipat semuanya ditumpuk tegak -- empat
+          kontrol berdampingan tidak muat di lebar ikon. */}
       <div className="shrink-0 border-t border-line/70 p-3">
-        <div className="flex items-center gap-2.5 px-1.5 py-1.5">
+        <div className={`flex px-1.5 py-1.5 ${lipat ? 'flex-col items-center gap-2' : 'items-center gap-2.5'}`}>
           <Avatar name={user?.name} src={user?.avatar_url} size={34} />
-          <div className="min-w-0 flex-1">
-            <p className="text-[13px] font-semibold text-strong truncate leading-tight">{user?.name}</p>
-            <p className="text-[11px] text-faint truncate">{LABEL_PERAN[user?.role] || user?.role}</p>
-          </div>
+          {!lipat && (
+            <div className="min-w-0 flex-1">
+              <p className="text-[13px] font-semibold text-strong truncate leading-tight">{user?.name}</p>
+              <p className="text-[11px] text-faint truncate">{LABEL_PERAN[user?.role] || user?.role}</p>
+            </div>
+          )}
           <ThemeToggle ringkas />
           <button
             onClick={onKeluar}
@@ -113,6 +128,21 @@ function Isi({ user, aktifKah, onPindah, onKeluar }) {
             <LogoutIcon className="w-[18px] h-[18px]" />
           </button>
         </div>
+
+        {onLipat && (
+          <button
+            onClick={onLipat}
+            title={lipat ? 'Tampilkan menu' : 'Sembunyikan menu'}
+            aria-label={lipat ? 'Tampilkan menu' : 'Sembunyikan menu'}
+            aria-expanded={!lipat}
+            className={`hidden lg:flex items-center gap-2 w-full h-9 mt-1 rounded-lg text-[12px] font-medium text-muted hover:text-strong hover:bg-surface-2 transition ${
+              lipat ? 'justify-center px-0' : 'px-2.5'
+            }`}
+          >
+            <ChevronLeftIcon className={`w-4 h-4 shrink-0 transition-transform ${lipat ? 'rotate-180' : ''}`} />
+            {!lipat && <span>Sembunyikan menu</span>}
+          </button>
+        )}
       </div>
     </div>
   );
@@ -123,6 +153,32 @@ export default function AdminSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const [buka, setBuka] = useState(false);
+
+  // Pilihan melipat diingat per perangkat: orang yang bekerja di layar
+  // sempit biasanya ingin menu tetap ringkas setiap kali membuka aplikasi,
+  // dan memintanya melipat ulang tiap kali terasa seperti aplikasi lupa.
+  const [lipat, setLipat] = useState(() => {
+    try {
+      return localStorage.getItem('sidebar_lipat') === '1';
+    } catch {
+      return false;
+    }
+  });
+
+  // Lebar diumumkan lewat variabel CSS supaya isi halaman ikut bergeser.
+  // Sidebar yang menentukan angkanya, halaman tinggal mengikuti -- tanpa
+  // satu sumber, keduanya bisa berselisih dan menyisakan lajur kosong.
+  useEffect(() => {
+    document.documentElement.style.setProperty('--lebar-sidebar', lipat ? '4.5rem' : '16rem');
+    try {
+      localStorage.setItem('sidebar_lipat', lipat ? '1' : '0');
+    } catch {
+      // Penyimpanan diblokir (mode privat): pilihannya tetap berlaku
+      // sepanjang sesi ini, cuma tidak diingat lain kali.
+    }
+  }, [lipat]);
+
+  const toggleLipat = useCallback(() => setLipat((v) => !v), []);
 
   // Laci ditutup tiap kali halaman berpindah. Tanpa ini, di HP laci tetap
   // menutupi halaman yang baru saja dibuka.
@@ -146,19 +202,30 @@ export default function AdminSidebar() {
   const aktifKah = (item) =>
     item.tepat ? location.pathname === item.to : location.pathname.startsWith(item.to);
 
-  const isi = (
+  // Laci di layar sempit selalu tampil penuh: di sana ruangnya memang
+  // sedang dipinjam seluruh layar, jadi melipatnya tidak ada gunanya.
+  const isiLebar = (
+    <Isi
+      user={user} aktifKah={aktifKah} onPindah={() => setBuka(false)}
+      onKeluar={handleLogout} lipat={lipat} onLipat={toggleLipat}
+    />
+  );
+  const isiLaci = (
     <Isi user={user} aktifKah={aktifKah} onPindah={() => setBuka(false)} onKeluar={handleLogout} />
   );
 
   return (
     <>
       {/* Layar lebar: sidebar tetap */}
-      <aside className="hidden lg:block fixed inset-y-0 left-0 w-64 bg-surface/80 backdrop-blur-xl border-r border-line/70 z-30">
-        {isi}
+      <aside
+        className="hidden lg:block fixed inset-y-0 left-0 kaca-pekat border-r border-line/70 z-30 transition-[width] duration-200"
+        style={{ width: 'var(--lebar-sidebar)' }}
+      >
+        {isiLebar}
       </aside>
 
       {/* Layar sempit: bilah atas + laci geser */}
-      <header className="lg:hidden sticky top-0 z-30 bg-surface/85 backdrop-blur-lg border-b border-line/70">
+      <header className="lg:hidden sticky top-0 z-30 kaca-pekat border-b border-line/70">
         <div className="h-14 px-3 flex items-center gap-3">
           <button
             onClick={() => setBuka(true)}
@@ -181,7 +248,7 @@ export default function AdminSidebar() {
             onClick={() => setBuka(false)}
             aria-hidden="true"
           />
-          <aside className="absolute inset-y-0 left-0 w-[17rem] bg-surface border-r border-line shadow-2xl">
+          <aside className="absolute inset-y-0 left-0 w-[17rem] kaca-pekat border-r border-line shadow-2xl">
             <button
               onClick={() => setBuka(false)}
               aria-label="Tutup menu"
@@ -189,7 +256,7 @@ export default function AdminSidebar() {
             >
               <CloseIcon className="w-5 h-5" />
             </button>
-            {isi}
+            {isiLaci}
           </aside>
         </div>
       )}

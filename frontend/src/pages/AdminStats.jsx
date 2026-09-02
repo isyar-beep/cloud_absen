@@ -150,7 +150,7 @@ export default function AdminStats() {
   const labelClass = 'block text-xs font-medium text-muted mb-1.5';
 
   return (
-    <div className="min-h-screen lg:pl-64">
+    <div className="min-h-screen transition-[padding] duration-200 lg:pl-[var(--lebar-sidebar)]">
       <AdminSidebar />
 
       <div className="max-w-5xl mx-auto px-4 py-7">
@@ -162,7 +162,7 @@ export default function AdminStats() {
         </div>
 
         {/* Filter */}
-        <div className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft p-5 mb-5">
+        <div className="kartu-kaca p-5 mb-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div className={butuhSeries ? 'sm:col-span-2' : ''}>
               <label className={labelClass}>Pegawai</label>
@@ -226,7 +226,7 @@ export default function AdminStats() {
         </div>
 
         {/* Kartu grafik */}
-        <div className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft overflow-hidden">
+        <div className="kartu-kaca overflow-hidden">
           <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 px-5 pt-5 pb-4">
             <p className="text-sm font-semibold text-strong">{namaTerpilih}</p>
             <p className="text-xs text-faint">{keteranganPeriode}</p>

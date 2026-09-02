@@ -60,7 +60,7 @@ export default function AdminLeaves() {
   ];
 
   return (
-    <div className="min-h-screen lg:pl-64">
+    <div className="min-h-screen transition-[padding] duration-200 lg:pl-[var(--lebar-sidebar)]">
       <AdminSidebar />
 
       <div className="max-w-4xl mx-auto px-4 py-7">
@@ -143,7 +143,7 @@ export default function AdminLeaves() {
 
         <div className="space-y-3">
           {leaves.map((item) => (
-            <div key={item.id} className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft p-5">
+            <div key={item.id} className="kartu-kaca p-5">
               <div className="flex justify-between items-start gap-3 mb-3">
                 <div className="flex items-center gap-2.5 min-w-0">
                   <Avatar name={item.name} src={item.avatar_url} size={34} />
@@ -226,7 +226,7 @@ export default function AdminLeaves() {
           ))}
 
           {leaves.length === 0 && (
-            <div className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft py-14 text-center">
+            <div className="kartu-kaca py-14 text-center">
               <p className="text-sm text-faint">Tidak ada pengajuan.</p>
             </div>
           )}

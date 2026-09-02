@@ -56,7 +56,7 @@ export default function Login() {
 
         <form
           onSubmit={handleSubmit}
-          className="bg-surface/80 backdrop-blur-2xl rounded-3xl border border-line shadow-glass p-7 space-y-4"
+          className="kartu-kaca rounded-3xl p-7 space-y-4"
         >
           {error && (
             <div className="flex items-start gap-2 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/15 border border-red-100 dark:border-red-500/30 rounded-xl px-3.5 py-2.5">

@@ -129,7 +129,7 @@ export default function Leaves() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft p-5 space-y-4 mb-6">
+        <form onSubmit={handleSubmit} className="kartu-kaca p-5 space-y-4 mb-6">
           <div>
             <label className="block text-sm font-medium text-body mb-1.5">Jenis pengajuan</label>
             <div className="grid grid-cols-3 gap-2">
@@ -235,7 +235,7 @@ export default function Leaves() {
           </button>
         </form>
 
-        <div className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft overflow-hidden">
+        <div className="kartu-kaca overflow-hidden">
           <p className="text-sm font-semibold text-strong px-5 pt-4 pb-2">Riwayat Pengajuan</p>
           {leaves.map((item) => (
             <div key={item.id} className="px-5 py-3.5 border-t border-line hover:bg-surface-2/60 transition">

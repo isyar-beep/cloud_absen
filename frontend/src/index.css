@@ -65,7 +65,11 @@ html {
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  /* Angka selalu selebar sama supaya kolom jam dan jumlah tidak bergeser
+     tiap kali nilainya berubah. */
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.011em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: rgb(var(--c-body));
@@ -139,4 +143,59 @@ body::before {
 .dark input[type='time']::-webkit-calendar-picker-indicator,
 .dark input[type='month']::-webkit-calendar-picker-indicator {
   filter: invert(1) opacity(0.65);
+}
+
+/* ============================================================
+   Permukaan kaca
+   ------------------------------------------------------------
+   Satu perlakuan kartu yang dipakai bersama seluruh halaman.
+   Sebelumnya rangkaian kelas yang sama diketik ulang di puluhan
+   tempat, dan sekali ada yang berbeda satu angka, kartunya tampak
+   tidak sejajar tanpa ketahuan sebabnya.
+
+   Kaca hanya terasa kalau ada sesuatu di belakangnya: noda cahaya
+   di latar body itulah yang menembus dan membuat blur ada gunanya.
+   ============================================================ */
+.kartu-kaca {
+  background-color: rgb(var(--c-surface) / 0.72);
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  border: 1px solid rgb(var(--c-line) / 0.9);
+  border-radius: 1rem;
+  box-shadow: var(--shadow-soft);
+  /* Garis terang setipis rambut di tepi atas: yang membuat permukaan
+     terbaca sebagai lembar kaca, bukan sekadar kotak tembus pandang. */
+  background-image: linear-gradient(
+    to bottom,
+    rgb(255 255 255 / 0.55),
+    rgb(255 255 255 / 0) 40%
+  );
+}
+
+.dark .kartu-kaca {
+  background-color: rgb(var(--c-surface) / 0.6);
+  border-color: rgb(var(--c-line) / 0.8);
+  background-image: linear-gradient(
+    to bottom,
+    rgb(255 255 255 / 0.06),
+    rgb(255 255 255 / 0) 40%
+  );
+}
+
+/* Varian yang lebih pekat untuk panel yang menimpa layar (dialog,
+   sidebar) -- isi di belakangnya tidak boleh ikut terbaca. */
+.kaca-pekat {
+  background-color: rgb(var(--c-surface) / 0.88);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+}
+.dark .kaca-pekat {
+  background-color: rgb(var(--c-surface) / 0.82);
+}
+
+/* Lebar sidebar dipakai bersama: sidebar yang menentukan, isi halaman
+   yang mengikuti. Tanpa satu sumber angka, keduanya bisa berselisih dan
+   menyisakan lajur kosong atau isi yang tertimpa. */
+:root {
+  --lebar-sidebar: 16rem;
 }

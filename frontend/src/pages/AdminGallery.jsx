@@ -228,7 +228,7 @@ export default function AdminGallery() {
   const labelClass = 'block text-xs font-medium text-muted mb-1.5';
 
   return (
-    <div className="min-h-screen lg:pl-64">
+    <div className="min-h-screen transition-[padding] duration-200 lg:pl-[var(--lebar-sidebar)]">
       <AdminSidebar />
 
       <div className="max-w-6xl mx-auto px-4 py-7">
@@ -240,8 +240,8 @@ export default function AdminGallery() {
         </div>
 
         {/* Filter */}
-        <div className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft p-5 mb-5">
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+        <div className="kartu-kaca p-5 mb-5">
+          <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(11rem,1fr))]">
             <div>
               <label className={labelClass}>Dari tanggal</label>
               <input type="date" value={filter.start_date}
@@ -342,7 +342,7 @@ export default function AdminGallery() {
         )}
 
         {!loading && !loadError && baris.length === 0 && (
-          <div className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft py-20 text-center">
+          <div className="kartu-kaca py-20 text-center">
             <p className="text-sm font-medium text-body">Belum ada foto absensi</p>
             <p className="text-xs text-faint mt-1">Tidak ada foto pada rentang dan saringan ini.</p>
           </div>
@@ -351,7 +351,7 @@ export default function AdminGallery() {
         {/* Kisi kartu */}
         <div className={`grid gap-4 ${hanyaSatuJenis ? 'sm:grid-cols-3 lg:grid-cols-4' : 'sm:grid-cols-2 lg:grid-cols-3'}`}>
           {baris.map((r) => (
-            <div key={r.id} className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft overflow-hidden">
+            <div key={r.id} className="kartu-kaca overflow-hidden">
               {/* Nama di baris sendiri, tanggal & status di bawahnya -- badge
                   "Hadir (Terlambat)" cukup panjang dan akan memotong nama
                   kalau dipaksa sebaris di kartu yang sempit. */}
@@ -413,7 +413,7 @@ export default function AdminGallery() {
           aria-modal="true"
         >
           <div
-            className="bg-surface/90 backdrop-blur-2xl border border-line rounded-2xl overflow-hidden w-full max-w-3xl grid md:grid-cols-[1.2fr_1fr] shadow-glass max-h-[90vh]"
+            className="kaca-pekat border border-line rounded-2xl overflow-hidden w-full max-w-3xl grid md:grid-cols-[1.2fr_1fr] shadow-glass max-h-[90vh]"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Tetap gelap di kedua tema: foto absensi paling terbaca

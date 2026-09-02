@@ -166,7 +166,7 @@ export default function Dashboard() {
         {stats && (
           <div className="grid grid-cols-2 gap-3 mb-5">
             {statCards.map((card) => (
-              <div key={card.label} className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft p-4">
+              <div key={card.label} className="kartu-kaca p-4">
                 <div className={`w-9 h-9 rounded-xl flex items-center justify-center mb-3 ${card.chip}`}>
                   <card.icon className="w-5 h-5" />
                 </div>
@@ -203,7 +203,7 @@ export default function Dashboard() {
 
         {/* Trend Chart */}
         {trend.length > 0 && (
-          <div className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft p-5 mb-5">
+          <div className="kartu-kaca p-5 mb-5">
             <p className="text-sm font-semibold text-strong mb-4">Jam Kerja 30 Hari Terakhir</p>
             <ResponsiveContainer width="100%" height={170}>
               <AreaChart data={trend} margin={{ top: 4, right: 4, left: -18, bottom: 0 }}>
@@ -226,7 +226,7 @@ export default function Dashboard() {
         )}
 
         {/* Riwayat terbaru */}
-        <div className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft overflow-hidden">
+        <div className="kartu-kaca overflow-hidden">
           <div className="flex justify-between items-center px-5 pt-4 pb-2">
             <p className="text-sm font-semibold text-strong">Riwayat Terbaru</p>
             <button

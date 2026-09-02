@@ -158,7 +158,7 @@ export default function History() {
         )}
 
         {/* Pilih periode */}
-        <div className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft p-4 mb-3">
+        <div className="kartu-kaca p-4 mb-3">
           <p className="text-xs font-medium text-muted mb-2">Periode</p>
           <div className="flex flex-wrap gap-1.5">
             {PRESET.map((p) => (
@@ -273,7 +273,7 @@ export default function History() {
         </div>
 
         {/* Daftar riwayat */}
-        <div className="bg-surface/75 backdrop-blur-xl rounded-2xl border border-line shadow-soft overflow-hidden">
+        <div className="kartu-kaca overflow-hidden">
           {items.map((item) => (
             <div key={item.id} className="px-5 py-4 border-b border-line last:border-b-0 hover:bg-surface-2/60 transition">
               <div className="flex justify-between items-center mb-1.5">

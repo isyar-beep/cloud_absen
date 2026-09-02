@@ -82,7 +82,7 @@ export default function EditAbsensiModal({ baris, onTutup, onSimpan }) {
       onClick={onTutup}
     >
       <div
-        className="bg-surface/90 backdrop-blur-2xl border border-line rounded-2xl shadow-glass w-full max-w-lg max-h-[90vh] overflow-y-auto"
+        className="kaca-pekat border border-line rounded-2xl shadow-glass w-full max-w-lg max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-5 py-4 border-b border-line">
