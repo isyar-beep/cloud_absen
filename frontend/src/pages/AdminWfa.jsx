@@ -131,7 +131,7 @@ export default function AdminWfa() {
       </div>
 
       {tampilForm && (
-        <form onSubmit={simpan} className="kartu-kaca p-5 mb-6 space-y-4">
+        <form onSubmit={simpan} className="kartu-kaca max-w-4xl p-5 mb-6 space-y-4">
           <p className="text-sm font-semibold text-strong">Penetapan WFA Baru</p>
           {error && (
             <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/15 border border-red-100 dark:border-red-500/30 rounded-xl px-4 py-2.5">

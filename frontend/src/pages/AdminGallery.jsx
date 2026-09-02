@@ -227,7 +227,7 @@ export default function AdminGallery() {
     <div className="min-h-screen transition-[padding] duration-200 lg:pl-[var(--lebar-sidebar)]">
       <AdminSidebar />
 
-      <div className="max-w-6xl mx-auto px-4 py-7">
+      <div className="wadah-petak px-5 lg:px-8 py-7">
         <div className="mb-5">
           <h1 className="text-xl font-bold text-strong tracking-tight">Galeri Foto Absensi</h1>
           <p className="text-sm text-muted mt-0.5">

@@ -143,7 +143,7 @@ export default function AdminProjects() {
     <div className="min-h-screen transition-[padding] duration-200 lg:pl-[var(--lebar-sidebar)]">
       <AdminSidebar />
 
-      <div className="wadah-petak max-w-6xl mx-auto px-4 py-7">
+      <div className="wadah-petak px-5 lg:px-8 py-7">
         <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
           <div>
             <h1 className="text-xl font-bold text-strong tracking-tight">Proyek</h1>
@@ -207,7 +207,7 @@ export default function AdminProjects() {
 
         {/* Form tambah / ubah */}
         {formTampil && adminPenuh && (
-          <form onSubmit={simpan} className="kartu-kaca p-5 mb-6">
+          <form onSubmit={simpan} className="kartu-kaca max-w-4xl p-5 mb-6">
             <p className="text-sm font-semibold text-strong mb-4">
               {sedangUbah ? `Ubah proyek: ${sedangUbah.name}` : 'Proyek baru'}
             </p>
