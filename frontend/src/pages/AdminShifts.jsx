@@ -316,33 +316,33 @@ export default function AdminShifts() {
           </form>
         )}
 
-        <div className="kartu-kaca overflow-x-auto">
-          <table className="w-full text-sm">
+        <div className="kartu-kaca overflow-x-auto p-4">
+          <table className="tabel-pil text-sm">
             <thead>
-              <tr className="border-b border-line">
-                <th className="text-left px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Shift</th>
-                <th className="text-left px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Jam Kerja</th>
-                <th className="text-left px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Hari Kerja</th>
-                <th className="text-left px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Jendela Absen</th>
-                <th className="text-left px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Pegawai</th>
-                <th className="text-right px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Aksi</th>
+              <tr>
+                <th>Shift</th>
+                <th>Jam Kerja</th>
+                <th>Hari Kerja</th>
+                <th>Jendela Absen</th>
+                <th>Pegawai</th>
+                <th className="!text-right">Aksi</th>
               </tr>
             </thead>
             <tbody>
               {shifts.map((s) => (
-                <tr key={s.id} className="border-b border-line last:border-b-0 hover:bg-surface-2/60 transition">
-                  <td className="px-5 py-3.5 font-medium text-strong">{s.name}</td>
-                  <td className="px-5 py-3.5 text-body tabular-nums whitespace-nowrap">
+                <tr key={s.id}>
+                  <td className="font-medium text-strong">{s.name}</td>
+                  <td className="text-body tabular-nums whitespace-nowrap">
                     {s.start_time} — {s.end_time}
                     {s.lintas_hari && <span className="text-[11px] text-violet-600 dark:text-violet-400 ml-1.5">+1 hari</span>}
                   </td>
-                  <td className="px-5 py-3.5 text-body text-xs whitespace-nowrap">{s.hari_kerja_teks}</td>
-                  <td className="px-5 py-3.5 text-muted text-xs tabular-nums whitespace-nowrap">
+                  <td className="text-body text-xs whitespace-nowrap">{s.hari_kerja_teks}</td>
+                  <td className="text-muted text-xs tabular-nums whitespace-nowrap">
                     <div>Masuk {geserJam(s.start_time, -s.checkin_open_minutes)}–{geserJam(s.start_time, s.checkin_close_minutes)}</div>
                     <div>Pulang {geserJam(s.end_time, -s.checkout_open_minutes)}–{geserJam(s.end_time, s.checkout_close_minutes)}</div>
                   </td>
-                  <td className="px-5 py-3.5 text-body">{s.jumlah_pegawai} orang</td>
-                  <td className="px-5 py-3.5 text-right space-x-3">
+                  <td className="text-body">{s.jumlah_pegawai} orang</td>
+                  <td className="text-right space-x-3">
                     <button onClick={() => openEditForm(s)} className="text-xs font-semibold text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition">
                       Edit
                     </button>
@@ -354,7 +354,7 @@ export default function AdminShifts() {
               ))}
               {shifts.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="text-center text-sm text-faint px-5 py-12">
+                  <td colSpan={6} className="text-center text-sm text-faint py-12">
                     Belum ada shift. Tambahkan shift pertama.
                   </td>
                 </tr>

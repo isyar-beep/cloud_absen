@@ -10,7 +10,11 @@
    ============================================================ */
 
 :root {
-  --c-canvas: 244 246 251;
+  /* Kanvas diberi rona biru tipis, bukan abu-abu netral. Inilah separuh
+     sebab permukaan kaca terbaca sebagai kaca: kalau latarnya nyaris
+     putih, tidak ada warna yang bisa menembus kartu, dan blur-nya jadi
+     tidak berguna. */
+  --c-canvas: 230 239 250;
   --c-surface: 255 255 255;
   --c-surface-2: 246 248 252;
   --c-surface-3: 237 241 248;
@@ -18,21 +22,30 @@
   --c-line-strong: 203 213 225;
   --c-strong: 15 23 42;
   --c-body: 51 65 85;
-  --c-muted: 100 116 139;
-  --c-faint: 148 163 184;
+  /* Sedikit lebih gelap dari slate-500. Di atas kartu kaca yang tembus,
+     slate-500 hanya mencapai kontras 4.41 -- di bawah ambang WCAG AA 4.5
+     untuk teks kecil. Nilai ini yang paling terang yang masih lolos (4.80),
+     jadi tingkatan teks tetap terjaga tanpa mengorbankan keterbacaan.
+     Diukur dari piksel yang sungguh tergambar, bukan dari nilai token. */
+  --c-muted: 95 110 133;
+  --c-faint: 138 152 173;
   --c-ink: 15 23 42;
   --c-on-ink: 255 255 255;
 
   --shadow-soft: 0 2px 12px -2px rgb(15 23 42 / 0.06), 0 8px 28px -8px rgb(15 23 42 / 0.08);
+  --shadow-lift: 0 6px 18px -4px rgb(15 23 42 / 0.1), 0 18px 40px -12px rgb(15 23 42 / 0.16);
   --shadow-glow: 0 8px 24px -8px rgb(37 99 235 / 0.45);
   --shadow-glass: 0 1px 0 0 rgb(255 255 255 / 0.6) inset, 0 8px 32px -12px rgb(15 23 42 / 0.14);
 
   /* Warna noda cahaya di latar. Inilah yang "terlihat" menembus kartu
      kaca; tanpa sesuatu di belakangnya, backdrop-blur tidak ada efeknya. */
+  /* Biru di kiri-atas, ungu di kanan-bawah -- komposisi dua noda, sama
+     seperti rujukan desainnya. Ungunya sengaja nada terang (a78bfa), bukan
+     violet pekat: violet pekat menarik mata lebih kuat daripada isi
+     halaman, dan ini layar kerja, bukan sampul. */
   --glow-1: 59 130 246;
-  --glow-2: 139 92 246;
-  --glow-3: 45 212 191;
-  --glow-alpha: 0.16;
+  --glow-2: 167 139 250;
+  --glow-alpha: 0.42;
 
   color-scheme: light;
 }
@@ -52,10 +65,11 @@
   --c-on-ink: 15 23 42;
 
   --shadow-soft: 0 2px 12px -2px rgb(0 0 0 / 0.5), 0 8px 28px -8px rgb(0 0 0 / 0.45);
+  --shadow-lift: 0 6px 18px -4px rgb(0 0 0 / 0.55), 0 18px 40px -12px rgb(0 0 0 / 0.5);
   --shadow-glow: 0 8px 24px -8px rgb(59 130 246 / 0.55);
   --shadow-glass: 0 1px 0 0 rgb(255 255 255 / 0.06) inset, 0 8px 32px -12px rgb(0 0 0 / 0.6);
 
-  --glow-alpha: 0.22;
+  --glow-alpha: 0.3;
 
   color-scheme: dark;
 }
@@ -73,7 +87,11 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: rgb(var(--c-body));
-  background-color: rgb(var(--c-canvas));
+  /* SENGAJA tanpa background-color. Warna kanvas sudah dipasang di <html>,
+     dan kalau body ikut punya latar sendiri, latar itu menutupi
+     body::before yang ber-z-index -1 -- noda cahayanya jadi tidak pernah
+     terlihat sama sekali, dan blur pada kartu kaca cuma mengaburkan warna
+     rata. Persis itu yang terjadi sebelum ini. */
   min-height: 100vh;
 }
 
@@ -88,9 +106,8 @@ body::before {
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(46rem 34rem at 12% -8%, rgb(var(--glow-1) / var(--glow-alpha)), transparent 60%),
-    radial-gradient(40rem 30rem at 88% 4%, rgb(var(--glow-2) / var(--glow-alpha)), transparent 62%),
-    radial-gradient(38rem 30rem at 60% 100%, rgb(var(--glow-3) / calc(var(--glow-alpha) * 0.75)), transparent 60%);
+    radial-gradient(58rem 46rem at 2% -6%, rgb(var(--glow-1) / var(--glow-alpha)), transparent 68%),
+    radial-gradient(54rem 44rem at 100% 100%, rgb(var(--glow-2) / var(--glow-alpha)), transparent 68%);
 }
 
 /* Dialog konfirmasi muncul dengan gerakan singkat. Tanpa itu ia terasa
@@ -157,11 +174,13 @@ body::before {
    di latar body itulah yang menembus dan membuat blur ada gunanya.
    ============================================================ */
 .kartu-kaca {
-  background-color: rgb(var(--c-surface) / 0.72);
+  background-color: rgb(var(--c-surface) / 0.62);
   backdrop-filter: blur(18px) saturate(150%);
   -webkit-backdrop-filter: blur(18px) saturate(150%);
-  border: 1px solid rgb(var(--c-line) / 0.9);
-  border-radius: 1rem;
+  /* Tepi putih, bukan abu-abu. Kaca dikenali mata dari pantulan cahaya di
+     sisinya; garis abu-abu membuatnya kembali terbaca sebagai kotak biasa. */
+  border: 1px solid rgb(255 255 255 / 0.6);
+  border-radius: 1.5rem;
   box-shadow: var(--shadow-soft);
   /* Garis terang setipis rambut di tepi atas: yang membuat permukaan
      terbaca sebagai lembar kaca, bukan sekadar kotak tembus pandang. */
@@ -174,7 +193,9 @@ body::before {
 
 .dark .kartu-kaca {
   background-color: rgb(var(--c-surface) / 0.6);
-  border-color: rgb(var(--c-line) / 0.8);
+  /* Di mode gelap pantulan putih pekat justru terbaca seperti garis neon;
+     yang meyakinkan di sana adalah kilau yang sangat tipis. */
+  border-color: rgb(255 255 255 / 0.1);
   background-image: linear-gradient(
     to bottom,
     rgb(255 255 255 / 0.06),
@@ -193,9 +214,77 @@ body::before {
   background-color: rgb(var(--c-surface) / 0.82);
 }
 
+/* Kartu yang bisa diketuk terangkat sedikit saat disentuh kursor.
+   SENGAJA bukan pada .kartu-kaca: kalau semua kartu ikut bergerak, tabel
+   yang cuma dibaca ikut meloncat tiap kali kursor lewat, dan gerakan itu
+   berhenti berarti apa-apa. Yang bergerak harus yang memang bisa ditekan. */
+.kartu-naik {
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 220ms ease;
+}
+.kartu-naik:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lift);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kartu-naik:hover {
+    transform: none;
+  }
+}
+
+/* ============================================================
+   Tabel baris-pil
+   ------------------------------------------------------------
+   Tiap baris jadi kepingan melayang sendiri, bukan deretan yang
+   dipisah garis. Bedanya bukan sekadar selera: dengan pil, mata
+   mengelompokkan satu baris sebagai satu benda utuh, sehingga
+   kolom paling kanan tetap terbaca milik nama di kiri. Itu yang
+   sering hilang pada tabel lebar bergaris tipis.
+   ============================================================ */
+.tabel-pil {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 0.5rem;
+}
+.tabel-pil th {
+  padding: 0 1rem 0.25rem;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgb(var(--c-muted));
+  white-space: nowrap;
+}
+.tabel-pil td {
+  padding: 0.9rem 1rem;
+  background-color: rgb(var(--c-surface) / 0.55);
+  transition: background-color 160ms ease;
+}
+.tabel-pil tbody tr:hover td {
+  background-color: rgb(var(--c-surface) / 0.9);
+}
+.tabel-pil td:first-child {
+  border-radius: 0.9rem 0 0 0.9rem;
+}
+.tabel-pil td:last-child {
+  border-radius: 0 0.9rem 0.9rem 0;
+}
+.dark .tabel-pil td {
+  background-color: rgb(var(--c-surface-2) / 0.6);
+}
+.dark .tabel-pil tbody tr:hover td {
+  background-color: rgb(var(--c-surface-2) / 0.95);
+}
+
 /* Lebar sidebar dipakai bersama: sidebar yang menentukan, isi halaman
    yang mengikuti. Tanpa satu sumber angka, keduanya bisa berselisih dan
-   menyisakan lajur kosong atau isi yang tertimpa. */
+   menyisakan lajur kosong atau isi yang tertimpa.
+
+   --sela-sidebar adalah jarak sidebar dari tepi layar. Sidebar yang
+   melayang butuh ruang di keempat sisinya; halaman harus tahu angka itu
+   supaya isinya tidak menempel di bawah kartu yang melayang. */
 :root {
   --lebar-sidebar: 16rem;
+  --sela-sidebar: 0.875rem;
 }

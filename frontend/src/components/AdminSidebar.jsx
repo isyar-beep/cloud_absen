@@ -52,18 +52,18 @@ function Isi({ user, aktifKah, onPindah, onKeluar, lipat = false, onLipat }) {
           Tema dan lipat ditaruh di atas, sejajar logo: keduanya mengatur
           kerangka layar, bukan akun -- jadi tempatnya di kepala, bukan
           berdesakan di kartu pengguna paling bawah. */}
-      <div className={`shrink-0 border-b border-line/70 ${lipat ? 'px-2 py-3' : 'px-4 py-3'}`}>
+      <div className={`shrink-0 ${lipat ? 'px-2 pt-4 pb-3' : 'px-5 pt-5 pb-3'}`}>
         {/* Identitas dan kendali diberi baris masing-masing. Dijejalkan
             sebaris, dua tombol ikon menyisakan ruang terlalu sempit dan
             nama aplikasinya terpotong jadi "Absensi Ko...". */}
-        <div className={`flex items-center ${lipat ? 'justify-center' : 'gap-2.5'}`}>
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 text-white text-sm font-bold flex items-center justify-center shadow-glow shrink-0">
+        <div className={`flex items-center ${lipat ? 'justify-center' : 'gap-3'}`}>
+          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary-400 to-primary-600 text-white text-base font-extrabold flex items-center justify-center shadow-glow shrink-0">
             AK
           </div>
           {!lipat && (
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-strong truncate leading-tight">Absensi Konsultan</p>
-              <p className="text-[11px] text-faint truncate">PERCIPKAR</p>
+              <p className="text-[15px] font-bold text-strong truncate leading-tight tracking-tight">Absensi Konsultan</p>
+              <p className="text-[10.5px] text-faint truncate tracking-[0.08em] mt-0.5">PERCIPKAR</p>
             </div>
           )}
         </div>
@@ -85,7 +85,11 @@ function Isi({ user, aktifKah, onPindah, onKeluar, lipat = false, onLipat }) {
       </div>
 
       {/* Menu */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
+      {/* Jaraknya dirapatkan saat terlipat. Dengan 9 menu dalam 3 kelompok,
+          setelan longgar membuat menu terakhir terpotong di layar laptop
+          1366x768 -- masih bisa digulir, tapi yang terpotong terbaca sebagai
+          cacat, bukan sebagai daftar panjang. Diukur, bukan dikira-kira. */}
+      <nav className={`flex-1 overflow-y-auto px-3 py-3 ${lipat ? 'space-y-3' : 'space-y-4'}`}>
         {KELOMPOK.map((kelompok) => {
           const terlihat = kelompok.item.filter((i) => !i.admin || user?.role === 'admin');
           if (terlihat.length === 0) return null;
@@ -96,7 +100,7 @@ function Isi({ user, aktifKah, onPindah, onKeluar, lipat = false, onLipat }) {
                 // tidak cukup untuk teks, tapi pengelompokannya tetap terbaca.
                 <div className="h-px bg-line/70 mx-2 mb-2" aria-hidden="true" />
               ) : (
-                <p className="px-2.5 mb-1.5 text-[10.5px] font-semibold uppercase tracking-[0.09em] text-faint">
+                <p className="px-3.5 mb-1.5 text-[10.5px] font-extrabold uppercase tracking-[0.13em] text-faint">
                   {kelompok.judul}
                 </p>
               )}
@@ -110,12 +114,15 @@ function Isi({ user, aktifKah, onPindah, onKeluar, lipat = false, onLipat }) {
                       onClick={onPindah}
                       aria-current={aktif ? 'page' : undefined}
                       title={lipat ? item.label : undefined}
-                      className={`flex items-center h-10 rounded-xl text-sm transition ${
-                        lipat ? 'justify-center px-0' : 'gap-3 px-2.5'
+                      className={`flex items-center rounded-2xl text-sm transition duration-200 ${
+                        lipat ? 'h-10 justify-center px-0' : 'h-11 gap-3 px-3.5'
                       } ${
                         aktif
-                          ? 'bg-primary-50 dark:bg-primary-500/15 text-primary-700 dark:text-primary-300 font-semibold'
-                          : 'text-body hover:bg-surface-2 hover:text-strong font-medium'
+                          // Putih pekat, bukan biru muda. Di atas sidebar
+                          // kaca, permukaan putihlah yang terbaca "terangkat";
+                          // blok biru justru menempel rata seperti stiker.
+                          ? 'bg-white/75 dark:bg-white/10 text-primary-700 dark:text-primary-300 font-bold shadow-soft'
+                          : 'text-body hover:bg-white/45 dark:hover:bg-white/[0.06] hover:text-strong font-semibold lg:hover:translate-x-1'
                       }`}
                     >
                       <item.icon className={`w-[18px] h-[18px] shrink-0 ${aktif ? '' : 'text-muted'}`} />
@@ -129,9 +136,13 @@ function Isi({ user, aktifKah, onPindah, onKeluar, lipat = false, onLipat }) {
         })}
       </nav>
 
-      {/* Kartu pengguna: siapa yang sedang masuk, dan cara keluar. */}
-      <div className="shrink-0 border-t border-line/70 p-3">
-        <div className={`flex px-1.5 py-1.5 ${lipat ? 'flex-col items-center gap-2' : 'items-center gap-2.5'}`}>
+      {/* Kartu pengguna: siapa yang sedang masuk, dan cara keluar.
+          Diberi permukaan sendiri supaya terbaca sebagai satu kesatuan yang
+          menetap di dasar, bukan baris terakhir yang menggantung. */}
+      <div className={`shrink-0 ${lipat ? 'p-2' : 'p-3'}`}>
+        <div className={`flex rounded-2xl bg-white/45 dark:bg-white/[0.06] border border-white/50 dark:border-white/10 ${
+          lipat ? 'flex-col items-center gap-2 p-2' : 'items-center gap-2.5 p-2.5'
+        }`}>
           <Avatar name={user?.name} src={user?.avatar_url} size={34} />
           {!lipat && (
             <div className="min-w-0 flex-1">
@@ -174,7 +185,9 @@ export default function AdminSidebar() {
   // Sidebar yang menentukan angkanya, halaman tinggal mengikuti -- tanpa
   // satu sumber, keduanya bisa berselisih dan menyisakan lajur kosong.
   useEffect(() => {
-    document.documentElement.style.setProperty('--lebar-sidebar', lipat ? '4.5rem' : '16rem');
+    // Angka ini ruang TOTAL yang dipesan, sudah termasuk sela melayangnya.
+    // Kartu sidebar sendiri selebar angka ini dikurangi --sela-sidebar.
+    document.documentElement.style.setProperty('--lebar-sidebar', lipat ? '5.25rem' : '17rem');
     try {
       localStorage.setItem('sidebar_lipat', lipat ? '1' : '0');
     } catch {
@@ -221,10 +234,15 @@ export default function AdminSidebar() {
 
   return (
     <>
-      {/* Layar lebar: sidebar tetap */}
+      {/* Layar lebar: sidebar melayang.
+          Kartunya sengaja lebih sempit daripada --lebar-sidebar, dan
+          selisihnya persis --sela-sidebar. Dengan begitu ruang yang
+          dipesan tetap --lebar-sidebar bulat, dan seluruh halaman yang
+          memakai lg:pl-[var(--lebar-sidebar)] tetap sejajar tanpa perlu
+          diubah satu per satu. */}
       <aside
-        className="hidden lg:block fixed inset-y-0 left-0 kaca-pekat border-r border-line/70 z-30 transition-[width] duration-200"
-        style={{ width: 'var(--lebar-sidebar)' }}
+        className="hidden lg:block fixed z-30 top-[var(--sela-sidebar)] bottom-[var(--sela-sidebar)] left-[var(--sela-sidebar)] kaca-pekat rounded-[1.75rem] border border-white/60 dark:border-white/10 shadow-soft overflow-hidden transition-[width] duration-200"
+        style={{ width: 'calc(var(--lebar-sidebar) - var(--sela-sidebar))' }}
       >
         {isiLebar}
       </aside>

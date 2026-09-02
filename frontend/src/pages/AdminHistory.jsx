@@ -171,25 +171,25 @@ export default function AdminHistory() {
         )}
 
         {/* Tabel riwayat */}
-        <div className="kartu-kaca overflow-x-auto">
-          <table className="w-full text-sm">
+        <div className="kartu-kaca overflow-x-auto p-4">
+          <table className="tabel-pil text-sm">
             <thead>
-              <tr className="border-b border-line">
-                <th className="text-left px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Tanggal</th>
-                <th className="text-left px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Nama</th>
-                <th className="text-left px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Masuk</th>
-                <th className="text-left px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Pulang</th>
-                <th className="text-left px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Status</th>
-                <th className="text-left px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Lokasi</th>
-                <th className="text-left px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Foto</th>
-                <th className="text-right px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Aksi</th>
+              <tr>
+                <th>Tanggal</th>
+                <th>Nama</th>
+                <th>Masuk</th>
+                <th>Pulang</th>
+                <th>Status</th>
+                <th>Lokasi</th>
+                <th>Foto</th>
+                <th className="!text-right">Aksi</th>
               </tr>
             </thead>
             <tbody>
               {items.map((item) => (
-                <tr key={item.id} className="border-b border-line last:border-b-0 hover:bg-surface-2/60 transition">
-                  <td className="px-5 py-3.5 text-strong font-medium whitespace-nowrap">{formatTanggal(item.date)}</td>
-                  <td className="px-5 py-3.5 text-strong">
+                <tr key={item.id}>
+                  <td className="text-strong font-medium whitespace-nowrap">{formatTanggal(item.date)}</td>
+                  <td className="text-strong">
                     {item.name}
                     {/* Proyek yang TERCAP pada baris ini, bukan penugasan
                         pegawai saat ini -- pegawai yang sudah dimutasi tetap
@@ -198,18 +198,18 @@ export default function AdminHistory() {
                       <span className="block text-[11px] text-faint font-normal mt-0.5">{item.project_name}</span>
                     )}
                   </td>
-                  <td className="px-5 py-3.5 text-body">{formatJam(item.check_in_time)}</td>
-                  <td className="px-5 py-3.5 text-body">{formatJam(item.check_out_time)}</td>
-                  <td className="px-5 py-3.5">
+                  <td className="text-body">{formatJam(item.check_in_time)}</td>
+                  <td className="text-body">{formatJam(item.check_out_time)}</td>
+                  <td>
                     <span className="flex items-center gap-1.5">
                       <StatusBadge status={item.status} kurang={item.kurang} />
                       <WfaBadge mode={item.work_mode} />
                     </span>
                   </td>
-                  <td className="px-5 py-3.5 whitespace-nowrap">
+                  <td className="whitespace-nowrap">
                     <Koordinat latitude={item.latitude} longitude={item.longitude} />
                   </td>
-                  <td className="px-5 py-3.5 space-x-2 whitespace-nowrap">
+                  <td className="space-x-2 whitespace-nowrap">
                     {item.photo_in_url && (
                       <a href={urlFoto(item.photo_in_url, tokenFoto)} target="_blank" rel="noreferrer" className="text-xs text-primary-600 dark:text-primary-400 font-medium hover:underline">
                         Masuk
@@ -224,7 +224,7 @@ export default function AdminHistory() {
                       <span className="text-xs text-faint">—</span>
                     )}
                   </td>
-                  <td className="px-5 py-3.5 text-right">
+                  <td className="text-right">
                     <button
                       onClick={() => setEdit(item)}
                       className="text-xs font-semibold text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 dark:text-primary-300 transition"

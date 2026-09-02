@@ -356,12 +356,12 @@ export default function AdminStats() {
 
             {!loading && !error && adaData && tipeGrafik === 'table' && (
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="tabel-pil text-sm">
                   <thead>
-                    <tr className="border-b border-line">
-                      <th className="text-left px-4 py-2.5 font-semibold text-muted text-xs uppercase tracking-wide">Status</th>
-                      <th className="text-right px-4 py-2.5 font-semibold text-muted text-xs uppercase tracking-wide">Jumlah</th>
-                      <th className="text-right px-4 py-2.5 font-semibold text-muted text-xs uppercase tracking-wide">Porsi</th>
+                    <tr>
+                      <th>Status</th>
+                      <th className="!text-right">Jumlah</th>
+                      <th className="!text-right">Porsi</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -370,27 +370,27 @@ export default function AdminStats() {
                         ? ((breakdown[key] / breakdown.total_record) * 100).toFixed(1)
                         : '0.0';
                       return (
-                        <tr key={key} className="border-b border-line">
-                          <td className="px-4 py-3">
+                        <tr key={key}>
+                          <td>
                             <span className="inline-flex items-center gap-2 text-body">
                               <span className="w-2 h-2 rounded-full" style={{ backgroundColor: WARNA[key] }} />
                               {LABEL[key]}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-right font-medium text-strong tabular-nums">{breakdown[key]}</td>
-                          <td className="px-4 py-3 text-right text-muted tabular-nums">{porsi}%</td>
+                          <td className="text-right font-medium text-strong tabular-nums">{breakdown[key]}</td>
+                          <td className="text-right text-muted tabular-nums">{porsi}%</td>
                         </tr>
                       );
                     })}
                     <tr className="bg-surface-2/70">
-                      <td className="px-4 py-3 font-semibold text-strong">Total Record</td>
-                      <td className="px-4 py-3 text-right font-semibold text-strong tabular-nums">{breakdown.total_record}</td>
-                      <td className="px-4 py-3" />
+                      <td className="font-semibold text-strong">Total Record</td>
+                      <td className="text-right font-semibold text-strong tabular-nums">{breakdown.total_record}</td>
+                      <td />
                     </tr>
                     <tr>
-                      <td className="px-4 py-3 font-semibold text-strong">Tingkat Kehadiran</td>
-                      <td className="px-4 py-3 text-right font-semibold text-primary-600 dark:text-primary-400 tabular-nums">{breakdown.attendance_rate}%</td>
-                      <td className="px-4 py-3" />
+                      <td className="font-semibold text-strong">Tingkat Kehadiran</td>
+                      <td className="text-right font-semibold text-primary-600 dark:text-primary-400 tabular-nums">{breakdown.attendance_rate}%</td>
+                      <td />
                     </tr>
                   </tbody>
                 </table>

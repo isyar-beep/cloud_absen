@@ -203,14 +203,14 @@ export default function AdminDashboard() {
                 key={card.label}
                 to={card.ke}
                 title={card.keterangan}
-                className="kartu-kaca p-5 flex items-center gap-4 text-left transition hover:border-line-strong hover:shadow-glow focus:outline-none focus:ring-2 focus:ring-primary-500/40"
+                className="kartu-kaca kartu-naik p-6 flex items-center gap-4 text-left focus:outline-none focus:ring-2 focus:ring-primary-500/40"
               >
-                <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${card.chip}`}>
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${card.chip}`}>
                   <card.icon className="w-6 h-6" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs text-muted truncate">{card.label}</p>
-                  <p className="text-2xl font-bold text-strong leading-tight">{card.value}</p>
+                  <p className="text-[13px] font-medium text-muted truncate">{card.label}</p>
+                  <p className="text-[32px] font-extrabold text-strong leading-none tracking-[-0.03em] mt-1">{card.value}</p>
                 </div>
               </Link>
             ))}
