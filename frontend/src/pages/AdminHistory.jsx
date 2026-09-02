@@ -10,16 +10,40 @@ import { formatTanggal, formatJam } from '../utils/tanggal';
 
 const LIMIT = 50;
 
+const STATUS_SAH = ['hadir', 'terlambat', 'izin', 'alpha'];
+
+// Nilai status dari alamat, disaring lewat daftar putih. Boleh berisi
+// beberapa status dipisah koma; server memahami bentuk yang sama.
+function bersihkanStatus(nilai) {
+  return String(nilai || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s) => STATUS_SAH.includes(s))
+    .join(',');
+}
+
 export default function AdminHistory() {
   const tokenFoto = useTokenFoto();
   const [items, setItems] = useState([]);
   const [users, setUsers] = useState([]);
-  const [filter, setFilter] = useState(() => ({
-    start_date: '', end_date: '', status: '', user_id: '',
-    // Dibaca dari alamat supaya tautan "Riwayat" di kartu proyek langsung
-    // membuka halaman ini dalam keadaan tersaring.
-    project_id: new URLSearchParams(window.location.search).get('project_id') || '',
-  }));
+  // Seluruh saringan dibaca dari alamat, bukan cuma proyek. Dengan begitu
+  // angka di dashboard bisa menjadi tautan yang membuka halaman ini dalam
+  // keadaan sudah tersaring -- misalnya "Alpha: 3" langsung memperlihatkan
+  // ketiganya, bukan menyuruh orang menyetel saringannya sendiri.
+  const [filter, setFilter] = useState(() => {
+    const url = new URLSearchParams(window.location.search);
+    const status = url.get('status');
+    return {
+      start_date: url.get('start_date') || '',
+      end_date: url.get('end_date') || '',
+      // Hanya nilai yang memang dikenal; alamat bisa diketik siapa saja.
+      // Boleh lebih dari satu dipisah koma, karena KPI "Hadir Hari Ini"
+      // menjumlahkan hadir dan terlambat sekaligus.
+      status: bersihkanStatus(status),
+      user_id: '',
+      project_id: url.get('project_id') || '',
+    };
+  });
   const [projects, setProjects] = useState([]);
   const [hasMore, setHasMore] = useState(false);
   const [edit, setEdit] = useState(null);
@@ -127,6 +151,11 @@ export default function AdminHistory() {
               className={inputClass}
             >
               <option value="">Semua</option>
+              {/* Pasangan ini punya pilihannya sendiri supaya saringan yang
+                  datang dari tautan dashboard tetap terbaca di kotak ini --
+                  tanpa pilihan yang cocok, kotaknya tampil seolah "Semua"
+                  padahal daftarnya sedang tersaring. */}
+              <option value="hadir,terlambat">Hadir &amp; terlambat</option>
               <option value="hadir">Hadir</option>
               <option value="terlambat">Terlambat</option>
               <option value="izin">Izin</option>

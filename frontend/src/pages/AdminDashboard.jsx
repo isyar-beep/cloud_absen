@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../api/axios';
 import AdminSidebar from '../components/AdminSidebar';
 import { useDialog } from '../components/Dialog';
@@ -8,15 +9,32 @@ import {
 } from '../components/Icons';
 import Avatar from '../components/Avatar';
 import PengingatAbsen from '../components/PengingatAbsen';
+import { tanggalIso } from '../utils/tanggal';
+
+// Batas "Perlu Perhatian", disamakan dengan ambang di server
+// (statsController: attendance_rate < 80). Ditulis di sini hanya untuk
+// dijelaskan pada layar; kalau nanti dibuat dapat disetel, kedua tempatnya
+// harus ikut membaca setelan yang sama.
+const AMBANG_BERISIKO = 80;
+
+// Peringkat baru berarti bila orangnya cukup banyak untuk dibedakan.
+const MIN_PEGAWAI_PERINGKAT = 5;
 
 export default function AdminDashboard() {
   const [overview, setOverview] = useState(null);
   const { konfirmasi, beritahu } = useDialog();
   const [todayAll, setTodayAll] = useState([]);
   const [ranking, setRanking] = useState({ top_performers: [], at_risk: [] });
+  const [projects, setProjects] = useState([]);
+  // Dibedakan dari pesan galat aksi: ini kegagalan MEMUAT, dan tanpa
+  // ditampilkan, layar kosong terlihat seolah memang belum ada datanya.
+  const [loadError, setLoadError] = useState('');
   const [reportPeriod, setReportPeriod] = useState({
     month: new Date().getMonth() + 1,
     year: new Date().getFullYear(),
+    // Kosong = seluruh proyek. Server sudah menerima penyaring ini pada
+    // Excel maupun PDF sejak kluster proyek dibangun.
+    project_id: '',
   });
   const [downloading, setDownloading] = useState('');
   const [sendingWarning, setSendingWarning] = useState(false);
@@ -37,19 +55,35 @@ export default function AdminDashboard() {
     return () => clearInterval(interval);
   }, []);
 
+  // Tiap permintaan berdiri sendiri dengan allSettled, bukan Promise.all.
+  // Dengan Promise.all satu kegagalan membatalkan semuanya sekaligus:
+  // dashboard tampil kosong melompong, dan satu-satunya jejaknya cuma
+  // console.error yang tidak dilihat siapa pun. Persis kejadian "statistik
+  // tidak muncul" yang dulu sulit dilacak di aplikasi HP.
+  //
+  // Sekarang bagian yang berhasil tetap tampil, dan yang gagal diberitahukan
+  // di layar -- bukan disembunyikan sebagai halaman kosong.
   async function fetchData() {
-    try {
-      const [overviewRes, todayRes, rankingRes] = await Promise.all([
-        api.get('/stats/overview'),
-        api.get('/attendance/today-all'),
-        api.get('/stats/ranking'),
-      ]);
-      setOverview(overviewRes.data);
-      setTodayAll(todayRes.data);
-      setRanking(rankingRes.data);
-    } catch (err) {
-      console.error(err);
-    }
+    const [overviewRes, todayRes, rankingRes, projectsRes] = await Promise.allSettled([
+      api.get('/stats/overview'),
+      api.get('/attendance/today-all'),
+      api.get('/stats/ranking'),
+      api.get('/projects'),
+    ]);
+
+    if (overviewRes.status === 'fulfilled') setOverview(overviewRes.value.data);
+    if (todayRes.status === 'fulfilled') setTodayAll(todayRes.value.data);
+    if (rankingRes.status === 'fulfilled') setRanking(rankingRes.value.data);
+    if (projectsRes.status === 'fulfilled') setProjects(projectsRes.value.data);
+
+    const gagal = [overviewRes, todayRes, rankingRes, projectsRes]
+      .find((r) => r.status === 'rejected');
+    setLoadError(
+      gagal
+        ? gagal.reason?.response?.data?.message
+          || 'Sebagian data gagal dimuat. Periksa koneksi ke server.'
+        : ''
+    );
   }
 
   // Download laporan lewat axios supaya header Authorization ikut terkirim,
@@ -57,15 +91,25 @@ export default function AdminDashboard() {
   async function downloadReport(format) {
     setDownloading(format);
     try {
+      // project_id kosong tidak dikirim: server memperlakukan ketiadaannya
+      // sebagai "seluruh proyek", sedangkan string kosong akan dicoba
+      // diubah jadi angka.
+      const params = { month: reportPeriod.month, year: reportPeriod.year };
+      if (reportPeriod.project_id) params.project_id = reportPeriod.project_id;
+
       const res = await api.get(`/reports/attendance/${format}`, {
-        params: reportPeriod,
+        params,
         responseType: 'blob',
       });
       const url = URL.createObjectURL(res.data);
       const link = document.createElement('a');
       const ext = format === 'excel' ? 'xlsx' : 'pdf';
+      // Nama proyek ikut di nama berkas: tanpa itu, laporan tiga proyek
+      // untuk bulan yang sama saling menimpa di folder unduhan.
+      const namaProyek = projects.find((pr) => String(pr.id) === String(reportPeriod.project_id))?.name;
+      const imbuhan = namaProyek ? `-${namaProyek.toLowerCase().replace(/[^a-z0-9]+/g, '-')}` : '';
       link.href = url;
-      link.download = `laporan-absensi-${reportPeriod.year}-${String(reportPeriod.month).padStart(2, '0')}.${ext}`;
+      link.download = `laporan-absensi-${reportPeriod.year}-${String(reportPeriod.month).padStart(2, '0')}${imbuhan}.${ext}`;
       link.click();
       URL.revokeObjectURL(url);
     } catch (err) {
@@ -104,12 +148,32 @@ export default function AdminDashboard() {
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
   ];
 
+  const cukupUntukPeringkat = Number(overview?.total_pegawai || 0) >= MIN_PEGAWAI_PERINGKAT;
+
+  // Tiap angka sebenarnya sebuah pertanyaan, dan jawabannya sudah ada di
+  // halaman lain -- jadi angkanya dijadikan pintu ke sana, bukan dibiarkan
+  // sebagai bilangan mati yang harus ditelusuri manual.
+  const hariIni = tanggalIso(new Date());
+  const keRiwayat = (status) =>
+    `/admin/history?start_date=${hariIni}&end_date=${hariIni}${status ? `&status=${status}` : ''}`;
+
   const kpiCards = overview
     ? [
-        { label: 'Total Pegawai', value: overview.total_pegawai, icon: UsersIcon, chip: 'bg-primary-50 dark:bg-primary-500/15 text-primary-600 dark:text-primary-400' },
-        { label: 'Hadir Hari Ini', value: overview.hadir_hari_ini, icon: CheckBadgeIcon, chip: 'bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' },
-        { label: 'Terlambat', value: overview.terlambat_hari_ini, icon: ClockIcon, chip: 'bg-amber-50 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400' },
-        { label: 'Alpha', value: overview.alpha_hari_ini, icon: AlertIcon, chip: 'bg-red-50 dark:bg-red-500/15 text-red-600 dark:text-red-400' },
+        { label: 'Total Pegawai', value: overview.total_pegawai, icon: UsersIcon,
+          chip: 'bg-primary-50 dark:bg-primary-500/15 text-primary-600 dark:text-primary-400',
+          ke: '/admin/users', keterangan: 'Lihat daftar pegawai' },
+        { label: 'Hadir Hari Ini', value: overview.hadir_hari_ini, icon: CheckBadgeIcon,
+          chip: 'bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
+          // Angka ini menjumlahkan hadir DAN terlambat (lihat statsController),
+          // jadi tautannya meminta keduanya -- kalau hanya 'hadir', daftar
+          // yang terbuka lebih sedikit daripada angka yang barusan diketuk.
+          ke: keRiwayat('hadir,terlambat'), keterangan: 'Lihat yang hadir hari ini' },
+        { label: 'Terlambat', value: overview.terlambat_hari_ini, icon: ClockIcon,
+          chip: 'bg-amber-50 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400',
+          ke: keRiwayat('terlambat'), keterangan: 'Lihat yang terlambat hari ini' },
+        { label: 'Alpha', value: overview.alpha_hari_ini, icon: AlertIcon,
+          chip: 'bg-red-50 dark:bg-red-500/15 text-red-600 dark:text-red-400',
+          ke: keRiwayat('alpha'), keterangan: 'Lihat yang tidak masuk hari ini' },
       ]
     : [];
 
@@ -125,11 +189,22 @@ export default function AdminDashboard() {
           </p>
         </div>
 
+        {loadError && (
+          <div className="text-sm text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-500/15 border border-red-100 dark:border-red-500/30 rounded-xl px-4 py-3 mb-5">
+            {loadError}
+          </div>
+        )}
+
         {/* KPI Overview */}
         {overview && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             {kpiCards.map((card) => (
-              <div key={card.label} className="kartu-kaca p-5 flex items-center gap-4">
+              <Link
+                key={card.label}
+                to={card.ke}
+                title={card.keterangan}
+                className="kartu-kaca p-5 flex items-center gap-4 text-left transition hover:border-line-strong hover:shadow-glow focus:outline-none focus:ring-2 focus:ring-primary-500/40"
+              >
                 <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${card.chip}`}>
                   <card.icon className="w-6 h-6" />
                 </div>
@@ -137,7 +212,7 @@ export default function AdminDashboard() {
                   <p className="text-xs text-muted truncate">{card.label}</p>
                   <p className="text-2xl font-bold text-strong leading-tight">{card.value}</p>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}
@@ -149,12 +224,33 @@ export default function AdminDashboard() {
               <DownloadIcon className="w-5 h-5" />
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-strong">Export Laporan Bulanan</p>
-              <p className="text-xs text-muted truncate">Rekap &amp; detail absensi seluruh pegawai</p>
+              <p className="text-sm font-semibold text-strong">Ekspor Laporan Bulanan</p>
+              <p className="text-xs text-muted truncate">
+                {reportPeriod.project_id
+                  ? 'Rekap & bukti kehadiran satu proyek'
+                  : 'Rekap & detail absensi seluruh pegawai'}
+              </p>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            {/* Penyaring proyek. Server sudah menerimanya sejak kluster
+                dibangun, tapi tombol ini hanya mengirim bulan dan tahun --
+                kemampuannya ada, pintunya belum dibuka. Padahal laporan per
+                proyek justru berkas pertanggungjawaban ke pemberi kerja. */}
+            {projects.length > 0 && (
+              <select
+                value={reportPeriod.project_id}
+                onChange={(e) => setReportPeriod({ ...reportPeriod, project_id: e.target.value })}
+                aria-label="Proyek untuk laporan"
+                className="px-3 py-2 bg-surface-2 border border-line rounded-xl text-sm transition focus:outline-none focus:bg-surface/75 backdrop-blur-xl focus:ring-2 focus:ring-primary-500/40"
+              >
+                <option value="">Semua proyek</option>
+                {projects.map((pr) => (
+                  <option key={pr.id} value={pr.id}>{pr.name}</option>
+                ))}
+              </select>
+            )}
             <select
               value={reportPeriod.month}
               onChange={(e) => setReportPeriod({ ...reportPeriod, month: Number(e.target.value) })}
@@ -205,6 +301,66 @@ export default function AdminDashboard() {
           </div>
         </div>
 
+        {/* Ringkasan per proyek.
+            Tanpa ini, dashboard hanya menampilkan satu angka gabungan untuk
+            semuanya -- dan ketika dinas melihat "Alpha: 3", pertanyaan
+            berikutnya pasti "di proyek mana?" yang tidak terjawab tanpa
+            berpindah halaman. Justru per paket pekerjaan itulah dinas
+            mengawasi konsultannya. */}
+        {projects.length > 0 && (
+          <div className="kartu-kaca overflow-hidden mb-6">
+            <div className="flex items-center justify-between px-5 pt-4 pb-3">
+              <p className="text-sm font-semibold text-strong">Keadaan per Proyek</p>
+              <Link
+                to="/admin/projects"
+                className="text-xs text-primary-600 dark:text-primary-400 font-semibold hover:underline"
+              >
+                Kelola proyek →
+              </Link>
+            </div>
+            <div className="divide-y divide-line border-t border-line">
+              {projects.map((pr) => (
+                <div key={pr.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-3.5">
+                  <div className="min-w-[11rem] flex-1">
+                    <p className="text-sm font-medium text-strong truncate leading-tight">{pr.name}</p>
+                    <p className="text-[11.5px] text-faint truncate">
+                      {pr.consultant_name || 'Belum ada penanggung jawab'}
+                      {pr.location ? ` · ${pr.location}` : ''}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-3.5 text-xs tabular-nums shrink-0">
+                    <span className={pr.hadir_hari_ini ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-faint'}>
+                      {pr.hadir_hari_ini} hadir
+                    </span>
+                    <span className={pr.izin_hari_ini ? 'text-blue-600 dark:text-blue-400 font-semibold' : 'text-faint'}>
+                      {pr.izin_hari_ini} izin
+                    </span>
+                    <span className={pr.alpha_hari_ini ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-faint'}>
+                      {pr.alpha_hari_ini} alpha
+                    </span>
+                    {/* Yang belum absen ditonjolkan karena inilah satu-satunya
+                        angka yang masih bisa ditindaklanjuti hari ini juga --
+                        sisanya sudah terjadi. */}
+                    <span className={pr.belum_absen
+                      ? 'text-amber-700 dark:text-amber-300 font-semibold bg-amber-50 dark:bg-amber-500/15 px-2 py-0.5 rounded-full'
+                      : 'text-faint'}>
+                      {pr.belum_absen} belum absen
+                    </span>
+                  </div>
+
+                  <Link
+                    to={`/admin/gallery?project_id=${pr.id}`}
+                    className="text-xs font-semibold text-primary-600 dark:text-primary-400 hover:underline shrink-0 ml-auto"
+                  >
+                    Lihat bukti
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="grid lg:grid-cols-2 gap-6">
           {/* Real-time board */}
           <div className="kartu-kaca overflow-hidden">
@@ -241,10 +397,18 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Ranking */}
           <div className="space-y-6">
+            {/* Peringkat disembunyikan selama pegawainya masih sedikit:
+                dengan dua orang yang sama-sama 100%, "peringkat" hanya
+                mendaftar semua orang tanpa membedakan apa pun, dan justru
+                terlihat seperti fitur yang belum jadi.
+                "Perlu Perhatian" di bawahnya TIDAK ikut disembunyikan --
+                itu ambang, bukan peringkat, jadi tetap berarti meski
+                pegawainya baru dua; menyembunyikannya juga akan ikut
+                menghilangkan tombol kirim peringatan. */}
+            {cukupUntukPeringkat && (
             <div className="kartu-kaca p-5">
-              <p className="text-sm font-semibold text-strong mb-4">Top Performers</p>
+              <p className="text-sm font-semibold text-strong mb-4">Kehadiran Terbaik</p>
               <div className="space-y-3">
                 {ranking.top_performers.map((r, i) => (
                   <div key={r.id} className="flex items-center gap-3">
@@ -270,9 +434,15 @@ export default function AdminDashboard() {
                 )}
               </div>
             </div>
+            )}
 
             <div className="kartu-kaca p-5">
-              <p className="text-sm font-semibold text-strong mb-4">Perlu Perhatian</p>
+              <div className="flex items-baseline justify-between gap-2 mb-4">
+                <p className="text-sm font-semibold text-strong">Perlu Perhatian</p>
+                {/* Ambangnya ditulis di layar. Tanpa itu, admin melihat nama
+                    muncul di sini tanpa tahu batasnya berapa. */}
+                <span className="text-[11px] text-faint">di bawah {AMBANG_BERISIKO}%</span>
+              </div>
               <div className="space-y-3">
                 {ranking.at_risk.map((r) => (
                   <div key={r.id} className="flex items-center gap-3">

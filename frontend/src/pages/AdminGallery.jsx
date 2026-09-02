@@ -6,7 +6,7 @@ import Avatar from '../components/Avatar';
 import StatusBadge from '../components/StatusBadge';
 import Koordinat from '../components/Koordinat';
 import WfaBadge from '../components/WfaBadge';
-import { formatTanggalHari, formatJam, formatJamDetik } from '../utils/tanggal';
+import { formatTanggalHari, formatJam, formatJamDetik, tanggalIso } from '../utils/tanggal';
 
 const LIMIT = 24;
 
@@ -15,10 +15,6 @@ const JENIS = [
   { id: 'masuk', label: 'Hanya masuk' },
   { id: 'pulang', label: 'Hanya pulang' },
 ];
-
-function tanggalIso(d) {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
 
 // Satu sisi foto (masuk / pulang). Slot kosong tampil jelas supaya
 // absen pulang yang bolong langsung terlihat, bukan sekadar hilang.

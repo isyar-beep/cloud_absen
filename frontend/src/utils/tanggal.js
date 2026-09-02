@@ -36,6 +36,14 @@ export function formatTanggalHari(nilai) {
   });
 }
 
+// "2026-08-27" dari sebuah Date, memakai jam dinding setempat.
+// Sengaja bukan toISOString(): itu mengubah ke UTC dulu, sehingga di zona
+// yang lebih timur tanggalnya bisa mundur sehari.
+export function tanggalIso(d) {
+  const p = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
 // "Kam, 27 Agu" -- untuk penanda kecil yang menempel di tempat sempit,
 // tempat tahunnya sudah jelas dari kalimat di sekitarnya.
 export function formatTanggalSingkat(nilai) {

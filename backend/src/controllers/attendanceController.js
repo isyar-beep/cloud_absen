@@ -253,9 +253,19 @@ function buildHistoryFilter(queryParams, conditions, params) {
     params.push(end_date);
     conditions.push(`a.date <= $${params.length}`);
   }
-  if (status && validStatus.includes(status)) {
-    params.push(status);
-    conditions.push(`a.status = $${params.length}`);
+  // Status boleh lebih dari satu, dipisah koma. Ini bukan kemewahan:
+  // KPI "Hadir Hari Ini" di dashboard menjumlahkan hadir DAN terlambat,
+  // jadi tautan dari angka itu harus bisa meminta keduanya sekaligus --
+  // kalau tidak, angka yang diketuk 5 membuka daftar berisi 4 baris.
+  // Nilainya tetap disaring lewat daftar putih, jadi isi alamat yang
+  // diketik siapa pun tidak pernah masuk ke SQL.
+  const status2 = String(status || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s) => validStatus.includes(s));
+  if (status2.length > 0) {
+    params.push(status2);
+    conditions.push(`a.status = ANY($${params.length}::text[])`);
   }
 }
 
