@@ -10,6 +10,10 @@ import {
 import Avatar from '../components/Avatar';
 import PengingatAbsen from '../components/PengingatAbsen';
 import Pilihan, { KELAS_PILIHAN } from '../components/Pilihan';
+import Tombol from '../components/Tombol';
+import KeadaanKosong from '../components/KeadaanKosong';
+import { KerangkaKpi, KerangkaBaris } from '../components/Kerangka';
+import TrenKehadiran from '../components/TrenKehadiran';
 import { tanggalIso } from '../utils/tanggal';
 
 // Batas "Perlu Perhatian", disamakan dengan ambang di server
@@ -30,6 +34,10 @@ export default function AdminDashboard() {
   // Dibedakan dari pesan galat aksi: ini kegagalan MEMUAT, dan tanpa
   // ditampilkan, layar kosong terlihat seolah memang belum ada datanya.
   const [loadError, setLoadError] = useState('');
+  // Dibedakan dari `overview === null`: muat-ulang tiap 30 detik tidak boleh
+  // mengembalikan kerangka, karena isinya sudah ada di layar. Kerangka hanya
+  // untuk pemuatan PERTAMA.
+  const [memuatAwal, setMemuatAwal] = useState(true);
   const [reportPeriod, setReportPeriod] = useState({
     month: new Date().getMonth() + 1,
     year: new Date().getFullYear(),
@@ -85,6 +93,7 @@ export default function AdminDashboard() {
           || 'Sebagian data gagal dimuat. Periksa koneksi ke server.'
         : ''
     );
+    setMemuatAwal(false);
   }
 
   // Download laporan lewat axios supaya header Authorization ikut terkirim,
@@ -200,6 +209,12 @@ export default function AdminDashboard() {
             .petak-kpi di index.css. Lajurnya ditentukan oleh ruang yang
             tersedia, bukan lebar jendela, sehingga melipat sidebar pun
             langsung melebarkan petaknya. */}
+        {memuatAwal && (
+          <div className="petak-kpi gap-4 mb-6">
+            <KerangkaKpi />
+          </div>
+        )}
+
         {overview && (
           <div className="petak-kpi gap-4 mb-6">
             {kpiCards.map((card) => (
@@ -271,20 +286,12 @@ export default function AdminDashboard() {
                 return { value: tahun, label: String(tahun) };
               })}
             />
-            <button
-              onClick={() => downloadReport('excel')}
-              disabled={!!downloading}
-              className="text-sm bg-gradient-to-r from-primary-600 to-primary-700 text-white px-4 py-2 rounded-xl font-semibold shadow-glow transition hover:from-primary-500 hover:to-primary-600 disabled:opacity-50"
-            >
+            <Tombol onClick={() => downloadReport('excel')} disabled={!!downloading}>
               {downloading === 'excel' ? 'Mengunduh…' : 'Excel'}
-            </button>
-            <button
-              onClick={() => downloadReport('pdf')}
-              disabled={!!downloading}
-              className="text-sm bg-ink text-on-ink px-4 py-2 rounded-xl font-semibold transition hover:bg-ink/90 disabled:opacity-50"
-            >
+            </Tombol>
+            <Tombol rupa="ink" onClick={() => downloadReport('pdf')} disabled={!!downloading}>
               {downloading === 'pdf' ? 'Mengunduh…' : 'PDF'}
-            </button>
+            </Tombol>
           </div>
         </div>
 
@@ -362,6 +369,8 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        <TrenKehadiran />
+
         <div className="grid lg:grid-cols-2 gap-6">
           {/* Real-time board */}
           <div className="kartu-kaca overflow-hidden">
@@ -392,8 +401,14 @@ export default function AdminDashboard() {
                   )}
                 </div>
               ))}
-              {todayAll.length === 0 && (
-                <p className="text-sm text-faint px-5 py-8 text-center">Belum ada pegawai.</p>
+              {memuatAwal && <KerangkaBaris jumlah={4} />}
+              {!memuatAwal && todayAll.length === 0 && (
+                <KeadaanKosong
+                  ikon={UsersIcon}
+                  judul="Belum ada pegawai"
+                  pesan="Tambahkan pegawai dan tugaskan ke proyek, lalu kehadirannya akan muncul di sini setiap hari."
+                  aksi={{ label: 'Tambah pegawai', to: '/admin/users' }}
+                />
               )}
             </div>
           </div>
@@ -431,7 +446,9 @@ export default function AdminDashboard() {
                   </div>
                 ))}
                 {ranking.top_performers.length === 0 && (
-                  <p className="text-xs text-faint">Belum ada data.</p>
+                  <p className="text-sm text-muted py-2">
+                    Peringkat muncul setelah ada catatan kehadiran yang bisa dibandingkan.
+                  </p>
                 )}
               </div>
             </div>
@@ -460,18 +477,21 @@ export default function AdminDashboard() {
                   </div>
                 ))}
                 {ranking.at_risk.length === 0 && (
-                  <p className="text-xs text-faint">Tidak ada pegawai berisiko. 🎉</p>
+                  <p className="text-sm text-muted py-2">
+                    Tidak ada pegawai di bawah ambang. Selama tetap begitu, bagian ini akan kosong.
+                  </p>
                 )}
               </div>
               {ranking.at_risk.length > 0 && (
-                <button
+                <Tombol
+                  rupa="bahaya"
+                  ikon={MailIcon}
                   onClick={sendWarningEmails}
                   disabled={sendingWarning}
-                  className="mt-4 flex items-center gap-2 text-sm bg-red-600 text-white px-4 py-2 rounded-xl font-semibold transition hover:bg-red-500 disabled:opacity-50"
+                  className="mt-4"
                 >
-                  <MailIcon className="w-4 h-4" />
-                  {sendingWarning ? 'Mengirim...' : 'Kirim Peringatan Email'}
-                </button>
+                  {sendingWarning ? 'Mengirim…' : 'Kirim Peringatan Email'}
+                </Tombol>
               )}
               {warningResult && (
                 <p className="text-xs text-muted mt-2">{warningResult}</p>

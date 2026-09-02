@@ -6,6 +6,7 @@ import { PlusIcon } from '../components/Icons';
 import { formatTanggalHari, tanggalLokal } from '../utils/tanggal';
 import { keTanggal } from '../utils/periode';
 import Pilihan, { KELAS_PILIHAN } from '../components/Pilihan';
+import Tombol from '../components/Tombol';
 
 // Penetapan WFA (Work From Anywhere).
 //
@@ -130,13 +131,9 @@ export default function AdminWfa() {
             </button>
           ))}
         </div>
-        <button
-          onClick={bukaForm}
-          className="flex items-center gap-1.5 text-sm bg-gradient-to-r from-primary-600 to-primary-700 text-white px-4 py-2.5 rounded-xl font-semibold shadow-glow transition hover:from-primary-500 hover:to-primary-600"
-        >
-          <PlusIcon className="w-4 h-4" />
+        <Tombol ikon={PlusIcon} onClick={bukaForm}>
           Tetapkan WFA
-        </button>
+        </Tombol>
       </div>
 
       {tampilForm && (

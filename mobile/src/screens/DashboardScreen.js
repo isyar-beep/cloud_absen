@@ -3,7 +3,8 @@ import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView, RefreshControl,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useWarna } from '../theme';
+import { useWarna, LENGKUNG } from '../theme';
+import LatarKaca from '../components/LatarKaca';
 import Avatar from '../components/Avatar';
 import { useTokenFoto } from '../services/fotoUrl';
 import api from '../services/api';
@@ -149,6 +150,7 @@ export default function DashboardScreen({ navigation }) {
   });
 
   return (
+    <LatarKaca>
     <ScrollView
       style={styles.container}
       contentContainerStyle={{ paddingBottom: 28 }}
@@ -386,11 +388,15 @@ export default function DashboardScreen({ navigation }) {
 
       </View>
     </ScrollView>
+    </LatarKaca>
   );
 }
 
 const buatGaya = (w) => StyleSheet.create({
-  container: { flex: 1, backgroundColor: w.latar },
+  // SENGAJA tembus: latarnya kini digambar LatarKaca di belakang. Kalau
+  // ScrollView punya latar sendiri, ia menutupi noda cahayanya -- persis
+  // masalah body::before yang dulu terjadi di web.
+  container: { flex: 1, backgroundColor: 'transparent' },
 
   hero: { backgroundColor: w.utama, paddingBottom: 56, paddingHorizontal: 16 },
   heroRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
@@ -420,7 +426,7 @@ const buatGaya = (w) => StyleSheet.create({
   },
 
   card: {
-    backgroundColor: w.permukaan, borderRadius: 14, padding: 14,
+    backgroundColor: w.kaca, borderColor: w.kacaGaris, borderWidth: 1, borderRadius: LENGKUNG.kartu, padding: 16,
     borderWidth: 1, borderColor: w.garis, marginBottom: 12,
   },
   shiftHeader: { flexDirection: 'row', justifyContent: 'space-between' },
@@ -477,7 +483,7 @@ const buatGaya = (w) => StyleSheet.create({
   peringatanJudul: { fontSize: 13, fontWeight: '700', color: w.status.terlambat.teks },
   peringatanTeks: { fontSize: 11, color: w.status.terlambat.teks, opacity: 0.85, marginTop: 2 },
   statCard: {
-    width: '47.5%', flexGrow: 1, backgroundColor: w.permukaan, borderRadius: 14,
+    width: '47.5%', flexGrow: 1, backgroundColor: w.kaca, borderColor: w.kacaGaris, borderWidth: 1, borderRadius: LENGKUNG.kartu,
     borderWidth: 1, borderColor: w.garis, paddingVertical: 14, paddingHorizontal: 14,
   },
   statValue: { fontSize: 19, fontWeight: '700', color: w.teks },
@@ -496,7 +502,7 @@ const buatGaya = (w) => StyleSheet.create({
 
   menuRow: { flexDirection: 'row', gap: 10, marginTop: 6 },
   menuButton: {
-    flex: 1, backgroundColor: w.permukaan, borderRadius: 14, paddingVertical: 13,
+    flex: 1, backgroundColor: w.kaca, borderColor: w.kacaGaris, borderWidth: 1, borderRadius: LENGKUNG.kartu, paddingVertical: 14,
     alignItems: 'center', borderWidth: 1, borderColor: w.garis,
   },
   menuButtonText: { fontSize: 13, color: w.teksBadan, fontWeight: '600' },

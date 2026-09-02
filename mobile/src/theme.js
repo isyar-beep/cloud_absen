@@ -28,7 +28,10 @@ const TERANG = {
   // mode gelap menyala.
   teksDiWarna: '#ffffff',
 
-  latar: '#f4f6fb',
+  // Diberi rona biru, disamakan dengan kanvas web. Inilah separuh sebab
+  // permukaan kaca terbaca sebagai kaca: kalau latarnya nyaris putih,
+  // tidak ada warna yang bisa menembus kartu.
+  latar: '#e6effa',
   permukaan: '#ffffff',
   permukaan2: '#f6f8fc',
   permukaan3: '#edf1f8',
@@ -80,6 +83,23 @@ const TERANG = {
   titikHidup: '#22c55e',
   titikMati: '#d1d5db',
   titikSelesai: '#2563eb',
+
+  // --- Permukaan kaca ---------------------------------------------
+  // React Native tidak punya backdrop-filter, jadi blur sungguhan hanya
+  // mungkin lewat BlurView. Tapi di layar selebar 390px kartu nyaris
+  // memenuhi layar, sehingga hampir tidak ada latar tersisa untuk
+  // ditembus -- bagian yang paling berisiko justru yang paling sedikit
+  // memberi hasil. Yang dipakai di sini permukaan semi-transparan di
+  // atas latar bernoda warna: itu yang menghasilkan hampir seluruh
+  // kesannya, tanpa biaya gambar sama sekali.
+  kaca: 'rgba(255,255,255,0.55)',
+  kacaGaris: 'rgba(255,255,255,0.75)',
+  kacaPekat: 'rgba(255,255,255,0.88)',
+
+  // Dua noda cahaya di latar, sama seperti web: biru kiri-atas, ungu
+  // kanan-bawah.
+  nodaBiru: 'rgba(59,130,246,0.45)',
+  nodaUngu: 'rgba(167,139,250,0.38)',
 };
 
 const GELAP = {
@@ -133,6 +153,15 @@ const GELAP = {
   titikHidup: '#22c55e',
   titikMati: '#475873',
   titikSelesai: '#60a5fa',
+
+  kaca: 'rgba(25,32,48,0.62)',
+  kacaGaris: 'rgba(255,255,255,0.10)',
+  kacaPekat: 'rgba(25,32,48,0.90)',
+
+  // Lebih rendah daripada mode terang: di latar gelap, warna yang sama
+  // terbaca jauh lebih menyala karena tidak ada yang meredamnya.
+  nodaBiru: 'rgba(59,130,246,0.30)',
+  nodaUngu: 'rgba(167,139,250,0.24)',
 };
 
 const KUNCI = 'cloud_absen_tema';
@@ -178,5 +207,43 @@ export function useWarna() {
   const gelap = pilihan === 'gelap' || (pilihan === 'sistem' && sistem === 'dark');
   return gelap ? GELAP : TERANG;
 }
+
+// Bentuk dan jarak, disamakan dengan web supaya kedua sisi terbaca satu
+// keluarga: kartu 24px, kotak isian 14px, pil 999px.
+export const LENGKUNG = { kartu: 24, kotak: 14, kecil: 10, pil: 999 };
+
+// Bayangan. iOS memakai shadow*, Android memakai elevation -- keduanya
+// harus disebut, karena masing-masing mengabaikan milik yang lain.
+export const BAYANG = {
+  lembut: {
+    shadowColor: '#0f172a',
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 3,
+  },
+  terangkat: {
+    shadowColor: '#0f172a',
+    shadowOpacity: 0.14,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 6,
+  },
+};
+
+// Skala huruf, disamakan dengan web. Muka hurufnya sengaja dibiarkan
+// bawaan sistem: Roboto di Android dan SF Pro di iOS sama-sama muka huruf
+// antarmuka yang sangat baik, sedangkan menambah Inter berarti satu paket
+// baru, satu langkah pasang lagi, dan unduhan saat aplikasi dibuka -- demi
+// beda yang nyaris tidak terlihat di layar segenggam.
+export const HURUF = {
+  judulBesar: { fontSize: 28, fontWeight: '800', letterSpacing: -0.6 },
+  judul: { fontSize: 20, fontWeight: '800', letterSpacing: -0.4 },
+  judulKartu: { fontSize: 17, fontWeight: '700', letterSpacing: -0.2 },
+  badan: { fontSize: 15, fontWeight: '400' },
+  kecil: { fontSize: 13, fontWeight: '500' },
+  label: { fontSize: 11, fontWeight: '700', letterSpacing: 1.2 },
+  angka: { fontSize: 32, fontWeight: '800', letterSpacing: -1 },
+};
 
 export { TERANG, GELAP };

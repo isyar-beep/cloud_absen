@@ -7,6 +7,10 @@ import WfaBadge from '../components/WfaBadge';
 import EditAbsensiModal from '../components/EditAbsensiModal';
 import Koordinat from '../components/Koordinat';
 import Pilihan, { KELAS_PILIHAN } from '../components/Pilihan';
+import Tombol from '../components/Tombol';
+import KeadaanKosong from '../components/KeadaanKosong';
+import { KerangkaTabel } from '../components/Kerangka';
+import { ClockIcon } from '../components/Icons';
 import { formatTanggal, formatJam } from '../utils/tanggal';
 
 const LIMIT = 50;
@@ -84,6 +88,12 @@ export default function AdminHistory() {
   }, [fetchHistory]);
 
 
+
+  // Saringan dianggap aktif bila ada satu saja yang terisi. Dipakai untuk
+  // memilih kalimat pada keadaan kosong.
+  const adaSaringan = Object.values(filter).some(Boolean);
+  const bersihkanSaringan = () =>
+    setFilter({ start_date: '', end_date: '', status: '', user_id: '', project_id: '' });
 
   const inputClass =
     'w-full px-2.5 py-2 bg-surface-2 border border-line rounded-xl text-sm transition focus:outline-none focus:bg-surface/75 backdrop-blur-xl focus:ring-2 focus:ring-primary-500/40';
@@ -240,21 +250,41 @@ export default function AdminHistory() {
             </tbody>
           </table>
 
-          {items.length === 0 && !loading && (
-            <p className="text-sm text-faint px-5 py-12 text-center">
-              Tidak ada data untuk filter ini.
-            </p>
+          {loading && items.length === 0 && <KerangkaTabel baris={6} kolom={5} />}
+
+          {!loading && items.length === 0 && (
+            // Dibedakan: saringan aktif berarti datanya mungkin ADA tapi
+            // sedang disembunyikan. Menyamakan keduanya membuat orang yang
+            // salah menyetel saringan mengira datanya hilang.
+            adaSaringan ? (
+              <KeadaanKosong
+                jenis="saringan"
+                ikon={ClockIcon}
+                judul="Tidak ada yang cocok dengan saringan ini"
+                pesan="Coba longgarkan rentang tanggal, atau pilih semua proyek dan semua status."
+                aksi={{ label: 'Bersihkan saringan', onClick: bersihkanSaringan }}
+              />
+            ) : (
+              <KeadaanKosong
+                ikon={ClockIcon}
+                judul="Belum ada catatan absensi"
+                pesan="Begitu pegawai mulai absen lewat aplikasi, catatannya muncul di sini."
+              />
+            )
           )}
         </div>
 
         {hasMore && (
-          <button
+          <Tombol
+            rupa="halus"
+            ukuran="lg"
+            penuh
             onClick={() => fetchHistory(items.length, true)}
             disabled={loading}
-            className="w-full mt-4 bg-surface/75 backdrop-blur-xl border border-line text-body py-3 rounded-2xl text-sm font-semibold shadow-soft transition hover:border-line-strong disabled:opacity-50"
+            className="mt-4"
           >
-            {loading ? 'Memuat...' : 'Muat Lebih Banyak'}
-          </button>
+            {loading ? 'Memuat…' : 'Muat lebih banyak'}
+          </Tombol>
         )}
       </div>
 

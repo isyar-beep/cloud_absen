@@ -4,7 +4,8 @@ import {
   KeyboardAvoidingView, ScrollView, Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useWarna } from '../theme';
+import { useWarna, LENGKUNG } from '../theme';
+import LatarKaca from '../components/LatarKaca';
 import PilihTema from '../components/PilihTema';
 import api from '../services/api';
 import { useAuthStore } from '../store/authStore';
@@ -42,6 +43,7 @@ export default function LoginScreen({ navigation }) {
     // menutupi kolom password dan pegawai mengetik tanpa bisa melihat apa
     // yang diketiknya. Di Android 'height' bekerja lebih andal daripada
     // 'padding', yang justru dipakai iOS.
+    <LatarKaca>
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -107,14 +109,16 @@ export default function LoginScreen({ navigation }) {
         </Text>
       </ScrollView>
     </KeyboardAvoidingView>
+    </LatarKaca>
   );
 }
 
 const buatGaya = (w) => StyleSheet.create({
-  container: { flex: 1, backgroundColor: w.latar },
+  // Tembus: latarnya digambar LatarKaca di belakang.
+  container: { flex: 1, backgroundColor: 'transparent' },
   isi: { flexGrow: 1, justifyContent: 'center', padding: 24 },
   logo: {
-    width: 56, height: 56, borderRadius: 16, backgroundColor: w.utama,
+    width: 68, height: 68, borderRadius: 20, backgroundColor: w.utama,
     alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginBottom: 16,
   },
   logoText: { color: w.teksDiWarna, fontSize: 20, fontWeight: '600' },
@@ -126,7 +130,7 @@ const buatGaya = (w) => StyleSheet.create({
 
   label: { fontSize: 12, fontWeight: '600', color: w.teksRedup, marginBottom: 6 },
   input: {
-    borderWidth: 1, borderColor: w.garisTebal, borderRadius: 12,
+    borderWidth: 1, borderColor: w.kacaGaris, borderRadius: LENGKUNG.kotak,
     paddingHorizontal: 14, paddingVertical: 13, marginBottom: 16, fontSize: 15,
     backgroundColor: w.permukaan,
     // Tanpa baris ini teksnya digambar hitam bawaan sistem -- tidak
@@ -134,7 +138,7 @@ const buatGaya = (w) => StyleSheet.create({
     color: w.teks,
   },
   button: {
-    backgroundColor: w.utama, borderRadius: 12, paddingVertical: 15,
+    backgroundColor: w.utama, borderRadius: LENGKUNG.kotak, paddingVertical: 16,
     alignItems: 'center', marginTop: 4,
   },
   buttonMati: { opacity: 0.6 },

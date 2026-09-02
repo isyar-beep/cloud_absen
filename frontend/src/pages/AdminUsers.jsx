@@ -7,6 +7,7 @@ import { useAuthStore } from '../store/authStore';
 import { PlusIcon } from '../components/Icons';
 import Avatar from '../components/Avatar';
 import { namaPeran, WARNA_PERAN } from '../utils/peran';
+import Tombol from '../components/Tombol';
 
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);
@@ -108,13 +109,9 @@ export default function AdminUsers() {
             <h1 className="text-[1.75rem] leading-tight font-extrabold text-strong tracking-[-0.02em]">Kelola Pengguna</h1>
             <p className="text-sm text-body mt-0.5">{users.length} akun terdaftar</p>
           </div>
-          <button
-            onClick={() => setShowForm(!showForm)}
-            className="flex items-center gap-1.5 text-sm bg-gradient-to-r from-primary-600 to-primary-700 text-white px-4 py-2.5 rounded-xl font-semibold shadow-glow transition hover:from-primary-500 hover:to-primary-600"
-          >
-            <PlusIcon className="w-4 h-4" />
+          <Tombol ikon={PlusIcon} onClick={() => setShowForm(!showForm)}>
             Tambah Pengguna
-          </button>
+          </Tombol>
         </div>
 
         {loadError && (

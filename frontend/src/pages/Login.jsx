@@ -4,6 +4,7 @@ import api from '../api/axios';
 import { useAuthStore } from '../store/authStore';
 import ThemeToggle from '../components/ThemeToggle';
 import { BERANDA_PERAN } from '../components/ProtectedRoute';
+import Tombol from '../components/Tombol';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -46,17 +47,22 @@ export default function Login() {
       </div>
 
       <div className="relative w-full max-w-sm">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 text-white text-2xl font-bold mb-4 shadow-glow">
+        <div className="text-center mb-7">
+          <div className="inline-flex items-center justify-center w-[4.5rem] h-[4.5rem] rounded-[1.375rem] bg-gradient-to-br from-primary-400 to-primary-600 text-white text-[26px] font-extrabold mb-5 shadow-glow">
             AK
           </div>
-          <h1 className="text-2xl font-bold text-strong uppercase">Absensi Konsultan</h1>
-          <p className="text-sm text-muted mt-1.5">Absensi modern, cukup dari genggaman</p>
+          <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-primary-600 dark:text-primary-400 mb-2">
+            PERCIPKAR
+          </p>
+          <h1 className="text-[1.875rem] leading-tight font-extrabold text-strong tracking-[-0.025em]">
+            Absensi Konsultan
+          </h1>
+          <p className="text-sm text-body mt-2">Absensi lapangan, cukup dari genggaman</p>
         </div>
 
         <form
           onSubmit={handleSubmit}
-          className="kartu-kaca rounded-3xl p-7 space-y-4"
+          className="kartu-kaca p-7 space-y-4"
         >
           {error && (
             <div className="flex items-start gap-2 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/15 border border-red-100 dark:border-red-500/30 rounded-xl px-3.5 py-2.5">
@@ -88,17 +94,13 @@ export default function Login() {
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-gradient-to-r from-primary-600 to-primary-700 text-white py-3 rounded-xl text-sm font-semibold shadow-glow transition hover:from-primary-500 hover:to-primary-600 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
-          >
-            {loading ? 'Memproses...' : 'Masuk'}
-          </button>
+          <Tombol type="submit" ukuran="lg" penuh disabled={loading} className="!mt-5">
+            {loading ? 'Memproses…' : 'Masuk'}
+          </Tombol>
         </form>
 
-        <p className="text-center text-xs text-faint mt-6">
-          © {new Date().getFullYear()} by : PERCIPKAR — Sistem Absensi Konsultan
+        <p className="text-center text-xs text-muted mt-7">
+          © {new Date().getFullYear()} PERCIPKAR — Sistem Absensi Konsultan
         </p>
       </div>
     </div>

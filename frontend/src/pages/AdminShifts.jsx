@@ -4,6 +4,7 @@ import AdminSidebar from '../components/AdminSidebar';
 import { useDialog } from '../components/Dialog';
 import { PlusIcon } from '../components/Icons';
 import AdminWfa from './AdminWfa';
+import Tombol from '../components/Tombol';
 
 // Nilai bawaan jendela absen, sama dengan default di migration 005.
 // 0=Minggu ... 6=Sabtu, penomoran yang sama dengan getDay() dan
@@ -169,13 +170,9 @@ export default function AdminShifts() {
         {tab === 'shift' && (
         <>
         <div className="flex justify-end mb-4">
-          <button
-            onClick={openCreateForm}
-            className="flex items-center gap-1.5 text-sm bg-gradient-to-r from-primary-600 to-primary-700 text-white px-4 py-2.5 rounded-xl font-semibold shadow-glow transition hover:from-primary-500 hover:to-primary-600"
-          >
-            <PlusIcon className="w-4 h-4" />
+          <Tombol ikon={PlusIcon} onClick={openCreateForm}>
             Tambah Shift
-          </button>
+          </Tombol>
         </div>
 
         {showForm && (

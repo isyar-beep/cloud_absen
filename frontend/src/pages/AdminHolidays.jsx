@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import api from '../api/axios';
 import AdminSidebar from '../components/AdminSidebar';
+import KeadaanKosong from '../components/KeadaanKosong';
 import { useDialog } from '../components/Dialog';
-import { PlusIcon } from '../components/Icons';
+import { PlusIcon, CalendarIcon } from '../components/Icons';
 import { tanggalLokal } from '../utils/tanggal';
 
 export default function AdminHolidays() {
@@ -140,7 +141,11 @@ export default function AdminHolidays() {
             </div>
           ))}
           {holidays.length === 0 && (
-            <p className="text-sm text-faint px-5 py-12 text-center">Belum ada hari libur terdaftar.</p>
+            <KeadaanKosong
+              ikon={CalendarIcon}
+              judul="Belum ada hari libur"
+              pesan="Hari libur yang didaftarkan di sini akan dikecualikan dari penandaan alpha otomatis."
+            />
           )}
         </div>
       </div>

@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import api from '../api/axios';
 import AdminSidebar from '../components/AdminSidebar';
+import KeadaanKosong from '../components/KeadaanKosong';
+import { DocumentIcon } from '../components/Icons';
 import StatusBadge from '../components/StatusBadge';
 import JenisBadge from '../components/JenisBadge';
 import Avatar from '../components/Avatar';
@@ -227,7 +229,11 @@ export default function AdminLeaves() {
 
           {leaves.length === 0 && (
             <div className="kartu-kaca py-14 text-center">
-              <p className="text-sm text-faint">Tidak ada pengajuan.</p>
+              <KeadaanKosong
+                ikon={DocumentIcon}
+                judul="Tidak ada pengajuan"
+                pesan="Pengajuan izin dan cuti dari pegawai akan muncul di sini untuk ditinjau."
+              />
             </div>
           )}
         </div>
