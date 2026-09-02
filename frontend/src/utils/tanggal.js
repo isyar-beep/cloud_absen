@@ -45,13 +45,6 @@ export function formatTanggalSingkat(nilai) {
   });
 }
 
-// "21/08/2026"
-export function formatTanggalPendek(nilai) {
-  if (!nilai) return '—';
-  return tanggalLokal(nilai).toLocaleDateString('id-ID', {
-    day: '2-digit', month: '2-digit', year: 'numeric',
-  });
-}
 
 // Ubah "2026-08-21 07:39:12" (jam dinding kantor, tanpa zona waktu) jadi
 // Date lokal. Sama seperti tanggal: jangan pernah dikonversi zona waktu,

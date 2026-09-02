@@ -43,10 +43,10 @@ export default {
         'on-ink': 'rgb(var(--c-on-ink) / <alpha-value>)',
       },
       fontFamily: {
-        // Plus Jakarta Sans: geometris, modern, dan dirancang di Jakarta --
-        // pilihan yang berarti untuk sistem yang dipakai instansi di sini,
-        // sekaligus menjauh dari muka huruf bawaan yang dipakai di mana-mana.
-        sans: ['"Plus Jakarta Sans"', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        // Manrope: geometris dan netral -- modern tanpa terasa main-main,
+        // dengan angka yang rapat sehingga kolom jam terbaca tenang. Muka
+        // huruf bawaan sistem sengaja dihindari karena dipakai di mana-mana.
+        sans: ['Manrope', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
       },
       boxShadow: {
         soft: 'var(--shadow-soft)',

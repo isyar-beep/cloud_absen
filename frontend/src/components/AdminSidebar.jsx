@@ -6,8 +6,9 @@ import ThemeToggle from './ThemeToggle';
 import {
   HomeIcon, BriefcaseIcon, ChartIcon, ClockIcon, PhotoIcon, DocumentIcon,
   UsersIcon, ClipboardIcon, CalendarIcon, LogoutIcon, MenuIcon, CloseIcon,
-  ChevronLeftIcon,
+  PanelIcon,
 } from './Icons';
+import { namaPeran } from '../utils/peran';
 
 // Menu dikelompokkan menurut cara orang memakainya, bukan menurut urutan
 // pembuatannya: yang dilihat tiap hari di atas, yang disiapkan sesekali di
@@ -44,22 +45,43 @@ const KELOMPOK = [
   },
 ];
 
-const LABEL_PERAN = { admin: 'Dinas', konsultan: 'Konsultan', staff: 'Pegawai' };
-
 function Isi({ user, aktifKah, onPindah, onKeluar, lipat = false, onLipat }) {
   return (
     <div className="flex flex-col h-full">
-      {/* Identitas aplikasi */}
-      <div className={`flex items-center h-16 shrink-0 border-b border-line/70 ${lipat ? 'justify-center px-2' : 'gap-2.5 px-5'}`}>
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 text-white text-sm font-bold flex items-center justify-center shadow-glow shrink-0">
-          AK
-        </div>
-        {!lipat && (
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-strong truncate leading-tight">Absensi Konsultan</p>
-            <p className="text-[11px] text-faint truncate">PERCIPKAR</p>
+      {/* Identitas aplikasi + kendali tampilan.
+          Tema dan lipat ditaruh di atas, sejajar logo: keduanya mengatur
+          kerangka layar, bukan akun -- jadi tempatnya di kepala, bukan
+          berdesakan di kartu pengguna paling bawah. */}
+      <div className={`shrink-0 border-b border-line/70 ${lipat ? 'px-2 py-3' : 'px-4 py-3'}`}>
+        {/* Identitas dan kendali diberi baris masing-masing. Dijejalkan
+            sebaris, dua tombol ikon menyisakan ruang terlalu sempit dan
+            nama aplikasinya terpotong jadi "Absensi Ko...". */}
+        <div className={`flex items-center ${lipat ? 'justify-center' : 'gap-2.5'}`}>
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 text-white text-sm font-bold flex items-center justify-center shadow-glow shrink-0">
+            AK
           </div>
-        )}
+          {!lipat && (
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-strong truncate leading-tight">Absensi Konsultan</p>
+              <p className="text-[11px] text-faint truncate">PERCIPKAR</p>
+            </div>
+          )}
+        </div>
+
+        <div className={`flex items-center gap-1.5 mt-2.5 ${lipat ? 'flex-col' : 'justify-end'}`}>
+          <ThemeToggle ringkas />
+          {onLipat && (
+            <button
+              onClick={onLipat}
+              title={lipat ? 'Tampilkan menu' : 'Sembunyikan menu'}
+              aria-label={lipat ? 'Tampilkan menu' : 'Sembunyikan menu'}
+              aria-expanded={!lipat}
+              className="hidden lg:flex w-9 h-9 rounded-xl border border-line bg-surface/70 text-muted transition hover:text-strong hover:border-line-strong items-center justify-center"
+            >
+              <PanelIcon className="w-[18px] h-[18px]" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Menu */}
@@ -107,42 +129,25 @@ function Isi({ user, aktifKah, onPindah, onKeluar, lipat = false, onLipat }) {
         })}
       </nav>
 
-      {/* Kartu pengguna. Saat terlipat semuanya ditumpuk tegak -- empat
-          kontrol berdampingan tidak muat di lebar ikon. */}
+      {/* Kartu pengguna: siapa yang sedang masuk, dan cara keluar. */}
       <div className="shrink-0 border-t border-line/70 p-3">
         <div className={`flex px-1.5 py-1.5 ${lipat ? 'flex-col items-center gap-2' : 'items-center gap-2.5'}`}>
           <Avatar name={user?.name} src={user?.avatar_url} size={34} />
           {!lipat && (
             <div className="min-w-0 flex-1">
               <p className="text-[13px] font-semibold text-strong truncate leading-tight">{user?.name}</p>
-              <p className="text-[11px] text-faint truncate">{LABEL_PERAN[user?.role] || user?.role}</p>
+              <p className="text-[11px] text-faint truncate">{namaPeran(user?.role)}</p>
             </div>
           )}
-          <ThemeToggle ringkas />
           <button
             onClick={onKeluar}
             title="Keluar"
             aria-label="Keluar"
-            className="w-9 h-9 rounded-lg flex items-center justify-center text-muted hover:text-red-600 dark:hover:text-red-400 hover:bg-surface-2 transition"
+            className="w-9 h-9 rounded-lg flex items-center justify-center text-muted hover:text-red-600 dark:hover:text-red-400 hover:bg-surface-2 transition shrink-0"
           >
             <LogoutIcon className="w-[18px] h-[18px]" />
           </button>
         </div>
-
-        {onLipat && (
-          <button
-            onClick={onLipat}
-            title={lipat ? 'Tampilkan menu' : 'Sembunyikan menu'}
-            aria-label={lipat ? 'Tampilkan menu' : 'Sembunyikan menu'}
-            aria-expanded={!lipat}
-            className={`hidden lg:flex items-center gap-2 w-full h-9 mt-1 rounded-lg text-[12px] font-medium text-muted hover:text-strong hover:bg-surface-2 transition ${
-              lipat ? 'justify-center px-0' : 'px-2.5'
-            }`}
-          >
-            <ChevronLeftIcon className={`w-4 h-4 shrink-0 transition-transform ${lipat ? 'rotate-180' : ''}`} />
-            {!lipat && <span>Sembunyikan menu</span>}
-          </button>
-        )}
       </div>
     </div>
   );

@@ -1,5 +1,4 @@
 const { query } = require('../config/db');
-const { todayLocal } = require('../utils/date');
 const { hitungRate } = require('../utils/attendanceRate');
 const { jendelaSemuaPegawai } = require('../utils/shiftWindow');
 const { KOLOM_SHIFT_SQL, kekuranganAbsen } = require('../utils/kelengkapan');
@@ -100,8 +99,6 @@ async function getMyTrend(req, res, next) {
 // GET /api/stats/overview -- KPI perusahaan untuk admin
 async function getOverview(req, res, next) {
   try {
-    const today = todayLocal();
-
     // Konsultan hanya melihat angka proyeknya sendiri. Tanpa penyaring ini
     // ia melihat KPI seluruh dinas -- bocor dalam bentuk angka gabungan,
     // yang justru sulit disadari karena tidak ada nama yang tampil.
@@ -161,50 +158,6 @@ async function getOverview(req, res, next) {
       alpha_hari_ini: Number(todayStats.rows[0].alpha) || 0,
       izin_hari_ini: Number(todayStats.rows[0].izin) || 0,
     });
-  } catch (err) {
-    next(err);
-  }
-}
-
-// GET /api/stats/department -- attendance rate per departemen
-async function getDepartmentStats(req, res, next) {
-  try {
-    const { month, year } = req.query;
-    const targetMonth = month || new Date().getMonth() + 1;
-    const targetYear = year || new Date().getFullYear();
-
-    // Konsultan melihat rekap departemen hanya untuk pegawai di proyeknya.
-    const paramsDept = [targetMonth, targetYear];
-    let filterProyek = '';
-    if (req.user.role === 'konsultan') {
-      const milik = await proyekKonsultan(req.user.id);
-      if (milik.length === 0) return res.json([]);
-      paramsDept.push(milik);
-      filterProyek = `AND u.project_id = ANY($${paramsDept.length}::int[])`;
-    }
-
-    const result = await query(
-      `SELECT d.name AS department,
-              COUNT(a.*) FILTER (WHERE a.status = 'hadir') AS hadir,
-              COUNT(a.*) FILTER (WHERE a.status = 'terlambat') AS terlambat,
-              COUNT(a.*) FILTER (WHERE a.status = 'alpha') AS alpha
-       FROM departments d
-       LEFT JOIN users u ON u.department_id = d.id AND u.role = 'staff' AND u.is_active = TRUE
-         ${filterProyek}
-       LEFT JOIN attendance a ON a.user_id = u.id
-         AND EXTRACT(MONTH FROM a.date) = $1
-         AND EXTRACT(YEAR FROM a.date) = $2
-       GROUP BY d.name
-       ORDER BY d.name`,
-      paramsDept
-    );
-
-    const stats = result.rows.map((row) => ({
-      department: row.department,
-      attendance_rate: hitungRate(row),
-    }));
-
-    res.json(stats);
   } catch (err) {
     next(err);
   }
@@ -379,7 +332,6 @@ module.exports = {
   getMyStats,
   getMyTrend,
   getOverview,
-  getDepartmentStats,
   getRanking,
   getBreakdown,
   getMonthlySeries,

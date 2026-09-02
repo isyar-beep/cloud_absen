@@ -4,7 +4,6 @@ const {
   getMyStats,
   getMyTrend,
   getOverview,
-  getDepartmentStats,
   getRanking,
   getBreakdown,
   getMonthlySeries,
@@ -17,7 +16,6 @@ router.get('/me/trend', authenticate, getMyTrend);
 
 // Statistik perusahaan (khusus admin)
 router.get('/overview', authenticate, authorize('admin', 'konsultan'), getOverview);
-router.get('/department', authenticate, authorize('admin', 'konsultan'), getDepartmentStats);
 router.get('/ranking', authenticate, authorize('admin', 'konsultan'), getRanking);
 router.get('/breakdown', authenticate, authorize('admin', 'konsultan'), getBreakdown);
 router.get('/monthly-series', authenticate, authorize('admin', 'konsultan'), getMonthlySeries);

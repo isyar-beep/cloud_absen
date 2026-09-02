@@ -65,7 +65,7 @@ html {
 }
 
 body {
-  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
   /* Angka selalu selebar sama supaya kolom jam dan jumlah tidak bergeser
      tiap kali nilainya berubah. */
   font-variant-numeric: tabular-nums;

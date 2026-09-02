@@ -2,16 +2,6 @@ const bcrypt = require('bcryptjs');
 const { query } = require('../config/db');
 const { batasiPerPegawai, bolehAksesPegawai } = require('../utils/lingkupProyek');
 
-// GET /api/departments -- daftar departemen (untuk dropdown filter/form)
-async function getDepartments(req, res, next) {
-  try {
-    const result = await query('SELECT id, name FROM departments ORDER BY name ASC');
-    res.json(result.rows);
-  } catch (err) {
-    next(err);
-  }
-}
-
 // GET /api/users -- daftar semua pengguna (admin only)
 async function getAllUsers(req, res, next) {
   try {
@@ -24,11 +14,9 @@ async function getAllUsers(req, res, next) {
 
     const result = await query(
       `SELECT u.id, u.name, u.email, u.role, u.is_active, u.avatar_url,
-              d.id AS department_id, d.name AS department,
               s.id AS shift_id, s.name AS shift_name, s.start_time AS shift_start, s.end_time AS shift_end,
               u.project_id, p.name AS project_name
        FROM users u
-       LEFT JOIN departments d ON u.department_id = d.id
        LEFT JOIN shifts s ON u.shift_id = s.id
        LEFT JOIN projects p ON u.project_id = p.id
        WHERE ${conditions.join(' AND ')}
@@ -54,10 +42,8 @@ async function getUserById(req, res, next) {
     }
     const result = await query(
       `SELECT u.id, u.name, u.email, u.role, u.is_active,
-              d.id AS department_id, d.name AS department,
               s.id AS shift_id, s.name AS shift_name
        FROM users u
-       LEFT JOIN departments d ON u.department_id = d.id
        LEFT JOIN shifts s ON u.shift_id = s.id
        WHERE u.id = $1`,
       [req.params.id]
@@ -239,7 +225,6 @@ async function deactivateUser(req, res, next) {
 }
 
 module.exports = {
-  getDepartments,
   getAllUsers,
   getUserById,
   createUser,

@@ -5,8 +5,7 @@ import { useDialog } from '../components/Dialog';
 import { useAuthStore } from '../store/authStore';
 import { PlusIcon } from '../components/Icons';
 import Avatar from '../components/Avatar';
-
-const LABEL_PERAN = { admin: 'Admin (Dinas)', konsultan: 'Konsultan', staff: 'Pegawai' };
+import { namaPeran, WARNA_PERAN } from '../utils/peran';
 
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);
@@ -95,6 +94,8 @@ export default function AdminUsers() {
   const inputClass =
     'px-3.5 py-2.5 bg-surface-2 border border-line rounded-xl text-sm transition focus:outline-none focus:bg-surface/75 backdrop-blur-xl focus:ring-2 focus:ring-primary-500/40 focus:border-primary-300';
   const labelClass = 'block text-xs font-medium text-muted mb-1.5';
+  const pilihanClass =
+    'w-[9.5rem] shrink-0 text-xs bg-surface-2 border border-line rounded-lg px-2 py-1.5 text-body focus:outline-none focus:ring-2 focus:ring-primary-500/40';
 
   return (
     <div className="min-h-screen transition-[padding] duration-200 lg:pl-[var(--lebar-sidebar)]">
@@ -222,111 +223,100 @@ export default function AdminUsers() {
           </form>
         )}
 
-        <div className="kartu-kaca overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-line">
-                <th className="text-left px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Pengguna</th>
-                <th className="text-left px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Role</th>
-                <th className="text-left px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Proyek</th>
-                <th className="text-left px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Shift</th>
-                <th className="text-left px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Status</th>
-                <th className="text-right px-5 py-3.5 font-semibold text-muted text-xs uppercase tracking-wide">Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((u) => (
-                <tr key={u.id} className="border-b border-line last:border-b-0 hover:bg-surface-2/60 transition">
-                  <td className="px-5 py-3.5">
-                    <div className="flex items-center gap-3">
-                      <Avatar name={u.name} src={u.avatar_url} />
-                      <div className="min-w-0">
-                        <p className="font-medium text-strong truncate">{u.name}</p>
-                        <p className="text-xs text-faint truncate">{u.email}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full ring-1 ring-inset ${
-                      u.role === 'admin'
-                        ? 'bg-violet-50 dark:bg-violet-500/15 text-violet-700 dark:text-violet-300 ring-violet-600/20'
-                        : u.role === 'konsultan'
-                          ? 'bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 ring-amber-600/20'
-                          : 'bg-surface-2 text-body ring-line-strong/40'
-                    }`}>
-                      {LABEL_PERAN[u.role] || u.role}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3.5">
-                    {/* Penugasan proyek hanya bermakna untuk pegawai. Konsultan
-                        ditunjuk sebagai penanggung jawab lewat halaman Proyek,
-                        dan admin tidak absen sama sekali. */}
-                    {u.role === 'staff' ? (
-                      <select
-                        value={u.project_id || ''}
-                        onChange={(e) => changeProject(u, e.target.value)}
-                        className="text-xs bg-surface-2 border border-line rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500/40"
-                      >
-                        <option value="">Belum ditugaskan</option>
-                        {projects.map((pr) => (
-                          <option key={pr.id} value={pr.id}>{pr.name}</option>
-                        ))}
-                        {/* Proyek yang sudah selesai tidak ada di daftar di atas;
-                            tanpa baris ini, penugasan lama tampil kosong seolah
-                            pegawainya tidak pernah ditugaskan. */}
-                        {u.project_id && !projects.some((pr) => pr.id === u.project_id) && (
-                          <option value={u.project_id}>{u.project_name} (selesai)</option>
-                        )}
-                      </select>
-                    ) : (
-                      <span className="text-xs text-faint">—</span>
-                    )}
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <select
-                      value={u.shift_id || ''}
-                      onChange={(e) => changeShift(u, e.target.value)}
-                      className="text-xs bg-surface-2 border border-line rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500/40"
-                    >
-                      <option value="">Tanpa shift (08:00)</option>
-                      {shifts.map((s) => (
-                        <option key={s.id} value={s.id}>{s.name} ({s.start_time}-{s.end_time})</option>
-                      ))}
-                    </select>
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full ring-1 ring-inset ${
+        {/* Daftar akun.
+            Dulu tabel enam kolom yang memaksa halaman digeser ke kanan --
+            dan kolom paling kanan, yang justru berisi tombol, adalah yang
+            paling sering tidak terlihat. Sekarang tiap akun jadi satu baris
+            kartu yang melipat sendiri saat layarnya sempit, jadi tidak ada
+            lagi isi yang tersembunyi di luar layar. */}
+        <div className="kartu-kaca divide-y divide-line">
+          {users.map((u) => (
+            <div
+              key={u.id}
+              className="flex flex-wrap items-center gap-x-4 gap-y-3 px-4 py-3.5 hover:bg-surface-2/50 transition"
+            >
+              {/* Identitas -- melebar mengisi sisa ruang */}
+              <div className="flex items-center gap-3 min-w-[12rem] flex-1">
+                <Avatar name={u.name} src={u.avatar_url} />
+                <div className="min-w-0">
+                  <p className="font-medium text-strong truncate leading-tight">{u.name}</p>
+                  <p className="text-xs text-faint truncate">{u.email}</p>
+                </div>
+              </div>
+
+              <span className={`text-xs font-medium px-2.5 py-1 rounded-full ring-1 ring-inset whitespace-nowrap ${
+                WARNA_PERAN[u.role] || WARNA_PERAN.staff
+              }`}>
+                {namaPeran(u.role)}
+              </span>
+
+              {/* Penugasan proyek hanya bermakna untuk pegawai. Konsultan
+                  ditunjuk sebagai penanggung jawab lewat halaman Proyek,
+                  dan admin tidak absen sama sekali. */}
+              {u.role === 'staff' ? (
+                <select
+                  value={u.project_id || ''}
+                  onChange={(e) => changeProject(u, e.target.value)}
+                  aria-label={`Proyek untuk ${u.name}`}
+                  className={pilihanClass}
+                >
+                  <option value="">Belum ditugaskan</option>
+                  {projects.map((pr) => (
+                    <option key={pr.id} value={pr.id}>{pr.name}</option>
+                  ))}
+                  {/* Proyek yang sudah selesai tidak ada di daftar di atas;
+                      tanpa baris ini, penugasan lama tampil kosong seolah
+                      pegawainya tidak pernah ditugaskan. */}
+                  {u.project_id && !projects.some((pr) => pr.id === u.project_id) && (
+                    <option value={u.project_id}>{u.project_name} (selesai)</option>
+                  )}
+                </select>
+              ) : (
+                <span className="text-xs text-faint w-[9.5rem]">Tanpa proyek</span>
+              )}
+
+              <select
+                value={u.shift_id || ''}
+                onChange={(e) => changeShift(u, e.target.value)}
+                aria-label={`Shift untuk ${u.name}`}
+                className={pilihanClass}
+              >
+                <option value="">Tanpa shift (08:00)</option>
+                {shifts.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name} ({s.start_time}-{s.end_time})</option>
+                ))}
+              </select>
+
+              <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full ring-1 ring-inset whitespace-nowrap ${
+                u.is_active
+                  ? 'bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 ring-emerald-600/20'
+                  : 'bg-surface-3 text-muted ring-line-strong/40'
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${u.is_active ? 'bg-emerald-500' : 'bg-faint'}`} />
+                {u.is_active ? 'Aktif' : 'Nonaktif'}
+              </span>
+
+              {/* Baris akun sendiri tidak menawarkan tombolnya. Server juga
+                  menolak, tapi menawarkan tombol yang pasti gagal hanya
+                  membuat orang mencoba lalu bingung. */}
+              <div className="ml-auto shrink-0 min-w-[6.5rem] text-right">
+                {u.id === user?.id ? (
+                  <span className="text-xs text-faint">Akun Anda</span>
+                ) : (
+                  <button
+                    onClick={() => toggleActive(u)}
+                    className={`text-xs font-semibold transition ${
                       u.is_active
-                        ? 'bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 ring-emerald-600/20'
-                        : 'bg-surface-3 text-muted ring-line-strong/40'
-                    }`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${u.is_active ? 'bg-emerald-500' : 'bg-faint'}`} />
-                      {u.is_active ? 'Aktif' : 'Nonaktif'}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3.5 text-right">
-                    {/* Baris akun sendiri tidak menawarkan tombolnya. Server
-                        juga menolak, tapi menawarkan tombol yang pasti gagal
-                        hanya membuat orang mencoba lalu bingung. */}
-                    {u.id === user?.id ? (
-                      <span className="text-xs text-faint">Akun Anda</span>
-                    ) : (
-                      <button
-                        onClick={() => toggleActive(u)}
-                        className={`text-xs font-semibold transition ${
-                          u.is_active
-                            ? 'text-red-500 hover:text-red-600 dark:text-red-400'
-                            : 'text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300'
-                        }`}
-                      >
-                        {u.is_active ? 'Nonaktifkan' : 'Aktifkan'}
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                        ? 'text-red-500 hover:text-red-600 dark:text-red-400'
+                        : 'text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300'
+                    }`}
+                  >
+                    {u.is_active ? 'Nonaktifkan' : 'Aktifkan'}
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>

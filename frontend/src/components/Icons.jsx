@@ -148,8 +148,12 @@ export const CloseIcon = (props) => (
   </Icon>
 );
 
-export const ChevronLeftIcon = (props) => (
+
+// Panel samping -- lambang lazim untuk menyembunyikan atau menampilkan
+// menu, sama seperti yang dipakai peramban dan editor kode.
+export const PanelIcon = (props) => (
   <Icon {...props}>
-    <path d="M15.75 19.5L8.25 12l7.5-7.5" />
+    <path d="M3.75 5.25h16.5a1.5 1.5 0 011.5 1.5v10.5a1.5 1.5 0 01-1.5 1.5H3.75a1.5 1.5 0 01-1.5-1.5V6.75a1.5 1.5 0 011.5-1.5z" />
+    <path d="M9.75 5.25v13.5" />
   </Icon>
 );
