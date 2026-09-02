@@ -372,6 +372,60 @@ body::before {
   background-color: rgb(var(--c-surface-2) / 0.95);
 }
 
+/* ============================================================
+   Petak yang menyesuaikan RUANG YANG TERSEDIA, bukan lebar layar.
+   ------------------------------------------------------------
+   Titik henti md:/lg: mengukur lebar jendela, padahal sejak 1024px
+   sidebar sudah memakan 272px. Akibatnya di layar 1024px kartu KPI
+   dipaksa 4 lajur di dalam ruang 738px -- 168px per kartu, lebih
+   sempit daripada di HP 414px. Diukur, bukan dikira-kira.
+
+   auto-fit + minmax menghitung sendiri berapa lajur yang muat di
+   ruang yang benar-benar ada, jadi ia ikut menyesuaikan saat sidebar
+   dilipat maupun saat jendela diseret -- tanpa satu pun titik henti
+   baru yang harus dirawat.
+
+   --petak-min = lebar terkecil yang masih pantas untuk satu kartu.
+   ============================================================ */
+.petak-auto {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(var(--petak-min, 12rem), 1fr));
+}
+
+/* ------------------------------------------------------------
+   Petak KPI: DUA atau EMPAT lajur, tidak pernah tiga.
+   auto-fit tidak dipakai di sini karena ia melewati angka tiga:
+   empat kartu dalam tiga lajur meninggalkan satu kartu sendirian
+   di baris kedua, dan itu terbaca sebagai tata letak yang rusak,
+   bukan sebagai penyesuaian.
+
+   Ambangnya diukur terhadap RUANG INDUKNYA (@container), bukan
+   lebar jendela. Ini yang tidak bisa dilakukan titik henti md:/lg:
+   -- dan bedanya nyata: saat sidebar dilipat, ruang bertambah
+   190px dan petaknya langsung ikut melebar, tanpa jendela perlu
+   diubah sama sekali.
+
+   53rem = ruang minimum agar empat kartu tetap pantas
+   (4 x 200px + 3 x 16px jarak).
+
+   Peramban lama yang belum mengenal @container tetap mendapat dua
+   lajur -- lebih sempit, tapi tidak pernah rusak.
+   ------------------------------------------------------------ */
+.wadah-petak {
+  container-type: inline-size;
+}
+
+.petak-kpi {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@container (min-width: 53rem) {
+  .petak-kpi {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
 /* Lebar sidebar dipakai bersama: sidebar yang menentukan, isi halaman
    yang mengikuti. Tanpa satu sumber angka, keduanya bisa berselisih dan
    menyisakan lajur kosong atau isi yang tertimpa.

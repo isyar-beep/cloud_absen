@@ -181,7 +181,7 @@ export default function AdminDashboard() {
     <div className="min-h-screen transition-[padding] duration-200 lg:pl-[var(--lebar-sidebar)]">
       <AdminSidebar />
 
-      <div className="max-w-6xl mx-auto px-4 py-7">
+      <div className="wadah-petak max-w-6xl mx-auto px-4 py-7">
         <div className="mb-6">
           <h1 className="text-xl font-bold text-strong tracking-tight">Dashboard</h1>
           <p className="text-sm text-muted mt-0.5">
@@ -195,9 +195,12 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* KPI Overview */}
+        {/* KPI Overview. Dua atau empat lajur, tidak pernah tiga -- lihat
+            .petak-kpi di index.css. Lajurnya ditentukan oleh ruang yang
+            tersedia, bukan lebar jendela, sehingga melipat sidebar pun
+            langsung melebarkan petaknya. */}
         {overview && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div className="petak-kpi gap-4 mb-6">
             {kpiCards.map((card) => (
               <Link
                 key={card.label}

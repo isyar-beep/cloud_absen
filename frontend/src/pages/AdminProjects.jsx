@@ -143,7 +143,7 @@ export default function AdminProjects() {
     <div className="min-h-screen transition-[padding] duration-200 lg:pl-[var(--lebar-sidebar)]">
       <AdminSidebar />
 
-      <div className="max-w-6xl mx-auto px-4 py-7">
+      <div className="wadah-petak max-w-6xl mx-auto px-4 py-7">
         <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
           <div>
             <h1 className="text-xl font-bold text-strong tracking-tight">Proyek</h1>
@@ -176,7 +176,7 @@ export default function AdminProjects() {
 
         {/* Ringkasan seluruh proyek */}
         {proyek.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          <div className="petak-kpi gap-3 mb-6">
             {[
               { label: 'Total Proyek', nilai: ringkasan.total, icon: BriefcaseIcon,
                 chip: 'bg-primary-50 dark:bg-primary-500/15 text-primary-600 dark:text-primary-400' },
@@ -312,7 +312,10 @@ export default function AdminProjects() {
           </div>
         )}
 
-        <div className="grid sm:grid-cols-2 gap-4">
+        {/* Jumlah proyek berubah-ubah, jadi auto-fit yang tepat di sini:
+            tidak ada masalah "satu kartu sendirian" seperti pada petak yang
+            isinya pasti empat. */}
+        <div className="petak-auto gap-4 [--petak-min:20rem]">
           {proyek.map((p) => (
             <div key={p.id} className="kartu-kaca overflow-hidden">
               <div className="px-5 pt-4 pb-3.5">

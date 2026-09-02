@@ -345,7 +345,7 @@ export default function AdminGallery() {
         )}
 
         {/* Kisi kartu */}
-        <div className={`grid gap-4 ${hanyaSatuJenis ? 'sm:grid-cols-3 lg:grid-cols-4' : 'sm:grid-cols-2 lg:grid-cols-3'}`}>
+        <div className={`petak-auto gap-4 ${hanyaSatuJenis ? '[--petak-min:14rem]' : '[--petak-min:19rem]'}`}>
           {baris.map((r) => (
             <div key={r.id} className="kartu-kaca overflow-hidden">
               {/* Nama di baris sendiri, tanggal & status di bawahnya -- badge
