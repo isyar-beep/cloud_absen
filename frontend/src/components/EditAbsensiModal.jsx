@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import api from '../api/axios';
 import StatusBadge from './StatusBadge';
 import { formatTanggalHari, formatJamDetik } from '../utils/tanggal';
+import Pilihan, { KELAS_PILIHAN } from './Pilihan';
 
 // Ambil "07:15" dari "2026-08-17 07:15:00" untuk mengisi input type=time.
 function keJamInput(stempel) {
@@ -122,16 +123,18 @@ export default function EditAbsensiModal({ baris, onTutup, onSimpan }) {
 
           <div>
             <label className={labelClass}>Status</label>
-            <select
+            <Pilihan
               value={form.status}
               onChange={(e) => setForm({ ...form, status: e.target.value })}
-              className={inputClass}
-            >
-              <option value="hadir">Hadir</option>
-              <option value="terlambat">Hadir (Terlambat)</option>
-              <option value="izin">Izin</option>
-              <option value="alpha">Alpha</option>
-            </select>
+              ariaLabel="Status"
+              className={`${KELAS_PILIHAN} w-full`}
+              options={[
+                { value: 'hadir', label: 'Hadir' },
+                { value: 'terlambat', label: 'Hadir (Terlambat)' },
+                { value: 'izin', label: 'Izin' },
+                { value: 'alpha', label: 'Alpha' },
+              ]}
+            />
           </div>
 
           <div>

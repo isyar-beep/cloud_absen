@@ -7,6 +7,7 @@ import WfaBadge from '../components/WfaBadge';
 import AjukanKoreksiModal from '../components/AjukanKoreksiModal';
 import { ArrowLeftIcon } from '../components/Icons';
 import { formatTanggalHari, formatJam } from '../utils/tanggal';
+import Pilihan, { KELAS_PILIHAN } from '../components/Pilihan';
 import {
   NAMA_BULAN, daftarTahun, rentangBulan, rentangPreset, rentangTahun,
 } from '../utils/periode';
@@ -186,28 +187,24 @@ export default function History() {
               {modePeriode === 'bulan' && (
                 <div>
                   <label className="block text-xs font-medium text-muted mb-1.5">Bulan</label>
-                  <select
+                  <Pilihan
                     value={pilihan.bulan}
                     onChange={(e) => setPilihan({ ...pilihan, bulan: Number(e.target.value) })}
-                    className={inputClass}
-                  >
-                    {NAMA_BULAN.map((nama, i) => (
-                      <option key={nama} value={i + 1}>{nama}</option>
-                    ))}
-                  </select>
+                    ariaLabel="Bulan"
+                    className={`${KELAS_PILIHAN} w-full`}
+                    options={NAMA_BULAN.map((nama, i) => ({ value: i + 1, label: nama }))}
+                  />
                 </div>
               )}
               <div className={modePeriode === 'tahun' ? 'col-span-2' : ''}>
                 <label className="block text-xs font-medium text-muted mb-1.5">Tahun</label>
-                <select
+                <Pilihan
                   value={pilihan.tahun}
                   onChange={(e) => setPilihan({ ...pilihan, tahun: Number(e.target.value) })}
-                  className={inputClass}
-                >
-                  {daftarTahun().map((t) => (
-                    <option key={t} value={t}>{t}</option>
-                  ))}
-                </select>
+                  ariaLabel="Tahun"
+                  className={`${KELAS_PILIHAN} w-full`}
+                  options={daftarTahun().map((t) => ({ value: t, label: String(t) }))}
+                />
               </div>
             </div>
           )}
@@ -277,7 +274,7 @@ export default function History() {
           {items.map((item) => (
             <div key={item.id} className="px-5 py-4 border-b border-line last:border-b-0 hover:bg-surface-2/60 transition">
               <div className="flex justify-between items-center mb-1.5">
-                <p className="text-sm font-semibold text-strong">{formatTanggalHari(item.date)}</p>
+                <p className="text-[17px] font-bold text-strong tracking-[-0.01em]">{formatTanggalHari(item.date)}</p>
                 <span className="flex items-center gap-1.5">
                   <WfaBadge mode={item.work_mode} />
                   <StatusBadge status={item.status} kurang={item.kurang} />

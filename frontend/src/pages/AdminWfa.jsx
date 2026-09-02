@@ -5,6 +5,7 @@ import Avatar from '../components/Avatar';
 import { PlusIcon } from '../components/Icons';
 import { formatTanggalHari, tanggalLokal } from '../utils/tanggal';
 import { keTanggal } from '../utils/periode';
+import Pilihan, { KELAS_PILIHAN } from '../components/Pilihan';
 
 // Penetapan WFA (Work From Anywhere).
 //
@@ -49,6 +50,14 @@ export default function AdminWfa() {
   async function simpan(e) {
     e.preventDefault();
     setError('');
+    // Diperiksa di sini karena kotak pegawai bukan lagi <select> bawaan:
+    // atribut `required` hanya berlaku pada kontrol formulir asli, dan
+    // hilang begitu kotaknya digambar sendiri. Tanpa penjagaan ini,
+    // menekan Simpan tanpa memilih pegawai akan menembus ke server.
+    if (!form.user_id) {
+      setError('Pilih pegawai terlebih dahulu.');
+      return;
+    }
     setLoading(true);
     try {
       const res = await api.post('/wfa', form);
@@ -132,7 +141,7 @@ export default function AdminWfa() {
 
       {tampilForm && (
         <form onSubmit={simpan} className="kartu-kaca max-w-4xl p-5 mb-6 space-y-4">
-          <p className="text-sm font-semibold text-strong">Penetapan WFA Baru</p>
+          <p className="text-[17px] font-bold text-strong tracking-[-0.01em]">Penetapan WFA Baru</p>
           {error && (
             <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/15 border border-red-100 dark:border-red-500/30 rounded-xl px-4 py-2.5">
               {error}
@@ -142,17 +151,14 @@ export default function AdminWfa() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className={labelClass}>Pegawai</label>
-              <select
-                required
+              <Pilihan
                 value={form.user_id}
                 onChange={(e) => setForm({ ...form, user_id: e.target.value })}
-                className={inputClass}
-              >
-                <option value="">Pilih pegawai</option>
-                {pegawai.map((u) => (
-                  <option key={u.id} value={u.id}>{u.name}</option>
-                ))}
-              </select>
+                ariaLabel="Pegawai"
+                placeholder="Pilih pegawai"
+                className={`${KELAS_PILIHAN} w-full`}
+                options={pegawai.map((u) => ({ value: u.id, label: u.name }))}
+              />
             </div>
             <div>
               <label className={labelClass}>Mulai</label>
@@ -226,7 +232,7 @@ export default function AdminWfa() {
               <Avatar name={w.name} src={w.avatar_url} size={38} />
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <p className="text-sm font-semibold text-strong truncate">{w.name}</p>
+                  <p className="text-[17px] font-bold text-strong tracking-[-0.01em] truncate">{w.name}</p>
                   {w.sedang_berjalan && (
                     <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-violet-50 dark:bg-violet-500/15 text-violet-700 dark:text-violet-300 border border-violet-100 dark:border-violet-500/30">
                       BERJALAN

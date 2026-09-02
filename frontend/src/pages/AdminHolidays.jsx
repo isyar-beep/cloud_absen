@@ -64,7 +64,7 @@ export default function AdminHolidays() {
       <div className="wadah-petak px-5 lg:px-8 py-7">
         <div className="flex justify-between items-center mb-6 gap-3">
           <div>
-            <h1 className="text-xl font-bold text-strong tracking-tight">Hari Libur</h1>
+            <h1 className="text-[1.75rem] leading-tight font-extrabold text-strong tracking-[-0.02em]">Hari Libur</h1>
             <p className="text-sm text-muted mt-0.5">
               {holidays.length} tanggal terdaftar — Sabtu &amp; Minggu otomatis dianggap bukan hari kerja
             </p>
@@ -80,7 +80,7 @@ export default function AdminHolidays() {
 
         {showForm && (
           <form onSubmit={handleSubmit} className="kartu-kaca max-w-4xl p-5 mb-6 space-y-4">
-            <p className="text-sm font-semibold text-strong">Hari Libur Baru</p>
+            <p className="text-[17px] font-bold text-strong tracking-[-0.01em]">Hari Libur Baru</p>
             {error && (
               <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/15 border border-red-100 dark:border-red-500/30 rounded-xl px-4 py-2.5">
                 {error}

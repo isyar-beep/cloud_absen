@@ -112,7 +112,7 @@ export default function AdminCorrections() {
               <div className="flex items-center gap-2.5 min-w-0">
                 <Avatar name={item.name} src={item.avatar_url} size={34} />
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-strong truncate">{item.name}</p>
+                  <p className="text-[17px] font-bold text-strong tracking-[-0.01em] truncate">{item.name}</p>
                   <p className="text-xs text-faint">{item.project_name || '—'}</p>
                 </div>
               </div>

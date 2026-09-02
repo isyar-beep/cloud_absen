@@ -6,6 +6,7 @@ import StatusBadge from '../components/StatusBadge';
 import WfaBadge from '../components/WfaBadge';
 import EditAbsensiModal from '../components/EditAbsensiModal';
 import Koordinat from '../components/Koordinat';
+import Pilihan, { KELAS_PILIHAN } from '../components/Pilihan';
 import { formatTanggal, formatJam } from '../utils/tanggal';
 
 const LIMIT = 50;
@@ -93,7 +94,7 @@ export default function AdminHistory() {
 
       <div className="wadah-petak px-5 lg:px-8 py-7">
         <div className="mb-6">
-          <h1 className="text-xl font-bold text-strong tracking-tight">Riwayat Absensi Pegawai</h1>
+          <h1 className="text-[1.75rem] leading-tight font-extrabold text-strong tracking-[-0.02em]">Riwayat Absensi Pegawai</h1>
           <p className="text-sm text-muted mt-0.5">Semua catatan absensi dengan filter</p>
         </div>
 
@@ -119,48 +120,50 @@ export default function AdminHistory() {
           </div>
           <div>
             <label className="block text-xs font-medium text-muted mb-1.5">Proyek</label>
-            <select
+            <Pilihan
               value={filter.project_id}
               onChange={(e) => setFilter({ ...filter, project_id: e.target.value })}
-              className={inputClass}
-            >
-              <option value="">Semua proyek</option>
-              {projects.map((pr) => (
-                <option key={pr.id} value={pr.id}>{pr.name}</option>
-              ))}
-            </select>
+              ariaLabel="Proyek"
+              className={`${KELAS_PILIHAN} w-full`}
+              options={[
+                { value: '', label: 'Semua proyek' },
+                ...projects.map((pr) => ({ value: pr.id, label: pr.name })),
+              ]}
+            />
           </div>
           <div>
             <label className="block text-xs font-medium text-muted mb-1.5">Pegawai</label>
-            <select
+            <Pilihan
               value={filter.user_id}
               onChange={(e) => setFilter({ ...filter, user_id: e.target.value })}
-              className={inputClass}
-            >
-              <option value="">Semua pegawai</option>
-              {users.map((u) => (
-                <option key={u.id} value={u.id}>{u.name}</option>
-              ))}
-            </select>
+              ariaLabel="Pegawai"
+              className={`${KELAS_PILIHAN} w-full`}
+              options={[
+                { value: '', label: 'Semua pegawai' },
+                ...users.map((u) => ({ value: u.id, label: u.name })),
+              ]}
+            />
           </div>
           <div>
             <label className="block text-xs font-medium text-muted mb-1.5">Status</label>
-            <select
+            <Pilihan
               value={filter.status}
               onChange={(e) => setFilter({ ...filter, status: e.target.value })}
-              className={inputClass}
-            >
-              <option value="">Semua</option>
-              {/* Pasangan ini punya pilihannya sendiri supaya saringan yang
-                  datang dari tautan dashboard tetap terbaca di kotak ini --
-                  tanpa pilihan yang cocok, kotaknya tampil seolah "Semua"
-                  padahal daftarnya sedang tersaring. */}
-              <option value="hadir,terlambat">Hadir &amp; terlambat</option>
-              <option value="hadir">Hadir</option>
-              <option value="terlambat">Terlambat</option>
-              <option value="izin">Izin</option>
-              <option value="alpha">Alpha</option>
-            </select>
+              ariaLabel="Status"
+              className={`${KELAS_PILIHAN} w-full`}
+              options={[
+                { value: '', label: 'Semua' },
+                // Pasangan ini punya pilihannya sendiri supaya saringan yang
+                // datang dari tautan dashboard tetap terbaca di kotak ini --
+                // tanpa pilihan yang cocok, kotaknya tampil seolah "Semua"
+                // padahal daftarnya sedang tersaring.
+                { value: 'hadir,terlambat', label: 'Hadir & terlambat' },
+                { value: 'hadir', label: 'Hadir' },
+                { value: 'terlambat', label: 'Terlambat' },
+                { value: 'izin', label: 'Izin' },
+                { value: 'alpha', label: 'Alpha' },
+              ]}
+            />
           </div>
         </div>
 

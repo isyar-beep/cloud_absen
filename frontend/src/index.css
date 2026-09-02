@@ -86,7 +86,7 @@ html {
 }
 
 body {
-  font-family: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   /* Angka selalu selebar sama supaya kolom jam dan jumlah tidak bergeser
      tiap kali nilainya berubah. */
   font-variant-numeric: tabular-nums;
@@ -344,7 +344,7 @@ body::before {
 .tabel-pil th {
   padding: 0 1rem 0.25rem;
   text-align: left;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -353,6 +353,7 @@ body::before {
 }
 .tabel-pil td {
   padding: 0.9rem 1rem;
+  font-size: 14px;
   background-color: rgb(var(--c-surface) / 0.55);
   transition: background-color 160ms ease;
 }

@@ -62,8 +62,8 @@ function Isi({ user, aktifKah, onPindah, onKeluar, lipat = false, onLipat }) {
           </div>
           {!lipat && (
             <div className="min-w-0">
-              <p className="text-[15px] font-bold text-strong truncate leading-tight tracking-tight">Absensi Konsultan</p>
-              <p className="text-[10.5px] text-faint truncate tracking-[0.08em] mt-0.5">PERCIPKAR</p>
+              <p className="text-[17px] font-extrabold text-strong truncate leading-tight tracking-[-0.02em]">Absensi Konsultan</p>
+              <p className="text-[11px] text-faint truncate tracking-[0.1em] mt-0.5">PERCIPKAR</p>
             </div>
           )}
         </div>
@@ -100,7 +100,7 @@ function Isi({ user, aktifKah, onPindah, onKeluar, lipat = false, onLipat }) {
                 // tidak cukup untuk teks, tapi pengelompokannya tetap terbaca.
                 <div className="h-px bg-line/70 mx-2 mb-2" aria-hidden="true" />
               ) : (
-                <p className="px-3.5 mb-1.5 text-[10.5px] font-extrabold uppercase tracking-[0.13em] text-faint">
+                <p className="px-3.5 mb-1.5 text-[11px] font-extrabold uppercase tracking-[0.13em] text-faint">
                   {kelompok.judul}
                 </p>
               )}
@@ -114,7 +114,7 @@ function Isi({ user, aktifKah, onPindah, onKeluar, lipat = false, onLipat }) {
                       onClick={onPindah}
                       aria-current={aktif ? 'page' : undefined}
                       title={lipat ? item.label : undefined}
-                      className={`flex items-center rounded-2xl text-sm transition duration-200 ${
+                      className={`flex items-center rounded-2xl text-[15px] transition duration-200 ${
                         lipat ? 'h-10 justify-center px-0' : 'h-11 gap-3 px-3.5'
                       } ${
                         aktif
@@ -146,8 +146,8 @@ function Isi({ user, aktifKah, onPindah, onKeluar, lipat = false, onLipat }) {
           <Avatar name={user?.name} src={user?.avatar_url} size={34} />
           {!lipat && (
             <div className="min-w-0 flex-1">
-              <p className="text-[13px] font-semibold text-strong truncate leading-tight">{user?.name}</p>
-              <p className="text-[11px] text-faint truncate">{namaPeran(user?.role)}</p>
+              <p className="text-sm font-bold text-strong truncate leading-tight">{user?.name}</p>
+              <p className="text-xs text-faint truncate">{namaPeran(user?.role)}</p>
             </div>
           )}
           <button
@@ -187,7 +187,7 @@ export default function AdminSidebar() {
   useEffect(() => {
     // Angka ini ruang TOTAL yang dipesan, sudah termasuk sela melayangnya.
     // Kartu sidebar sendiri selebar angka ini dikurangi --sela-sidebar.
-    document.documentElement.style.setProperty('--lebar-sidebar', lipat ? '5.25rem' : '17rem');
+    document.documentElement.style.setProperty('--lebar-sidebar', lipat ? '5.25rem' : '18rem');
     try {
       localStorage.setItem('sidebar_lipat', lipat ? '1' : '0');
     } catch {
@@ -260,7 +260,7 @@ export default function AdminSidebar() {
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 text-white text-xs font-bold flex items-center justify-center">
             AK
           </div>
-          <p className="text-sm font-semibold text-strong truncate">Absensi Konsultan</p>
+          <p className="text-[17px] font-bold text-strong tracking-[-0.01em] truncate">Absensi Konsultan</p>
         </div>
       </header>
 

@@ -27,7 +27,7 @@ function JendelaBaris({ label, info, tanggal, hariIni, selesai, tutup }) {
           {formatTanggalSingkat(tanggal)}
         </p>
       )}
-      <p className="text-sm font-semibold text-strong">
+      <p className="text-[17px] font-bold text-strong tracking-[-0.01em]">
         {info ? `${info.buka}–${info.tutup}` : '—'}
       </p>
       <p className="flex items-center gap-1.5 text-[11px] text-muted mt-0.5">

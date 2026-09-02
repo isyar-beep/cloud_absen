@@ -157,3 +157,15 @@ export const PanelIcon = (props) => (
     <path d="M9.75 5.25v13.5" />
   </Icon>
 );
+
+export const ChevronDownIcon = (props) => (
+  <Icon {...props}>
+    <path d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+  </Icon>
+);
+
+export const CheckIcon = (props) => (
+  <Icon {...props}>
+    <path d="m4.5 12.75 6 6 9-13.5" />
+  </Icon>
+);

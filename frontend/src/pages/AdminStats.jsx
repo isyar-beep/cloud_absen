@@ -5,6 +5,7 @@ import {
 } from 'recharts';
 import api from '../api/axios';
 import AdminSidebar from '../components/AdminSidebar';
+import Pilihan, { KELAS_PILIHAN } from '../components/Pilihan';
 import { useGrafikTema } from '../utils/grafik';
 
 const WARNA = { hadir: '#10b981', terlambat: '#f59e0b', izin: '#3b82f6', alpha: '#ef4444' };
@@ -155,7 +156,7 @@ export default function AdminStats() {
 
       <div className="wadah-petak px-5 lg:px-8 py-7">
         <div className="mb-6">
-          <h1 className="text-xl font-bold text-strong tracking-tight">Statistik &amp; Grafik</h1>
+          <h1 className="text-[1.75rem] leading-tight font-extrabold text-strong tracking-[-0.02em]">Statistik &amp; Grafik</h1>
           <p className="text-sm text-muted mt-0.5">
             Kehadiran keseluruhan atau per pegawai, bulanan atau riwayat lengkap
           </p>
@@ -166,40 +167,54 @@ export default function AdminStats() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div className={butuhSeries ? 'sm:col-span-2' : ''}>
               <label className={labelClass}>Pegawai</label>
-              <select value={userId} onChange={(e) => setUserId(e.target.value)} className={selectClass}>
-                <option value="">Semua Pegawai</option>
-                {users.map((u) => (
-                  <option key={u.id} value={u.id}>{u.name}</option>
-                ))}
-              </select>
+              <Pilihan
+                value={userId}
+                onChange={(e) => setUserId(e.target.value)}
+                ariaLabel="Pegawai"
+                className={`${KELAS_PILIHAN} w-full`}
+                options={[
+                  { value: '', label: 'Semua Pegawai' },
+                  ...users.map((u) => ({ value: u.id, label: u.name })),
+                ]}
+              />
             </div>
 
             {!butuhSeries && (
               <>
                 <div>
                   <label className={labelClass}>Periode</label>
-                  <select value={periode} onChange={(e) => setPeriode(e.target.value)} className={selectClass}>
-                    <option value="bulan">Bulan tertentu</option>
-                    <option value="semua">Riwayat keseluruhan</option>
-                  </select>
+                  <Pilihan
+                    value={periode}
+                    onChange={(e) => setPeriode(e.target.value)}
+                    ariaLabel="Periode"
+                    className={`${KELAS_PILIHAN} w-full`}
+                    options={[
+                      { value: 'bulan', label: 'Bulan tertentu' },
+                      { value: 'semua', label: 'Riwayat keseluruhan' },
+                    ]}
+                  />
                 </div>
                 {periode === 'bulan' && (
                   <>
                     <div>
                       <label className={labelClass}>Bulan</label>
-                      <select value={bulan} onChange={(e) => setBulan(Number(e.target.value))} className={selectClass}>
-                        {NAMA_BULAN.map((b, i) => (
-                          <option key={b} value={i + 1}>{b}</option>
-                        ))}
-                      </select>
+                      <Pilihan
+                        value={bulan}
+                        onChange={(e) => setBulan(Number(e.target.value))}
+                        ariaLabel="Bulan"
+                        className={`${KELAS_PILIHAN} w-full`}
+                        options={NAMA_BULAN.map((b, i) => ({ value: i + 1, label: b }))}
+                      />
                     </div>
                     <div>
                       <label className={labelClass}>Tahun</label>
-                      <select value={tahun} onChange={(e) => setTahun(Number(e.target.value))} className={selectClass}>
-                        {[tahun - 1, tahun, tahun + 1].map((y) => (
-                          <option key={y} value={y}>{y}</option>
-                        ))}
-                      </select>
+                      <Pilihan
+                        value={tahun}
+                        onChange={(e) => setTahun(Number(e.target.value))}
+                        ariaLabel="Tahun"
+                        className={`${KELAS_PILIHAN} w-full`}
+                        options={[tahun - 1, tahun, tahun + 1].map((y) => ({ value: y, label: String(y) }))}
+                      />
                     </div>
                   </>
                 )}
@@ -228,7 +243,7 @@ export default function AdminStats() {
         {/* Kartu grafik */}
         <div className="kartu-kaca overflow-hidden">
           <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 px-5 pt-5 pb-4">
-            <p className="text-sm font-semibold text-strong">{namaTerpilih}</p>
+            <p className="text-[17px] font-bold text-strong tracking-[-0.01em]">{namaTerpilih}</p>
             <p className="text-xs text-faint">{keteranganPeriode}</p>
           </div>
 

@@ -236,7 +236,7 @@ export default function Leaves() {
         </form>
 
         <div className="kartu-kaca overflow-hidden">
-          <p className="text-sm font-semibold text-strong px-5 pt-4 pb-2">Riwayat Pengajuan</p>
+          <p className="text-[17px] font-bold text-strong tracking-[-0.01em] px-5 pt-4 pb-2">Riwayat Pengajuan</p>
           {leaves.map((item) => (
             <div key={item.id} className="px-5 py-3.5 border-t border-line hover:bg-surface-2/60 transition">
               <div className="flex justify-between items-center gap-2 mb-1">

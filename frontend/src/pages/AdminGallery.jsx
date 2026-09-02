@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import api from '../api/axios';
 import { urlFoto, useTokenFoto } from '../api/fileUrl';
 import AdminSidebar from '../components/AdminSidebar';
+import Pilihan, { KELAS_PILIHAN } from '../components/Pilihan';
 import Avatar from '../components/Avatar';
 import StatusBadge from '../components/StatusBadge';
 import Koordinat from '../components/Koordinat';
@@ -229,7 +230,7 @@ export default function AdminGallery() {
 
       <div className="wadah-petak px-5 lg:px-8 py-7">
         <div className="mb-5">
-          <h1 className="text-xl font-bold text-strong tracking-tight">Galeri Foto Absensi</h1>
+          <h1 className="text-[1.75rem] leading-tight font-extrabold text-strong tracking-[-0.02em]">Galeri Foto Absensi</h1>
           <p className="text-sm text-muted mt-0.5">
             Bukti foto masuk dan pulang — satu kartu per pegawai per hari
           </p>
@@ -252,45 +253,55 @@ export default function AdminGallery() {
             </div>
             <div>
               <label className={labelClass}>Proyek</label>
-              <select
+              <Pilihan
                 value={filter.project_id}
                 onChange={(e) => setFilter({ ...filter, project_id: e.target.value })}
-                className={inputClass}
-              >
-                <option value="">Semua proyek</option>
-                {projects.map((pr) => (
-                  <option key={pr.id} value={pr.id}>{pr.name}</option>
-                ))}
-              </select>
+                ariaLabel="Proyek"
+                className={`${KELAS_PILIHAN} w-full`}
+                options={[
+                  { value: '', label: 'Semua proyek' },
+                  ...projects.map((pr) => ({ value: pr.id, label: pr.name })),
+                ]}
+              />
             </div>
             <div>
               <label className={labelClass}>Pegawai</label>
-              <select value={filter.user_id}
+              <Pilihan
+                value={filter.user_id}
                 onChange={(e) => setFilter({ ...filter, user_id: e.target.value })}
-                className={`${inputClass} ${filter.user_id ? inputAktif : ''}`}>
-                <option value="">Semua pegawai</option>
-                {users.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
-              </select>
+                ariaLabel="Pegawai"
+                className={`${KELAS_PILIHAN} w-full ${filter.user_id ? inputAktif : ''}`}
+                options={[
+                  { value: '', label: 'Semua pegawai' },
+                  ...users.map((u) => ({ value: u.id, label: u.name })),
+                ]}
+              />
             </div>
             <div>
               <label className={labelClass}>Jenis absen</label>
-              <select value={filter.jenis}
+              <Pilihan
+                value={filter.jenis}
                 onChange={(e) => setFilter({ ...filter, jenis: e.target.value })}
-                className={`${inputClass} ${filter.jenis !== 'semua' ? inputAktif : ''}`}>
-                {JENIS.map((j) => <option key={j.id} value={j.id}>{j.label}</option>)}
-              </select>
+                ariaLabel="Jenis absen"
+                className={`${KELAS_PILIHAN} w-full ${filter.jenis !== 'semua' ? inputAktif : ''}`}
+                options={JENIS.map((j) => ({ value: j.id, label: j.label }))}
+              />
             </div>
             <div>
               <label className={labelClass}>Status</label>
-              <select value={filter.status}
+              <Pilihan
+                value={filter.status}
                 onChange={(e) => setFilter({ ...filter, status: e.target.value })}
-                className={`${inputClass} ${filter.status ? inputAktif : ''}`}>
-                <option value="">Semua status</option>
-                <option value="hadir">Hadir</option>
-                <option value="terlambat">Hadir (Terlambat)</option>
-                <option value="izin">Izin</option>
-                <option value="alpha">Alpha</option>
-              </select>
+                ariaLabel="Status"
+                className={`${KELAS_PILIHAN} w-full ${filter.status ? inputAktif : ''}`}
+                options={[
+                  { value: '', label: 'Semua status' },
+                  { value: 'hadir', label: 'Hadir' },
+                  { value: 'terlambat', label: 'Hadir (Terlambat)' },
+                  { value: 'izin', label: 'Izin' },
+                  { value: 'alpha', label: 'Alpha' },
+                ]}
+              />
             </div>
           </div>
 
@@ -308,12 +319,16 @@ export default function AdminGallery() {
             <button onClick={resetFilter} className="text-xs font-semibold text-muted underline underline-offset-2 hover:text-body ml-1">
               Reset semua
             </button>
-            <select value={filter.sort}
+            <Pilihan
+              value={filter.sort}
               onChange={(e) => setFilter({ ...filter, sort: e.target.value })}
-              className="ml-auto text-xs bg-surface-2 border border-line rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500/40">
-              <option value="desc">Terbaru dulu</option>
-              <option value="asc">Terlama dulu</option>
-            </select>
+              ariaLabel="Urutan"
+              className="ml-auto text-xs bg-surface-2 border border-line rounded-lg px-2.5 py-1.5 w-36 focus:outline-none focus:ring-2 focus:ring-primary-500/40"
+              options={[
+                { value: 'desc', label: 'Terbaru dulu' },
+                { value: 'asc', label: 'Terlama dulu' },
+              ]}
+            />
           </div>
         </div>
 
@@ -354,7 +369,7 @@ export default function AdminGallery() {
               <div className="px-3.5 py-3 border-b border-line">
                 <div className="flex items-center gap-2.5">
                   <Avatar name={r.name} src={r.avatar_url} size={34} />
-                  <p className="text-sm font-semibold text-strong truncate leading-tight min-w-0">{r.name}</p>
+                  <p className="text-[17px] font-bold text-strong tracking-[-0.01em] truncate leading-tight min-w-0">{r.name}</p>
                 </div>
                 <div className="flex items-center justify-between gap-2 mt-2">
                   <span className="text-[11.5px] text-faint shrink-0">{formatTanggalHari(r.date)}</span>

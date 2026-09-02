@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../api/axios';
 import AdminSidebar from '../components/AdminSidebar';
+import Pilihan, { KELAS_PILIHAN } from '../components/Pilihan';
 import { useDialog } from '../components/Dialog';
 import { useAuthStore } from '../store/authStore';
 import { PlusIcon } from '../components/Icons';
@@ -104,7 +105,7 @@ export default function AdminUsers() {
       <div className="wadah-petak px-5 lg:px-8 py-7">
         <div className="flex justify-between items-center mb-6 gap-3">
           <div>
-            <h1 className="text-xl font-bold text-strong tracking-tight">Kelola Pengguna</h1>
+            <h1 className="text-[1.75rem] leading-tight font-extrabold text-strong tracking-[-0.02em]">Kelola Pengguna</h1>
             <p className="text-sm text-muted mt-0.5">{users.length} akun terdaftar</p>
           </div>
           <button
@@ -124,7 +125,7 @@ export default function AdminUsers() {
 
         {showForm && (
           <form onSubmit={handleCreate} className="kartu-kaca max-w-4xl p-5 mb-6 space-y-4">
-            <p className="text-sm font-semibold text-strong">Pengguna Baru</p>
+            <p className="text-[17px] font-bold text-strong tracking-[-0.01em]">Pengguna Baru</p>
             {error && (
               <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/15 border border-red-100 dark:border-red-500/30 rounded-xl px-4 py-2.5">
                 {error}
@@ -165,43 +166,51 @@ export default function AdminUsers() {
               </div>
               <div>
                 <label className={labelClass}>Role</label>
-                <select
+                <Pilihan
                   value={form.role}
                   onChange={(e) => setForm({ ...form, role: e.target.value })}
-                  className={`${inputClass} w-full`}
-                >
-                  <option value="staff">Pegawai</option>
-                  <option value="konsultan">Konsultan</option>
-                  <option value="admin">Admin (Dinas)</option>
-                </select>
+                  ariaLabel="Peran"
+                  className={`${KELAS_PILIHAN} w-full`}
+                  options={[
+                    { value: 'staff', label: 'Pegawai' },
+                    { value: 'konsultan', label: 'Konsultan' },
+                    { value: 'admin', label: 'Admin (Dinas)' },
+                  ]}
+                />
               </div>
               {form.role === 'staff' && (
                 <div className="sm:col-span-2">
                   <label className={labelClass}>Proyek penugasan</label>
-                  <select
+                  <Pilihan
                     value={form.project_id}
                     onChange={(e) => setForm({ ...form, project_id: e.target.value })}
-                    className={`${inputClass} w-full`}
-                  >
-                    <option value="">Belum ditugaskan</option>
-                    {projects.map((p) => (
-                      <option key={p.id} value={p.id}>{p.name}{p.location ? ` — ${p.location}` : ''}</option>
-                    ))}
-                  </select>
+                    ariaLabel="Proyek penugasan"
+                    className={`${KELAS_PILIHAN} w-full`}
+                    options={[
+                      { value: '', label: 'Belum ditugaskan' },
+                      ...projects.map((p) => ({
+                        value: p.id,
+                        label: `${p.name}${p.location ? ` — ${p.location}` : ''}`,
+                      })),
+                    ]}
+                  />
                 </div>
               )}
               <div className="sm:col-span-2">
                 <label className={labelClass}>Shift kerja</label>
-                <select
+                <Pilihan
                   value={form.shift_id}
                   onChange={(e) => setForm({ ...form, shift_id: e.target.value })}
-                  className={`${inputClass} w-full`}
-                >
-                  <option value="">Tanpa shift (batas telat default 08:00)</option>
-                  {shifts.map((s) => (
-                    <option key={s.id} value={s.id}>{s.name} ({s.start_time}–{s.end_time})</option>
-                  ))}
-                </select>
+                  ariaLabel="Shift kerja"
+                  className={`${KELAS_PILIHAN} w-full`}
+                  options={[
+                    { value: '', label: 'Tanpa shift (batas telat default 08:00)' },
+                    ...shifts.map((sh) => ({
+                      value: sh.id,
+                      label: `${sh.name} (${sh.start_time}–${sh.end_time})`,
+                    })),
+                  ]}
+                />
               </div>
             </div>
             <div className="flex gap-2">
@@ -254,38 +263,39 @@ export default function AdminUsers() {
                   ditunjuk sebagai penanggung jawab lewat halaman Proyek,
                   dan admin tidak absen sama sekali. */}
               {u.role === 'staff' ? (
-                <select
+                <Pilihan
                   value={u.project_id || ''}
                   onChange={(e) => changeProject(u, e.target.value)}
-                  aria-label={`Proyek untuk ${u.name}`}
+                  ariaLabel={`Proyek untuk ${u.name}`}
                   className={pilihanClass}
-                >
-                  <option value="">Belum ditugaskan</option>
-                  {projects.map((pr) => (
-                    <option key={pr.id} value={pr.id}>{pr.name}</option>
-                  ))}
-                  {/* Proyek yang sudah selesai tidak ada di daftar di atas;
-                      tanpa baris ini, penugasan lama tampil kosong seolah
-                      pegawainya tidak pernah ditugaskan. */}
-                  {u.project_id && !projects.some((pr) => pr.id === u.project_id) && (
-                    <option value={u.project_id}>{u.project_name} (selesai)</option>
-                  )}
-                </select>
+                  options={[
+                    { value: '', label: 'Belum ditugaskan' },
+                    ...projects.map((pr) => ({ value: pr.id, label: pr.name })),
+                    // Proyek yang sudah selesai tidak ada di daftar di atas;
+                    // tanpa baris ini, penugasan lama tampil kosong seolah
+                    // pegawainya tidak pernah ditugaskan.
+                    ...(u.project_id && !projects.some((pr) => pr.id === u.project_id)
+                      ? [{ value: u.project_id, label: `${u.project_name} (selesai)` }]
+                      : []),
+                  ]}
+                />
               ) : (
                 <span className="text-xs text-faint w-[9.5rem]">Tanpa proyek</span>
               )}
 
-              <select
+              <Pilihan
                 value={u.shift_id || ''}
                 onChange={(e) => changeShift(u, e.target.value)}
-                aria-label={`Shift untuk ${u.name}`}
+                ariaLabel={`Shift untuk ${u.name}`}
                 className={pilihanClass}
-              >
-                <option value="">Tanpa shift (08:00)</option>
-                {shifts.map((s) => (
-                  <option key={s.id} value={s.id}>{s.name} ({s.start_time}-{s.end_time})</option>
-                ))}
-              </select>
+                options={[
+                  { value: '', label: 'Tanpa shift (08:00)' },
+                  ...shifts.map((sh) => ({
+                    value: sh.id,
+                    label: `${sh.name} (${sh.start_time}-${sh.end_time})`,
+                  })),
+                ]}
+              />
 
               <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full ring-1 ring-inset whitespace-nowrap ${
                 u.is_active

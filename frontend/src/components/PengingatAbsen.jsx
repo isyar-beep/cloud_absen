@@ -93,7 +93,7 @@ export default function PengingatAbsen() {
           <span className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
             <ClockIcon className="w-4 h-4" />
           </span>
-          <p className="text-sm font-semibold text-strong">Pengingat Absen</p>
+          <p className="text-[17px] font-bold text-strong tracking-[-0.01em]">Pengingat Absen</p>
         </div>
         <button
           onClick={ambil}

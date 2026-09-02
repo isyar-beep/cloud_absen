@@ -43,10 +43,11 @@ export default {
         'on-ink': 'rgb(var(--c-on-ink) / <alpha-value>)',
       },
       fontFamily: {
-        // Manrope: geometris dan netral -- modern tanpa terasa main-main,
-        // dengan angka yang rapat sehingga kolom jam terbaca tenang. Muka
-        // huruf bawaan sistem sengaja dihindari karena dipakai di mana-mana.
-        sans: ['Manrope', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        // Inter, disamakan dengan berkas rancangan yang jadi rujukan.
+        // Dirancang khusus untuk antarmuka layar: tinggi-x besar sehingga
+        // teks kecil tetap terbaca, dan angkanya rapat sehingga kolom jam
+        // terbaca tenang.
+        sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
       },
       boxShadow: {
         soft: 'var(--shadow-soft)',

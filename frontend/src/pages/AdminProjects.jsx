@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import api from '../api/axios';
 import AdminSidebar from '../components/AdminSidebar';
+import Pilihan, { KELAS_PILIHAN } from '../components/Pilihan';
 import { useDialog } from '../components/Dialog';
 import { useAuthStore } from '../store/authStore';
 import { BriefcaseIcon, PlusIcon, UsersIcon, CheckBadgeIcon, AlertIcon } from '../components/Icons';
@@ -146,7 +147,7 @@ export default function AdminProjects() {
       <div className="wadah-petak px-5 lg:px-8 py-7">
         <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
           <div>
-            <h1 className="text-xl font-bold text-strong tracking-tight">Proyek</h1>
+            <h1 className="text-[1.75rem] leading-tight font-extrabold text-strong tracking-[-0.02em]">Proyek</h1>
             <p className="text-sm text-muted mt-0.5">
               {adminPenuh
                 ? 'Setiap proyek punya penanggung jawab dan pegawainya sendiri'
@@ -208,7 +209,7 @@ export default function AdminProjects() {
         {/* Form tambah / ubah */}
         {formTampil && adminPenuh && (
           <form onSubmit={simpan} className="kartu-kaca max-w-4xl p-5 mb-6">
-            <p className="text-sm font-semibold text-strong mb-4">
+            <p className="text-[17px] font-bold text-strong tracking-[-0.01em] mb-4">
               {sedangUbah ? `Ubah proyek: ${sedangUbah.name}` : 'Proyek baru'}
             </p>
             <div className="grid sm:grid-cols-2 gap-3.5">
@@ -233,14 +234,16 @@ export default function AdminProjects() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-muted mb-1.5">Konsultan penanggung jawab</label>
-                <select
+                <Pilihan
                   value={form.consultant_id}
                   onChange={(e) => setForm({ ...form, consultant_id: e.target.value })}
+                  ariaLabel="Penanggung jawab"
                   className="w-full text-sm bg-surface-2 border border-line rounded-xl px-3 h-10 text-strong outline-none focus:border-primary-500 transition"
-                >
-                  <option value="">Belum ditunjuk</option>
-                  {konsultan.map((k) => <option key={k.id} value={k.id}>{k.name}</option>)}
-                </select>
+                  options={[
+                    { value: '', label: 'Belum ditunjuk' },
+                    ...konsultan.map((k) => ({ value: k.id, label: k.name })),
+                  ]}
+                />
                 {konsultan.length === 0 && (
                   <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-1.5">
                     Belum ada akun berperan konsultan. Buat dulu di menu Pengguna.
@@ -266,14 +269,16 @@ export default function AdminProjects() {
               {sedangUbah && (
                 <div>
                   <label className="block text-xs font-medium text-muted mb-1.5">Status</label>
-                  <select
+                  <Pilihan
                     value={form.status}
                     onChange={(e) => setForm({ ...form, status: e.target.value })}
+                    ariaLabel="Status proyek"
                     className="w-full text-sm bg-surface-2 border border-line rounded-xl px-3 h-10 text-strong outline-none focus:border-primary-500 transition"
-                  >
-                    <option value="berjalan">Berjalan</option>
-                    <option value="selesai">Selesai</option>
-                  </select>
+                    options={[
+                      { value: 'berjalan', label: 'Berjalan' },
+                      { value: 'selesai', label: 'Selesai' },
+                    ]}
+                  />
                 </div>
               )}
             </div>

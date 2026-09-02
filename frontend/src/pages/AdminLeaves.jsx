@@ -65,7 +65,7 @@ export default function AdminLeaves() {
 
       <div className="wadah-petak px-5 lg:px-8 py-7">
         <div className="mb-5">
-          <h1 className="text-xl font-bold text-strong tracking-tight">Pengajuan Pegawai</h1>
+          <h1 className="text-[1.75rem] leading-tight font-extrabold text-strong tracking-[-0.02em]">Pengajuan Pegawai</h1>
           <p className="text-sm text-muted mt-0.5">
             {tab === 'izin'
               ? 'Review pengajuan izin, sakit, dan cuti dari pegawai'
@@ -148,7 +148,7 @@ export default function AdminLeaves() {
                 <div className="flex items-center gap-2.5 min-w-0">
                   <Avatar name={item.name} src={item.avatar_url} size={34} />
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-strong truncate">{item.name}</p>
+                    <p className="text-[17px] font-bold text-strong tracking-[-0.01em] truncate">{item.name}</p>
                     <p className="text-xs text-faint">{item.project_name || '—'}</p>
                   </div>
                 </div>

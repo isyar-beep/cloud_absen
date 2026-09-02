@@ -9,6 +9,7 @@ import {
 } from '../components/Icons';
 import Avatar from '../components/Avatar';
 import PengingatAbsen from '../components/PengingatAbsen';
+import Pilihan, { KELAS_PILIHAN } from '../components/Pilihan';
 import { tanggalIso } from '../utils/tanggal';
 
 // Batas "Perlu Perhatian", disamakan dengan ambang di server
@@ -183,7 +184,7 @@ export default function AdminDashboard() {
 
       <div className="wadah-petak px-5 lg:px-8 py-7">
         <div className="mb-6">
-          <h1 className="text-xl font-bold text-strong tracking-tight">Dashboard</h1>
+          <h1 className="text-[1.75rem] leading-tight font-extrabold text-strong tracking-[-0.02em]">Dashboard</h1>
           <p className="text-sm text-muted mt-0.5">
             {new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
@@ -227,7 +228,7 @@ export default function AdminDashboard() {
               <DownloadIcon className="w-5 h-5" />
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-strong">Ekspor Laporan Bulanan</p>
+              <p className="text-[17px] font-bold text-strong tracking-[-0.01em]">Ekspor Laporan Bulanan</p>
               <p className="text-xs text-muted truncate">
                 {reportPeriod.project_id
                   ? 'Rekap & bukti kehadiran satu proyek'
@@ -242,37 +243,34 @@ export default function AdminDashboard() {
                 kemampuannya ada, pintunya belum dibuka. Padahal laporan per
                 proyek justru berkas pertanggungjawaban ke pemberi kerja. */}
             {projects.length > 0 && (
-              <select
+              <Pilihan
                 value={reportPeriod.project_id}
                 onChange={(e) => setReportPeriod({ ...reportPeriod, project_id: e.target.value })}
-                aria-label="Proyek untuk laporan"
-                className="px-3 py-2 bg-surface-2 border border-line rounded-xl text-sm transition focus:outline-none focus:bg-surface/75 backdrop-blur-xl focus:ring-2 focus:ring-primary-500/40"
-              >
-                <option value="">Semua proyek</option>
-                {projects.map((pr) => (
-                  <option key={pr.id} value={pr.id}>{pr.name}</option>
-                ))}
-              </select>
+                ariaLabel="Proyek untuk laporan"
+                className={`${KELAS_PILIHAN} w-44`}
+                options={[
+                  { value: '', label: 'Semua proyek' },
+                  ...projects.map((pr) => ({ value: pr.id, label: pr.name })),
+                ]}
+              />
             )}
-            <select
+            <Pilihan
               value={reportPeriod.month}
               onChange={(e) => setReportPeriod({ ...reportPeriod, month: Number(e.target.value) })}
-              className="px-3 py-2 bg-surface-2 border border-line rounded-xl text-sm transition focus:outline-none focus:bg-surface/75 backdrop-blur-xl focus:ring-2 focus:ring-primary-500/40"
-            >
-              {namaBulan.map((nama, i) => (
-                <option key={nama} value={i + 1}>{nama}</option>
-              ))}
-            </select>
-            <select
+              ariaLabel="Bulan laporan"
+              className={`${KELAS_PILIHAN} w-36`}
+              options={namaBulan.map((nama, i) => ({ value: i + 1, label: nama }))}
+            />
+            <Pilihan
               value={reportPeriod.year}
               onChange={(e) => setReportPeriod({ ...reportPeriod, year: Number(e.target.value) })}
-              className="px-3 py-2 bg-surface-2 border border-line rounded-xl text-sm transition focus:outline-none focus:bg-surface/75 backdrop-blur-xl focus:ring-2 focus:ring-primary-500/40"
-            >
-              {[0, 1, 2].map((offset) => {
-                const tahun = new Date().getFullYear() - offset;
-                return <option key={tahun} value={tahun}>{tahun}</option>;
+              ariaLabel="Tahun laporan"
+              className={`${KELAS_PILIHAN} w-24`}
+              options={[0, 1, 2].map((o) => {
+                const tahun = new Date().getFullYear() - o;
+                return { value: tahun, label: String(tahun) };
               })}
-            </select>
+            />
             <button
               onClick={() => downloadReport('excel')}
               disabled={!!downloading}
@@ -293,7 +291,7 @@ export default function AdminDashboard() {
         {/* Tindakan admin: normalnya dijalankan terjadwal lewat cron di server,
             tombol ini untuk menjalankan manual / keperluan demo */}
         <div className="kartu-kaca p-5 mb-6">
-          <p className="text-sm font-semibold text-strong">Tindakan Admin</p>
+          <p className="text-[17px] font-bold text-strong tracking-[-0.01em]">Tindakan Admin</p>
           <p className="text-xs text-muted mt-0.5">
             Penandaan alpha berjalan otomatis terjadwal di server tiap dini hari.
             Untuk mengoreksi satu catatan absensi, buka menu Riwayat lalu klik Koreksi.
@@ -313,7 +311,7 @@ export default function AdminDashboard() {
         {projects.length > 0 && (
           <div className="kartu-kaca overflow-hidden mb-6">
             <div className="flex items-center justify-between px-5 pt-4 pb-3">
-              <p className="text-sm font-semibold text-strong">Keadaan per Proyek</p>
+              <p className="text-[17px] font-bold text-strong tracking-[-0.01em]">Keadaan per Proyek</p>
               <Link
                 to="/admin/projects"
                 className="text-xs text-primary-600 dark:text-primary-400 font-semibold hover:underline"
@@ -368,7 +366,7 @@ export default function AdminDashboard() {
           {/* Real-time board */}
           <div className="kartu-kaca overflow-hidden">
             <div className="flex items-center justify-between px-5 pt-4 pb-2">
-              <p className="text-sm font-semibold text-strong">Status Absensi Hari Ini</p>
+              <p className="text-[17px] font-bold text-strong tracking-[-0.01em]">Status Absensi Hari Ini</p>
               <span className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-medium">
                 <span className="relative flex w-2 h-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
@@ -411,7 +409,7 @@ export default function AdminDashboard() {
                 menghilangkan tombol kirim peringatan. */}
             {cukupUntukPeringkat && (
             <div className="kartu-kaca p-5">
-              <p className="text-sm font-semibold text-strong mb-4">Kehadiran Terbaik</p>
+              <p className="text-[17px] font-bold text-strong tracking-[-0.01em] mb-4">Kehadiran Terbaik</p>
               <div className="space-y-3">
                 {ranking.top_performers.map((r, i) => (
                   <div key={r.id} className="flex items-center gap-3">
@@ -441,7 +439,7 @@ export default function AdminDashboard() {
 
             <div className="kartu-kaca p-5">
               <div className="flex items-baseline justify-between gap-2 mb-4">
-                <p className="text-sm font-semibold text-strong">Perlu Perhatian</p>
+                <p className="text-[17px] font-bold text-strong tracking-[-0.01em]">Perlu Perhatian</p>
                 {/* Ambangnya ditulis di layar. Tanpa itu, admin melihat nama
                     muncul di sini tanpa tahu batasnya berapa. */}
                 <span className="text-[11px] text-faint">di bawah {AMBANG_BERISIKO}%</span>

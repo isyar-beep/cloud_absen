@@ -204,7 +204,7 @@ export default function Dashboard() {
         {/* Trend Chart */}
         {trend.length > 0 && (
           <div className="kartu-kaca p-5 mb-5">
-            <p className="text-sm font-semibold text-strong mb-4">Jam Kerja 30 Hari Terakhir</p>
+            <p className="text-[17px] font-bold text-strong tracking-[-0.01em] mb-4">Jam Kerja 30 Hari Terakhir</p>
             <ResponsiveContainer width="100%" height={170}>
               <AreaChart data={trend} margin={{ top: 4, right: 4, left: -18, bottom: 0 }}>
                 <defs>
@@ -228,7 +228,7 @@ export default function Dashboard() {
         {/* Riwayat terbaru */}
         <div className="kartu-kaca overflow-hidden">
           <div className="flex justify-between items-center px-5 pt-4 pb-2">
-            <p className="text-sm font-semibold text-strong">Riwayat Terbaru</p>
+            <p className="text-[17px] font-bold text-strong tracking-[-0.01em]">Riwayat Terbaru</p>
             <button
               onClick={() => navigate('/history')}
               className="text-xs text-primary-600 dark:text-primary-400 font-semibold hover:text-primary-700 dark:hover:text-primary-300 dark:text-primary-300 transition"
