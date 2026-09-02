@@ -313,8 +313,8 @@ export default function AdminShifts() {
           </form>
         )}
 
-        <div className="kartu-kaca overflow-x-auto p-4">
-          <table className="tabel-pil text-sm">
+        <div className="kartu-kaca p-4 overflow-x-auto">
+          <table className="tabel-pil text-sm hidden xl:table">
             <thead>
               <tr>
                 <th>Shift</th>
@@ -358,6 +358,37 @@ export default function AdminShifts() {
               )}
             </tbody>
           </table>
+
+          {/* Enam kolom tidak muat di layar sempit; barisnya dilipat jadi
+              kartu, sama seperti Riwayat dan Kelola Pengguna. */}
+          <div className="xl:hidden space-y-2">
+            {shifts.map((s) => (
+              <div key={s.id} className="baris-pil px-4 py-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-strong">{s.name}</p>
+                    <p className="text-xs text-body tabular-nums mt-0.5">
+                      {s.start_time} — {s.end_time}
+                      {s.lintas_hari && <span className="text-violet-600 dark:text-violet-400 ml-1.5">+1 hari</span>}
+                    </p>
+                    <p className="text-xs text-muted mt-0.5">{s.hari_kerja_teks} · {s.jumlah_pegawai} orang</p>
+                  </div>
+                  <div className="flex gap-3 shrink-0">
+                    <button onClick={() => openEditForm(s)} className="text-xs font-semibold text-primary-600 dark:text-primary-400">Edit</button>
+                    <button onClick={() => handleDelete(s)} className="text-xs font-semibold text-red-600 dark:text-red-400">Hapus</button>
+                  </div>
+                </div>
+                <p className="text-[11px] text-muted tabular-nums mt-2">
+                  Masuk {geserJam(s.start_time, -s.checkin_open_minutes)}–{geserJam(s.start_time, s.checkin_close_minutes)}
+                  {' · '}
+                  Pulang {geserJam(s.end_time, -s.checkout_open_minutes)}–{geserJam(s.end_time, s.checkout_close_minutes)}
+                </p>
+              </div>
+            ))}
+            {shifts.length === 0 && (
+              <p className="text-sm text-muted text-center py-8">Belum ada shift. Tambahkan shift pertama.</p>
+            )}
+          </div>
         </div>
         </>
         )}

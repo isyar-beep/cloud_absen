@@ -5,7 +5,6 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useWarna, LENGKUNG } from '../theme';
-import LatarKaca from '../components/LatarKaca';
 import PilihTema from '../components/PilihTema';
 import api from '../services/api';
 import { useAuthStore } from '../store/authStore';
@@ -43,7 +42,6 @@ export default function LoginScreen({ navigation }) {
     // menutupi kolom password dan pegawai mengetik tanpa bisa melihat apa
     // yang diketiknya. Di Android 'height' bekerja lebih andal daripada
     // 'padding', yang justru dipakai iOS.
-    <LatarKaca>
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -109,13 +107,11 @@ export default function LoginScreen({ navigation }) {
         </Text>
       </ScrollView>
     </KeyboardAvoidingView>
-    </LatarKaca>
   );
 }
 
 const buatGaya = (w) => StyleSheet.create({
-  // Tembus: latarnya digambar LatarKaca di belakang.
-  container: { flex: 1, backgroundColor: 'transparent' },
+  container: { flex: 1, backgroundColor: w.latar },
   isi: { flexGrow: 1, justifyContent: 'center', padding: 24 },
   logo: {
     width: 68, height: 68, borderRadius: 20, backgroundColor: w.utama,

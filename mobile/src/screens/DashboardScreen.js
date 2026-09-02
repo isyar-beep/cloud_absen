@@ -4,7 +4,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useWarna, LENGKUNG } from '../theme';
-import LatarKaca from '../components/LatarKaca';
+import Gradasi from '../components/Gradasi';
 import Avatar from '../components/Avatar';
 import { useTokenFoto } from '../services/fotoUrl';
 import api from '../services/api';
@@ -150,7 +150,6 @@ export default function DashboardScreen({ navigation }) {
   });
 
   return (
-    <LatarKaca>
     <ScrollView
       style={styles.container}
       contentContainerStyle={{ paddingBottom: 28 }}
@@ -161,7 +160,11 @@ export default function DashboardScreen({ navigation }) {
           menyelinap ke bawah jam dan ikon sinyal, dan tombol di pojok
           berhimpitan dengan area tarik-turun notifikasi -- menekannya
           justru membuka panel notifikasi HP. */}
-      <View style={[styles.hero, { paddingTop: insets.top + 14 }]}>
+      <Gradasi
+        atas={w.heroAtas}
+        bawah={w.heroBawah}
+        style={[styles.hero, { paddingTop: insets.top + 14 }]}
+      >
         <View style={styles.heroRow}>
           <View style={styles.heroTeks}>
             <Text style={styles.heroTanggal}>{tanggalHariIni}</Text>
@@ -194,7 +197,7 @@ export default function DashboardScreen({ navigation }) {
             <Avatar nama={user?.name} url={user?.avatar_url} token={tokenFoto} ukuran={40} />
           </TouchableOpacity>
         </View>
-      </View>
+      </Gradasi>
 
       <View style={styles.isi}>
         {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -388,17 +391,13 @@ export default function DashboardScreen({ navigation }) {
 
       </View>
     </ScrollView>
-    </LatarKaca>
   );
 }
 
 const buatGaya = (w) => StyleSheet.create({
-  // SENGAJA tembus: latarnya kini digambar LatarKaca di belakang. Kalau
-  // ScrollView punya latar sendiri, ia menutupi noda cahayanya -- persis
-  // masalah body::before yang dulu terjadi di web.
-  container: { flex: 1, backgroundColor: 'transparent' },
+  container: { flex: 1, backgroundColor: w.latar },
 
-  hero: { backgroundColor: w.utama, paddingBottom: 56, paddingHorizontal: 16 },
+  hero: { paddingBottom: 56, paddingHorizontal: 16, overflow: 'hidden' },
   heroRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
   heroTeks: { flex: 1 },
   heroTanggal: { fontSize: 12, color: 'rgba(255,255,255,0.85)' },

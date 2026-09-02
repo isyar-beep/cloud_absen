@@ -28,10 +28,10 @@ const TERANG = {
   // mode gelap menyala.
   teksDiWarna: '#ffffff',
 
-  // Diberi rona biru, disamakan dengan kanvas web. Inilah separuh sebab
-  // permukaan kaca terbaca sebagai kaca: kalau latarnya nyaris putih,
-  // tidak ada warna yang bisa menembus kartu.
-  latar: '#e6effa',
+  // Nyaris putih. Di layar segenggam, latar berwarna membuat isi terasa
+  // ramai -- yang di layar lebar terbaca sebagai kedalaman, di sini justru
+  // bersaing dengan kartunya sendiri.
+  latar: '#f5f7fb',
   permukaan: '#ffffff',
   permukaan2: '#f6f8fc',
   permukaan3: '#edf1f8',
@@ -84,22 +84,17 @@ const TERANG = {
   titikMati: '#d1d5db',
   titikSelesai: '#2563eb',
 
-  // --- Permukaan kaca ---------------------------------------------
-  // React Native tidak punya backdrop-filter, jadi blur sungguhan hanya
-  // mungkin lewat BlurView. Tapi di layar selebar 390px kartu nyaris
-  // memenuhi layar, sehingga hampir tidak ada latar tersisa untuk
-  // ditembus -- bagian yang paling berisiko justru yang paling sedikit
-  // memberi hasil. Yang dipakai di sini permukaan semi-transparan di
-  // atas latar bernoda warna: itu yang menghasilkan hampir seluruh
-  // kesannya, tanpa biaya gambar sama sekali.
-  kaca: 'rgba(255,255,255,0.55)',
-  kacaGaris: 'rgba(255,255,255,0.75)',
-  kacaPekat: 'rgba(255,255,255,0.88)',
+  // --- Permukaan kartu ---------------------------------------------
+  // PUTIH PADAT, bukan semi-transparan. Ketembusan hanya berguna kalau
+  // ada warna di belakangnya; setelah latar dibuat polos, permukaan
+  // tembus cuma membuat kartunya tampak kotor tanpa memberi apa pun.
+  kaca: '#ffffff',
+  kacaGaris: '#e8edf5',
+  kacaPekat: '#ffffff',
 
-  // Dua noda cahaya di latar, sama seperti web: biru kiri-atas, ungu
-  // kanan-bawah.
-  nodaBiru: 'rgba(59,130,246,0.45)',
-  nodaUngu: 'rgba(167,139,250,0.38)',
+  // Kepala layar. Dua ujung gradasi -- lihat components/Gradasi.js.
+  heroAtas: [79, 141, 245],
+  heroBawah: [147, 189, 250],
 };
 
 const GELAP = {
@@ -154,14 +149,14 @@ const GELAP = {
   titikMati: '#475873',
   titikSelesai: '#60a5fa',
 
-  kaca: 'rgba(25,32,48,0.62)',
-  kacaGaris: 'rgba(255,255,255,0.10)',
-  kacaPekat: 'rgba(25,32,48,0.90)',
+  kaca: '#192030',
+  kacaGaris: '#2a3448',
+  kacaPekat: '#192030',
 
-  // Lebih rendah daripada mode terang: di latar gelap, warna yang sama
-  // terbaca jauh lebih menyala karena tidak ada yang meredamnya.
-  nodaBiru: 'rgba(59,130,246,0.30)',
-  nodaUngu: 'rgba(167,139,250,0.24)',
+  // Lebih pekat daripada mode terang: di latar gelap, biru muda terbaca
+  // jauh lebih menyala karena tidak ada yang meredamnya.
+  heroAtas: [30, 64, 145],
+  heroBawah: [37, 87, 171],
 };
 
 const KUNCI = 'cloud_absen_tema';

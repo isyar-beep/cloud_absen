@@ -307,12 +307,12 @@ export default function AdminGallery() {
 
           <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-line">
             <span className="text-xs text-faint">Filter aktif</span>
-            <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-primary-50 dark:bg-primary-500/15 text-primary-700 dark:text-primary-300 border border-primary-100 dark:border-primary-500/30">
+            <span className="inline-flex flex-wrap items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-primary-50 dark:bg-primary-500/15 text-primary-700 dark:text-primary-300 border border-primary-100 dark:border-primary-500/30">
               {formatTanggalHari(filter.start_date)} – {formatTanggalHari(filter.end_date)}
             </span>
             {chips.map((c) => (
               <button key={c.teks} onClick={c.bersih}
-                className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-primary-50 dark:bg-primary-500/15 text-primary-700 dark:text-primary-300 border border-primary-100 dark:border-primary-500/30 hover:bg-primary-100 dark:bg-primary-500/20 transition">
+                className="inline-flex flex-wrap items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-primary-50 dark:bg-primary-500/15 text-primary-700 dark:text-primary-300 border border-primary-100 dark:border-primary-500/30 hover:bg-primary-100 dark:bg-primary-500/20 transition">
                 {c.teks} <span className="text-primary-400">✕</span>
               </button>
             ))}
@@ -371,12 +371,17 @@ export default function AdminGallery() {
                   <Avatar name={r.name} src={r.avatar_url} size={34} />
                   <p className="text-[17px] font-bold text-strong tracking-[-0.01em] truncate leading-tight min-w-0">{r.name}</p>
                 </div>
-                <div className="flex items-center justify-between gap-2 mt-2">
+                {/* Boleh melipat. Tanggal dan lencana sama-sama shrink-0
+                    supaya tulisannya tidak terpotong -- tapi kalau barisnya
+                    juga tidak boleh melipat, keduanya meluber keluar kartu
+                    di layar 360px. Melipat ke baris kedua jauh lebih baik
+                    daripada meluber. */}
+                <div className="flex flex-wrap items-center justify-between gap-2 mt-2">
                   <span className="text-[11.5px] text-faint shrink-0">{formatTanggalHari(r.date)}</span>
                   {/* WFA di luar percabangan: hari yang absen pulangnya kosong
                       tetap perlu terlihat WFA-nya, karena justru hari seperti
                       itulah yang biasanya ditelusuri admin. */}
-                  <span className="flex items-center gap-1.5 shrink-0">
+                  <span className="flex flex-wrap items-center gap-1.5">
                     <WfaBadge mode={r.work_mode} />
                     {/* Sebelumnya lencana status DIGANTI oleh tanda "Pulang
                         kosong", sehingga pegawai yang terlambat sekaligus

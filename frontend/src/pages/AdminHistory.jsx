@@ -184,8 +184,8 @@ export default function AdminHistory() {
         )}
 
         {/* Tabel riwayat */}
-        <div className="kartu-kaca overflow-x-auto p-4">
-          <table className="tabel-pil text-sm">
+        <div className="kartu-kaca p-4 overflow-x-auto">
+          <table className="tabel-pil text-sm hidden xl:table">
             <thead>
               <tr>
                 <th>Tanggal</th>
@@ -249,6 +249,54 @@ export default function AdminHistory() {
               ))}
             </tbody>
           </table>
+
+          {/* Di bawah lg, delapan kolom tidak muat dan tabel harus digeser ke
+              samping untuk dibaca. Yang sama sudah ditolak pada Kelola
+              Pengguna, jadi di sini pun barisnya dilipat jadi kartu: seluruh
+              keterangan satu hari berdiri sendiri, tanpa ada yang tersembunyi
+              di luar layar. */}
+          <div className="xl:hidden space-y-2">
+            {items.map((item) => (
+              <div key={item.id} className="baris-pil px-4 py-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-strong truncate">{item.name}</p>
+                    <p className="text-xs text-muted">{formatTanggal(item.date)}</p>
+                    {item.project_name && (
+                      <p className="text-[11px] text-faint truncate">{item.project_name}</p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setEdit(item)}
+                    className="text-xs font-semibold text-primary-600 dark:text-primary-400 shrink-0"
+                  >
+                    Koreksi
+                  </button>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
+                  <StatusBadge status={item.status} kurang={item.kurang} />
+                  <WfaBadge mode={item.work_mode} />
+                </div>
+
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2.5 text-xs text-muted">
+                  <span>Masuk <b className="text-body font-semibold">{formatJam(item.check_in_time)}</b></span>
+                  <span>Pulang <b className="text-body font-semibold">{formatJam(item.check_out_time)}</b></span>
+                  <Koordinat latitude={item.latitude} longitude={item.longitude} />
+                  {item.photo_in_url && (
+                    <a href={urlFoto(item.photo_in_url, tokenFoto)} target="_blank" rel="noreferrer" className="text-primary-600 dark:text-primary-400 font-medium">
+                      Foto masuk
+                    </a>
+                  )}
+                  {item.photo_out_url && (
+                    <a href={urlFoto(item.photo_out_url, tokenFoto)} target="_blank" rel="noreferrer" className="text-primary-600 dark:text-primary-400 font-medium">
+                      Foto pulang
+                    </a>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
 
           {loading && items.length === 0 && <KerangkaTabel baris={6} kolom={5} />}
 

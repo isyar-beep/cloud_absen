@@ -97,7 +97,7 @@ export default function AdminUsers() {
     'px-3.5 py-2.5 bg-surface-2 border border-line rounded-xl text-sm transition focus:outline-none focus:bg-surface/75 backdrop-blur-xl focus:ring-2 focus:ring-primary-500/40 focus:border-primary-300';
   const labelClass = 'block text-xs font-medium text-muted mb-1.5';
   const pilihanClass =
-    'w-[9.5rem] shrink-0 text-xs bg-surface-2 border border-line rounded-lg px-2 py-1.5 text-body focus:outline-none focus:ring-2 focus:ring-primary-500/40';
+    'w-full text-xs bg-surface-2 border border-line rounded-lg px-2 py-1.5 text-body focus:outline-none focus:ring-2 focus:ring-primary-500/40';
 
   return (
     <div className="min-h-screen transition-[padding] duration-200 lg:pl-[var(--lebar-sidebar)]">
@@ -250,15 +250,23 @@ export default function AdminUsers() {
                 </div>
               </div>
 
-              <span className={`text-xs font-medium px-2.5 py-1 rounded-full ring-1 ring-inset whitespace-nowrap ${
-                WARNA_PERAN[u.role] || WARNA_PERAN.staff
-              }`}>
-                {namaPeran(u.role)}
-              </span>
+              {/* Tiap kolom duduk di WADAH berlebar tetap, bukan mengikuti
+                  lebar isinya. Lencana peran panjangnya berbeda-beda
+                  ("Dinas" jauh lebih pendek daripada "Konsultan"), dan
+                  tanpa wadah tetap seluruh kolom sesudahnya ikut bergeser
+                  baris demi baris -- yang terbaca sebagai daftar miring. */}
+              <div className="w-[5.5rem] shrink-0">
+                <span className={`inline-block text-xs font-medium px-2.5 py-1 rounded-full ring-1 ring-inset whitespace-nowrap ${
+                  WARNA_PERAN[u.role] || WARNA_PERAN.staff
+                }`}>
+                  {namaPeran(u.role)}
+                </span>
+              </div>
 
               {/* Penugasan proyek hanya bermakna untuk pegawai. Konsultan
                   ditunjuk sebagai penanggung jawab lewat halaman Proyek,
                   dan admin tidak absen sama sekali. */}
+              <div className="w-[9.5rem] shrink-0">
               {u.role === 'staff' ? (
                 <Pilihan
                   value={u.project_id || ''}
@@ -277,9 +285,11 @@ export default function AdminUsers() {
                   ]}
                 />
               ) : (
-                <span className="text-xs text-faint w-[9.5rem]">Tanpa proyek</span>
+                <span className="text-xs text-faint">Tanpa proyek</span>
               )}
+              </div>
 
+              <div className="w-[9.5rem] shrink-0">
               <Pilihan
                 value={u.shift_id || ''}
                 onChange={(e) => changeShift(u, e.target.value)}
@@ -293,7 +303,9 @@ export default function AdminUsers() {
                   })),
                 ]}
               />
+              </div>
 
+              <div className="w-[5.5rem] shrink-0">
               <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full ring-1 ring-inset whitespace-nowrap ${
                 u.is_active
                   ? 'bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 ring-emerald-600/20'
@@ -302,6 +314,7 @@ export default function AdminUsers() {
                 <span className={`w-1.5 h-1.5 rounded-full ${u.is_active ? 'bg-emerald-500' : 'bg-faint'}`} />
                 {u.is_active ? 'Aktif' : 'Nonaktif'}
               </span>
+              </div>
 
               {/* Baris akun sendiri tidak menawarkan tombolnya. Server juga
                   menolak, tapi menawarkan tombol yang pasti gagal hanya
