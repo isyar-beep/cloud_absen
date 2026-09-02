@@ -235,11 +235,11 @@ export default function AdminUsers() {
             paling sering tidak terlihat. Sekarang tiap akun jadi satu baris
             kartu yang melipat sendiri saat layarnya sempit, jadi tidak ada
             lagi isi yang tersembunyi di luar layar. */}
-        <div className="kartu-kaca divide-y divide-line">
+        <div className="kartu-kaca daftar-pil">
           {users.map((u) => (
             <div
               key={u.id}
-              className="flex flex-wrap items-center gap-x-4 gap-y-3 px-4 py-3.5 hover:bg-surface-2/50 transition"
+              className="baris-pil flex flex-wrap items-center gap-x-4 gap-y-3 px-4 py-3.5"
             >
               {/* Identitas -- melebar mengisi sisa ruang */}
               <div className="flex items-center gap-3 min-w-[12rem] flex-1">

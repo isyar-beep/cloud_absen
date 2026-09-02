@@ -326,9 +326,9 @@ export default function AdminDashboard() {
                 Kelola proyek →
               </Link>
             </div>
-            <div className="divide-y divide-line border-t border-line">
+            <div className="daftar-pil">
               {projects.map((pr) => (
-                <div key={pr.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-3.5">
+                <div key={pr.id} className="baris-pil flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3.5">
                   <div className="min-w-[11rem] flex-1">
                     <p className="text-sm font-medium text-strong truncate leading-tight">{pr.name}</p>
                     <p className="text-[11.5px] text-muted truncate">
@@ -384,9 +384,9 @@ export default function AdminDashboard() {
                 Live
               </span>
             </div>
-            <div className="max-h-[26rem] overflow-y-auto">
+            <div className="max-h-[26rem] overflow-y-auto daftar-pil">
               {todayAll.map((item) => (
-                <div key={item.user_id} className="flex items-center gap-3 px-5 py-3 border-t border-line hover:bg-surface-2/60 transition">
+                <div key={item.user_id} className="baris-pil flex items-center gap-3 px-4 py-3">
                   <Avatar name={item.name} src={item.avatar_url} />
                   <div className="min-w-0 mr-auto">
                     <p className="text-sm font-medium text-strong truncate">{item.name}</p>

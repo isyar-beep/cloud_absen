@@ -249,9 +249,12 @@ export default function AdminStats() {
 
           {/* Ringkasan angka */}
           {!loading && !error && adaData && ringkasan && (
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-px bg-surface-3 border-y border-line">
+            // Ubin terpisah, bukan lajur yang dipisah garis rambut. Di mode
+            // gelap garis serambut nyaris lenyap dan kelimanya menyatu jadi
+            // satu blok panjang tanpa bentuk.
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 px-3 pb-3">
               {KATEGORI.map((key) => (
-                <div key={key} className="bg-surface/75 backdrop-blur-xl px-4 py-3">
+                <div key={key} className="ubin-angka !text-left px-4">
                   <div className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: WARNA[key] }} />
                     <p className="text-xs text-muted truncate">{LABEL[key]}</p>
@@ -259,7 +262,7 @@ export default function AdminStats() {
                   <p className="text-lg font-bold text-strong mt-0.5 tabular-nums">{ringkasan[key]}</p>
                 </div>
               ))}
-              <div className="bg-surface/75 backdrop-blur-xl px-4 py-3 col-span-2 sm:col-span-1">
+              <div className="ubin-angka !text-left px-4 col-span-2 sm:col-span-1">
                 <p className="text-xs text-muted">Tingkat Kehadiran</p>
                 <p className="text-lg font-bold text-primary-600 dark:text-primary-400 mt-0.5 tabular-nums">{ringkasan.attendance_rate}%</p>
               </div>

@@ -312,6 +312,56 @@ body::before {
   }
 }
 
+
+/* ============================================================
+   Daftar baris-pil untuk daftar yang dibangun dari <div>.
+   ------------------------------------------------------------
+   Saudara kandung .tabel-pil, dengan alasan yang sama persis --
+   dan dipisahkan hanya karena <table> memerlukan border-spacing
+   sedangkan susunan <div> memakai gap.
+
+   Garis pemisah setipis rambut cukup di mode terang, tapi di mode
+   gelap ia nyaris lenyap: yang tersisa cuma deretan teks tanpa
+   bentuk. Pil tetap punya badan di kedua tema, dan mata membaca
+   satu baris sebagai satu benda utuh -- itu yang membuat kolom
+   paling kanan tetap terbaca milik nama di kiri.
+   ============================================================ */
+.daftar-pil {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+}
+
+.baris-pil {
+  background-color: rgb(var(--c-surface) / 0.55);
+  border-radius: 0.9rem;
+  transition: background-color 160ms ease;
+}
+.baris-pil:hover {
+  background-color: rgb(var(--c-surface) / 0.92);
+}
+.dark .baris-pil {
+  background-color: rgb(var(--c-surface-2) / 0.6);
+}
+.dark .baris-pil:hover {
+  background-color: rgb(var(--c-surface-2) / 0.95);
+}
+
+/* Deretan angka ringkasan (mis. Hadir / Izin / Alpha / Belum absen).
+   Sebelumnya dipisah garis rambut lewat `gap-px bg-surface-3`, yang di
+   mode gelap membuat keempatnya menyatu jadi satu blok panjang. Sebagai
+   ubin terpisah, tiap angka punya wadahnya sendiri. */
+.ubin-angka {
+  background-color: rgb(var(--c-surface) / 0.55);
+  border-radius: 0.9rem;
+  padding: 0.75rem 0.5rem;
+  text-align: center;
+}
+.dark .ubin-angka {
+  background-color: rgb(var(--c-surface-2) / 0.6);
+}
+
 /* Kartu yang bisa diketuk terangkat sedikit saat disentuh kursor.
    SENGAJA bukan pada .kartu-kaca: kalau semua kartu ikut bergerak, tabel
    yang cuma dibaca ikut meloncat tiap kali kursor lewat, dan gerakan itu

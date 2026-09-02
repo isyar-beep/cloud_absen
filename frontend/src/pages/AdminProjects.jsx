@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import api from '../api/axios';
 import AdminSidebar from '../components/AdminSidebar';
 import Pilihan, { KELAS_PILIHAN } from '../components/Pilihan';
+import Tombol from '../components/Tombol';
 import { useDialog } from '../components/Dialog';
 import { useAuthStore } from '../store/authStore';
 import { BriefcaseIcon, PlusIcon, UsersIcon, CheckBadgeIcon, AlertIcon } from '../components/Icons';
@@ -17,7 +18,7 @@ const FORM_KOSONG = {
 function Angka({ label, nilai, warna }) {
   const kosong = !nilai;
   return (
-    <div className="flex-1 min-w-0 text-center">
+    <div className="ubin-angka flex-1 min-w-0">
       <p className={`text-xl font-bold tabular-nums leading-none ${kosong ? 'text-faint' : warna}`}>
         {nilai}
       </p>
@@ -155,12 +156,7 @@ export default function AdminProjects() {
             </p>
           </div>
           {adminPenuh && (
-            <button
-              onClick={bukaTambah}
-              className="inline-flex items-center gap-1.5 text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-xl px-4 h-10 transition shadow-glow"
-            >
-              <PlusIcon className="w-4 h-4" /> Tambah Proyek
-            </button>
+            <Tombol ikon={PlusIcon} onClick={bukaTambah}>Tambah Proyek</Tombol>
           )}
         </div>
 
@@ -357,14 +353,14 @@ export default function AdminProjects() {
               </div>
 
               {/* Keadaan hari ini */}
-              <div className="flex items-center gap-1 px-4 py-3 border-t border-line bg-surface-2/50">
+              <div className="flex items-stretch gap-2 px-3 pb-3">
                 <Angka label="Hadir" nilai={p.hadir_hari_ini} warna="text-emerald-600 dark:text-emerald-400" />
                 <Angka label="Izin" nilai={p.izin_hari_ini} warna="text-blue-600 dark:text-blue-400" />
                 <Angka label="Alpha" nilai={p.alpha_hari_ini} warna="text-red-600 dark:text-red-400" />
                 <Angka label="Belum absen" nilai={p.belum_absen} warna="text-amber-600 dark:text-amber-400" />
               </div>
 
-              <div className="flex items-center gap-3 px-5 py-2.5 border-t border-line text-xs font-semibold">
+              <div className="flex items-center gap-3 px-5 py-2.5 border-t border-line/60 text-xs font-semibold">
                 <a
                   href={`/admin/gallery?project_id=${p.id}`}
                   className="text-primary-600 dark:text-primary-400 hover:underline"
