@@ -106,7 +106,7 @@ export default function AdminUsers() {
         <div className="flex justify-between items-center mb-6 gap-3">
           <div>
             <h1 className="text-[1.75rem] leading-tight font-extrabold text-strong tracking-[-0.02em]">Kelola Pengguna</h1>
-            <p className="text-sm text-muted mt-0.5">{users.length} akun terdaftar</p>
+            <p className="text-sm text-body mt-0.5">{users.length} akun terdaftar</p>
           </div>
           <button
             onClick={() => setShowForm(!showForm)}

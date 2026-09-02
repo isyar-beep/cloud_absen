@@ -138,7 +138,7 @@ export default function AdminShifts() {
       <div className="wadah-petak px-5 lg:px-8 py-7">
         <div className="mb-5">
           <h1 className="text-[1.75rem] leading-tight font-extrabold text-strong tracking-[-0.02em]">Shift &amp; WFA</h1>
-          <p className="text-sm text-muted mt-0.5">
+          <p className="text-sm text-body mt-0.5">
             {tab === 'shift'
               ? `${shifts.length} shift terdaftar — menentukan batas jam telat dan jendela waktu absen`
               : 'Tetapkan rentang tanggal pegawai bekerja dari luar kantor'}
@@ -156,7 +156,7 @@ export default function AdminShifts() {
               className={`px-4 py-2.5 text-sm font-semibold border-b-2 -mb-px transition ${
                 tab === t.key
                   ? 'border-primary-600 text-primary-700 dark:text-primary-300'
-                  : 'border-transparent text-muted hover:text-strong'
+                  : 'border-transparent text-body hover:text-strong'
               }`}
             >
               {t.label}

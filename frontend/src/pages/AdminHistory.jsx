@@ -95,7 +95,7 @@ export default function AdminHistory() {
       <div className="wadah-petak px-5 lg:px-8 py-7">
         <div className="mb-6">
           <h1 className="text-[1.75rem] leading-tight font-extrabold text-strong tracking-[-0.02em]">Riwayat Absensi Pegawai</h1>
-          <p className="text-sm text-muted mt-0.5">Semua catatan absensi dengan filter</p>
+          <p className="text-sm text-body mt-0.5">Semua catatan absensi dengan filter</p>
         </div>
 
         {/* Filter */}

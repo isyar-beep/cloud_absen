@@ -28,14 +28,14 @@
      jadi tingkatan teks tetap terjaga tanpa mengorbankan keterbacaan.
      Diukur dari piksel yang sungguh tergambar, bukan dari nilai token. */
   --c-muted: 95 110 133;
-  /* Dinaikkan dari 148,163,184: dengan kartu yang kini tembus 0.45, nilai
-     lama hanya mencapai kontras 2.3. Nilai ini memberi 3.8 -- masih di
-     bawah ambang AA 4.5, dan itu disengaja: untuk lolos, faint harus
-     menjadi 100,112,131, yang praktis sama dengan muted sehingga tingkatan
+  /* Dinaikkan dua kali: pertama karena kartu jadi tembus 0.45, lalu lagi
+     karena noda biru diperkuat -- keduanya menggelapkan latar di balik
+     teks. Nilai ini masih di bawah ambang AA 4.5, dan itu disengaja: untuk
+     lolos, faint harus menjadi hampir sama dengan muted, sehingga tingkatan
      teksnya runtuh. Jadi faint dibatasi hanya untuk keterangan yang boleh
      surut (label kelompok, tanda satuan). Teks yang memuat ISI memakai
-     muted, yang lolos ambang. */
-  --c-faint: 112 124 143;
+     muted atau body, yang lolos ambang. */
+  --c-faint: 104 116 135;
   --c-ink: 15 23 42;
   --c-on-ink: 255 255 255;
 
@@ -53,6 +53,11 @@
   --glow-1: 59 130 246;
   --glow-2: 167 139 250;
   --glow-alpha: 0.42;
+  /* Biru diberi kepekatannya sendiri, terpisah dari ungu. Sudut kiri atas
+     adalah tempat mata pertama kali jatuh -- di situ warnanya boleh lebih
+     tegas, sementara ungu di kanan bawah tetap tenang supaya tidak menarik
+     perhatian dari isi halaman. */
+  --glow-1-alpha: 0.62;
 
   color-scheme: light;
 }
@@ -77,6 +82,9 @@
   --shadow-glass: 0 1px 0 0 rgb(255 255 255 / 0.06) inset, 0 8px 32px -12px rgb(0 0 0 / 0.6);
 
   --glow-alpha: 0.3;
+  /* Lebih rendah daripada mode terang: di latar gelap, warna yang sama
+     terbaca jauh lebih menyala karena tidak ada apa pun yang meredamnya. */
+  --glow-1-alpha: 0.4;
 
   color-scheme: dark;
 }
@@ -112,8 +120,11 @@ body::before {
   inset: 0;
   z-index: -1;
   pointer-events: none;
+  /* Biru dibuat lebih luas daripada ungu (80rem vs 54rem) dan memudarnya
+     ditahan sampai 74%, bukan 68% -- itu yang membuat warnanya terasa
+     menjangkau lebih jauh ke tengah, bukan sekadar lebih pekat di pojok. */
   background:
-    radial-gradient(58rem 46rem at 2% -6%, rgb(var(--glow-1) / var(--glow-alpha)), transparent 68%),
+    radial-gradient(80rem 62rem at 0% -8%, rgb(var(--glow-1) / var(--glow-1-alpha)), transparent 74%),
     radial-gradient(54rem 44rem at 100% 100%, rgb(var(--glow-2) / var(--glow-alpha)), transparent 68%);
 }
 

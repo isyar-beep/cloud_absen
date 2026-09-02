@@ -148,7 +148,7 @@ export default function AdminProjects() {
         <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
           <div>
             <h1 className="text-[1.75rem] leading-tight font-extrabold text-strong tracking-[-0.02em]">Proyek</h1>
-            <p className="text-sm text-muted mt-0.5">
+            <p className="text-sm text-body mt-0.5">
               {adminPenuh
                 ? 'Setiap proyek punya penanggung jawab dan pegawainya sendiri'
                 : 'Proyek yang Anda tangani'}

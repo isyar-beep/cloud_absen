@@ -231,7 +231,7 @@ export default function AdminGallery() {
       <div className="wadah-petak px-5 lg:px-8 py-7">
         <div className="mb-5">
           <h1 className="text-[1.75rem] leading-tight font-extrabold text-strong tracking-[-0.02em]">Galeri Foto Absensi</h1>
-          <p className="text-sm text-muted mt-0.5">
+          <p className="text-sm text-body mt-0.5">
             Bukti foto masuk dan pulang — satu kartu per pegawai per hari
           </p>
         </div>

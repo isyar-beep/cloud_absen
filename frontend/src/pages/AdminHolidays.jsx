@@ -65,7 +65,7 @@ export default function AdminHolidays() {
         <div className="flex justify-between items-center mb-6 gap-3">
           <div>
             <h1 className="text-[1.75rem] leading-tight font-extrabold text-strong tracking-[-0.02em]">Hari Libur</h1>
-            <p className="text-sm text-muted mt-0.5">
+            <p className="text-sm text-body mt-0.5">
               {holidays.length} tanggal terdaftar — Sabtu &amp; Minggu otomatis dianggap bukan hari kerja
             </p>
           </div>

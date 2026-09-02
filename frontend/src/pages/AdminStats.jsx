@@ -157,7 +157,7 @@ export default function AdminStats() {
       <div className="wadah-petak px-5 lg:px-8 py-7">
         <div className="mb-6">
           <h1 className="text-[1.75rem] leading-tight font-extrabold text-strong tracking-[-0.02em]">Statistik &amp; Grafik</h1>
-          <p className="text-sm text-muted mt-0.5">
+          <p className="text-sm text-body mt-0.5">
             Kehadiran keseluruhan atau per pegawai, bulanan atau riwayat lengkap
           </p>
         </div>
