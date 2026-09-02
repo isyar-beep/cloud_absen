@@ -68,7 +68,7 @@ function Isi({ user, aktifKah, onPindah, onKeluar, lipat = false, onLipat }) {
           )}
         </div>
 
-        <div className={`flex items-center gap-1.5 mt-2.5 ${lipat ? 'flex-col' : 'justify-end'}`}>
+        <div className={`flex items-center gap-1.5 mt-2.5 ${lipat ? 'flex-col' : 'justify-start'}`}>
           <ThemeToggle ringkas />
           {onLipat && (
             <button
