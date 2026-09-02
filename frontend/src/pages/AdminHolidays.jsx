@@ -134,7 +134,7 @@ export default function AdminHolidays() {
                 <p className="text-sm font-medium text-strong">{h.name}</p>
                 <p className="text-xs text-faint mt-0.5">{formatTanggal(h.date)}</p>
               </div>
-              <button onClick={() => handleDelete(h)} className="text-xs font-semibold text-red-500 hover:text-red-600 dark:text-red-400 transition">
+              <button onClick={() => handleDelete(h)} className="text-xs font-semibold text-red-600 hover:text-red-700 dark:text-red-400 transition">
                 Hapus
               </button>
             </div>

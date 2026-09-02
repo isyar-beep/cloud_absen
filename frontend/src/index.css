@@ -28,7 +28,14 @@
      jadi tingkatan teks tetap terjaga tanpa mengorbankan keterbacaan.
      Diukur dari piksel yang sungguh tergambar, bukan dari nilai token. */
   --c-muted: 95 110 133;
-  --c-faint: 138 152 173;
+  /* Dinaikkan dari 148,163,184: dengan kartu yang kini tembus 0.45, nilai
+     lama hanya mencapai kontras 2.3. Nilai ini memberi 3.8 -- masih di
+     bawah ambang AA 4.5, dan itu disengaja: untuk lolos, faint harus
+     menjadi 100,112,131, yang praktis sama dengan muted sehingga tingkatan
+     teksnya runtuh. Jadi faint dibatasi hanya untuk keterangan yang boleh
+     surut (label kelompok, tanda satuan). Teks yang memuat ISI memakai
+     muted, yang lolos ambang. */
+  --c-faint: 112 124 143;
   --c-ink: 15 23 42;
   --c-on-ink: 255 255 255;
 
@@ -174,7 +181,7 @@ body::before {
    di latar body itulah yang menembus dan membuat blur ada gunanya.
    ============================================================ */
 .kartu-kaca {
-  background-color: rgb(var(--c-surface) / 0.62);
+  background-color: rgb(var(--c-surface) / 0.45);
   backdrop-filter: blur(18px) saturate(150%);
   -webkit-backdrop-filter: blur(18px) saturate(150%);
   /* Tepi putih, bukan abu-abu. Kaca dikenali mata dari pantulan cahaya di
@@ -203,8 +210,19 @@ body::before {
   );
 }
 
-/* Varian yang lebih pekat untuk panel yang menimpa layar (dialog,
-   sidebar) -- isi di belakangnya tidak boleh ikut terbaca. */
+/* Dua perlakuan panel, dibedakan menurut APA YANG ADA DI BELAKANGNYA --
+   bukan menurut jenis komponennya.
+
+   .kaca-pekat -- panel yang MENIMPA isi halaman: dialog, laci menu di HP,
+   bilah atas yang dilewati isi saat digulung. Di sini ketembusan justru
+   merugikan: tulisan di belakang ikut terbaca dan bertumpuk dengan
+   tulisan di depannya.
+
+   .kaca-samping -- panel yang duduk DI SAMPING isi halaman, yaitu sidebar
+   di layar lebar. Isi halaman sudah digeser ke kanan sejauh sidebar, jadi
+   di belakangnya cuma ada latar. Tidak ada yang bisa tertumpuk, sehingga
+   ia boleh setembus kartu biasa -- dan memang harus, supaya sidebar tidak
+   tampak seperti lempeng putih yang ditempel di atas halaman kaca. */
 .kaca-pekat {
   background-color: rgb(var(--c-surface) / 0.88);
   backdrop-filter: blur(24px) saturate(160%);
@@ -212,6 +230,75 @@ body::before {
 }
 .dark .kaca-pekat {
   background-color: rgb(var(--c-surface) / 0.82);
+}
+
+.kaca-samping {
+  background-color: rgb(var(--c-surface) / 0.45);
+  backdrop-filter: blur(20px) saturate(155%);
+  -webkit-backdrop-filter: blur(20px) saturate(155%);
+  background-image: linear-gradient(
+    to bottom,
+    rgb(255 255 255 / 0.5),
+    rgb(255 255 255 / 0) 32%
+  );
+}
+.dark .kaca-samping {
+  background-color: rgb(var(--c-surface) / 0.5);
+  background-image: linear-gradient(
+    to bottom,
+    rgb(255 255 255 / 0.05),
+    rgb(255 255 255 / 0) 32%
+  );
+}
+
+/* ============================================================
+   Kartu masuk dengan gerakan naik singkat.
+   ------------------------------------------------------------
+   Dipasang pada .kartu-kaca, bukan pada pembungkus tiap halaman:
+   dengan begitu ke-16 halaman ikut tanpa satu pun disentuh, dan
+   animasinya berjalan tepat saat halaman berganti -- React
+   melepas lalu memasang ulang simpulnya, dan animasi CSS memang
+   berjalan pada pemasangan. Muat-ulang data tiap 30 detik TIDAK
+   memicunya lagi, karena simpulnya dipakai ulang, bukan dibuat
+   baru. Itu yang membuat efek ini aman pada dashboard yang
+   menyegarkan diri sendiri.
+   ============================================================ */
+@keyframes masukKartu {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.kartu-kaca {
+  /* backwards: selama masih menunggu gilirannya, kartu menahan keadaan
+     awal. Tanpa itu kartu tampil dulu, lalu mendadak lenyap saat
+     jedanya habis, baru muncul lagi -- kedip yang justru mengganggu. */
+  animation: masukKartu 420ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+/* Bertahap menurut urutannya dalam satu baris/petak, sehingga mata
+   mengikuti susunan halaman alih-alih disergap semuanya sekaligus. */
+.kartu-kaca:nth-child(2) { animation-delay: 45ms; }
+.kartu-kaca:nth-child(3) { animation-delay: 90ms; }
+.kartu-kaca:nth-child(4) { animation-delay: 135ms; }
+.kartu-kaca:nth-child(n + 5) { animation-delay: 175ms; }
+
+/* Baris tabel ikut masuk, tapi lebih cepat dan tanpa jeda bertingkat:
+   daftar panjang yang muncul satu per satu terasa lambat, bukan halus. */
+.tabel-pil tbody tr {
+  animation: masukKartu 260ms ease-out backwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kartu-kaca,
+  .tabel-pil tbody tr {
+    animation: none;
+  }
 }
 
 /* Kartu yang bisa diketuk terangkat sedikit saat disentuh kursor.
@@ -225,9 +312,17 @@ body::before {
   transform: translateY(-3px);
   box-shadow: var(--shadow-lift);
 }
+/* Ditekan, kartunya turun kembali. Balasan sekejap inilah yang membuat
+   ketukan terasa diterima -- tanpa itu, kartu yang bisa diklik dan yang
+   tidak terasa sama persis di jari. */
+.kartu-naik:active {
+  transform: translateY(-1px) scale(0.995);
+  transition-duration: 90ms;
+}
 
 @media (prefers-reduced-motion: reduce) {
-  .kartu-naik:hover {
+  .kartu-naik:hover,
+  .kartu-naik:active {
     transform: none;
   }
 }

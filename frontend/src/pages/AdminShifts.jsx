@@ -346,7 +346,7 @@ export default function AdminShifts() {
                     <button onClick={() => openEditForm(s)} className="text-xs font-semibold text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition">
                       Edit
                     </button>
-                    <button onClick={() => handleDelete(s)} className="text-xs font-semibold text-red-500 hover:text-red-600 dark:text-red-400 transition">
+                    <button onClick={() => handleDelete(s)} className="text-xs font-semibold text-red-600 hover:text-red-700 dark:text-red-400 transition">
                       Hapus
                     </button>
                   </td>

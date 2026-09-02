@@ -252,7 +252,7 @@ export default function AdminWfa() {
               </span>
               <button
                 onClick={() => hapus(w)}
-                className="text-xs font-semibold text-red-500 hover:text-red-600 dark:text-red-400 transition"
+                className="text-xs font-semibold text-red-600 hover:text-red-700 dark:text-red-400 transition"
               >
                 Batalkan
               </button>

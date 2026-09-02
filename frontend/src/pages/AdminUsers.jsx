@@ -307,7 +307,7 @@ export default function AdminUsers() {
                     onClick={() => toggleActive(u)}
                     className={`text-xs font-semibold transition ${
                       u.is_active
-                        ? 'text-red-500 hover:text-red-600 dark:text-red-400'
+                        ? 'text-red-600 hover:text-red-700 dark:text-red-400'
                         : 'text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300'
                     }`}
                   >

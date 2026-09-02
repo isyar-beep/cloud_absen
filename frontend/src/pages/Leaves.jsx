@@ -207,7 +207,7 @@ export default function Leaves() {
                 <button
                   type="button"
                   onClick={hapusBerkas}
-                  className="text-xs font-semibold text-red-500 hover:text-red-600 dark:text-red-400 transition shrink-0"
+                  className="text-xs font-semibold text-red-600 hover:text-red-700 dark:text-red-400 transition shrink-0"
                 >
                   Hapus
                 </button>

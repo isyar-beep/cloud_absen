@@ -241,7 +241,7 @@ export default function AdminSidebar() {
           memakai lg:pl-[var(--lebar-sidebar)] tetap sejajar tanpa perlu
           diubah satu per satu. */}
       <aside
-        className="hidden lg:block fixed z-30 top-[var(--sela-sidebar)] bottom-[var(--sela-sidebar)] left-[var(--sela-sidebar)] kaca-pekat rounded-[1.75rem] border border-white/60 dark:border-white/10 shadow-soft overflow-hidden transition-[width] duration-200"
+        className="hidden lg:block fixed z-30 top-[var(--sela-sidebar)] bottom-[var(--sela-sidebar)] left-[var(--sela-sidebar)] kaca-samping rounded-[1.75rem] border border-white/60 dark:border-white/10 shadow-soft overflow-hidden transition-[width] duration-200"
         style={{ width: 'calc(var(--lebar-sidebar) - var(--sela-sidebar))' }}
       >
         {isiLebar}

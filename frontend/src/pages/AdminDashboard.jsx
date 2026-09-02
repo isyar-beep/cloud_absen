@@ -323,20 +323,20 @@ export default function AdminDashboard() {
                 <div key={pr.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-3.5">
                   <div className="min-w-[11rem] flex-1">
                     <p className="text-sm font-medium text-strong truncate leading-tight">{pr.name}</p>
-                    <p className="text-[11.5px] text-faint truncate">
+                    <p className="text-[11.5px] text-muted truncate">
                       {pr.consultant_name || 'Belum ada penanggung jawab'}
                       {pr.location ? ` · ${pr.location}` : ''}
                     </p>
                   </div>
 
                   <div className="flex items-center gap-3.5 text-xs tabular-nums shrink-0">
-                    <span className={pr.hadir_hari_ini ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-faint'}>
+                    <span className={pr.hadir_hari_ini ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-muted'}>
                       {pr.hadir_hari_ini} hadir
                     </span>
-                    <span className={pr.izin_hari_ini ? 'text-blue-600 dark:text-blue-400 font-semibold' : 'text-faint'}>
+                    <span className={pr.izin_hari_ini ? 'text-blue-600 dark:text-blue-400 font-semibold' : 'text-muted'}>
                       {pr.izin_hari_ini} izin
                     </span>
-                    <span className={pr.alpha_hari_ini ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-faint'}>
+                    <span className={pr.alpha_hari_ini ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-muted'}>
                       {pr.alpha_hari_ini} alpha
                     </span>
                     {/* Yang belum absen ditonjolkan karena inilah satu-satunya
@@ -344,7 +344,7 @@ export default function AdminDashboard() {
                         sisanya sudah terjadi. */}
                     <span className={pr.belum_absen
                       ? 'text-amber-700 dark:text-amber-300 font-semibold bg-amber-50 dark:bg-amber-500/15 px-2 py-0.5 rounded-full'
-                      : 'text-faint'}>
+                      : 'text-muted'}>
                       {pr.belum_absen} belum absen
                     </span>
                   </div>
@@ -380,7 +380,7 @@ export default function AdminDashboard() {
                   <Avatar name={item.name} src={item.avatar_url} />
                   <div className="min-w-0 mr-auto">
                     <p className="text-sm font-medium text-strong truncate">{item.name}</p>
-                    <p className="text-xs text-faint truncate">{item.project_name || '—'}</p>
+                    <p className="text-xs text-muted truncate">{item.project_name || '—'}</p>
                   </div>
                   {item.status ? (
                     <StatusBadge status={item.status} />
