@@ -7,7 +7,7 @@ import Avatar from '../components/Avatar';
 import StatusBadge from '../components/StatusBadge';
 import Koordinat from '../components/Koordinat';
 import WfaBadge from '../components/WfaBadge';
-import { formatTanggalHari, formatJam, formatJamDetik, tanggalIso } from '../utils/tanggal';
+import { formatTanggalHari, formatJam, formatJamDetik } from '../utils/tanggal';
 
 const LIMIT = 24;
 
@@ -82,13 +82,18 @@ export default function AdminGallery() {
   const [hasMore, setHasMore] = useState(false);
   const [detail, setDetail] = useState(null); // { row, jenis }
 
+  // Tanpa rentang tanggal bawaan: seluruh foto tampil, lalu pemakainya
+  // menyaring kalau memang mencari sesuatu.
+  //
+  // Sebelumnya dibuka pada "tujuh hari terakhir", dan itu menyesatkan.
+  // Galeri yang dibuka lalu terlihat kosong terbaca sebagai "tidak ada
+  // foto" -- padahal fotonya ada, cuma di luar rentang yang tidak pernah
+  // diminta siapa pun. Paginasi sudah menjaga jumlah yang dimuat, jadi
+  // batas tanggal tidak lagi diperlukan untuk menahan beban.
   const [filter, setFilter] = useState(() => {
-    const kini = new Date();
-    const mulai = new Date();
-    mulai.setDate(mulai.getDate() - 6);
     return {
-      start_date: tanggalIso(mulai),
-      end_date: tanggalIso(kini),
+      start_date: '',
+      end_date: '',
       user_id: '',
       // Dibaca dari alamat supaya tautan "Lihat foto" di kartu proyek
       // membuka galeri dalam keadaan sudah tersaring.
@@ -187,12 +192,9 @@ export default function AdminGallery() {
   }, [filter, users, projects]);
 
   function resetFilter() {
-    const kini = new Date();
-    const mulai = new Date();
-    mulai.setDate(mulai.getDate() - 6);
     setFilter({
-      start_date: tanggalIso(mulai),
-      end_date: tanggalIso(kini),
+      start_date: '',
+      end_date: '',
       user_id: '',
       project_id: '',
       jenis: 'semua',
@@ -310,9 +312,23 @@ export default function AdminGallery() {
 
           <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-line">
             <span className="text-xs text-faint">Filter aktif</span>
-            <span className="inline-flex flex-wrap items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-primary-50 dark:bg-primary-500/15 text-primary-700 dark:text-primary-300 border border-primary-100 dark:border-primary-500/30">
-              {formatTanggalHari(filter.start_date)} – {formatTanggalHari(filter.end_date)}
-            </span>
+
+            {/* Penanda rentang hanya muncul kalau tanggalnya memang
+                disetel. Sejak galeri dibuka tanpa rentang bawaan,
+                menampilkannya tanpa syarat hanya menghasilkan "- – -". */}
+            {(filter.start_date || filter.end_date) ? (
+              <button
+                onClick={() => setFilter((f) => ({ ...f, start_date: '', end_date: '' }))}
+                className="inline-flex flex-wrap items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-primary-50 dark:bg-primary-500/15 text-primary-700 dark:text-primary-300 border border-primary-100 dark:border-primary-500/30 hover:bg-primary-100 dark:hover:bg-primary-500/20 transition"
+              >
+                {filter.start_date ? formatTanggalHari(filter.start_date) : 'Paling awal'}
+                {' – '}
+                {filter.end_date ? formatTanggalHari(filter.end_date) : 'Terbaru'}
+                <span className="text-primary-400">✕</span>
+              </button>
+            ) : (
+              <span className="text-xs text-muted">Semua tanggal</span>
+            )}
             {chips.map((c) => (
               <button key={c.teks} onClick={c.bersih}
                 className="inline-flex flex-wrap items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-primary-50 dark:bg-primary-500/15 text-primary-700 dark:text-primary-300 border border-primary-100 dark:border-primary-500/30 hover:bg-primary-100 dark:bg-primary-500/20 transition">
@@ -366,25 +382,33 @@ export default function AdminGallery() {
         <div className={`petak-auto gap-4 ${hanyaSatuJenis ? '[--petak-min:14rem]' : '[--petak-min:19rem]'}`}>
           {baris.map((r) => (
             <div key={r.id} className="kartu-kaca overflow-hidden">
-              {/* Nama di baris sendiri, tanggal & status di bawahnya -- badge
-                  "Hadir (Terlambat)" cukup panjang dan akan memotong nama
-                  kalau dipaksa sebaris di kartu yang sempit. */}
+              {/* Dua baris dengan pembagian tetap:
+                    baris 1 -- identitas di kiri, tanggal di kanan
+                    baris 2 -- lencana status
+                  
+                  Sebelumnya tanggal dan lencana berbagi satu baris dengan
+                  justify-between, dan barisnya boleh melipat. Akibatnya
+                  bentuk kartu berubah-ubah mengikuti panjang lencananya:
+                  kartu "Hadir (Terlambat)" + "Pulang kosong" melipat jadi
+                  dua baris sementara tetangganya tidak, dan deretan kartu
+                  terbaca tidak rata. Justru kartu yang paling perlu
+                  diperhatikan yang tampil paling berantakan.
+                  
+                  Dengan pembagian tetap, jumlah lencana tidak lagi
+                  memengaruhi letak apa pun. */}
               <div className="px-3.5 py-3 border-b border-line">
-                <div className="flex items-center gap-2.5">
-                  <Avatar name={r.name} src={r.avatar_url} size={34} />
-                  <p className="text-[17px] font-bold text-strong tracking-[-0.01em] truncate leading-tight min-w-0">{r.name}</p>
-                </div>
-                {/* Boleh melipat. Tanggal dan lencana sama-sama shrink-0
-                    supaya tulisannya tidak terpotong -- tapi kalau barisnya
-                    juga tidak boleh melipat, keduanya meluber keluar kartu
-                    di layar 360px. Melipat ke baris kedua jauh lebih baik
-                    daripada meluber. */}
-                <div className="flex flex-wrap items-center justify-between gap-2 mt-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <Avatar name={r.name} src={r.avatar_url} size={34} />
+                    <p className="text-[17px] font-bold text-strong tracking-[-0.01em] truncate leading-tight min-w-0">{r.name}</p>
+                  </div>
                   <span className="text-[11.5px] text-faint shrink-0">{formatTanggalHari(r.date)}</span>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
                   {/* WFA di luar percabangan: hari yang absen pulangnya kosong
                       tetap perlu terlihat WFA-nya, karena justru hari seperti
                       itulah yang biasanya ditelusuri admin. */}
-                  <span className="flex flex-wrap items-center gap-1.5">
                     <WfaBadge mode={r.work_mode} />
                     {/* Sebelumnya lencana status DIGANTI oleh tanda "Pulang
                         kosong", sehingga pegawai yang terlambat sekaligus
@@ -395,7 +419,6 @@ export default function AdminGallery() {
                         disembunyikan: admin memang sedang melihat foto masuk
                         saja, jadi "pulang kosong" bukan temuan. */}
                     <StatusBadge status={r.status} kurang={hanyaSatuJenis ? null : r.kurang} />
-                  </span>
                 </div>
               </div>
 

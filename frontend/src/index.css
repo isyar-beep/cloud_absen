@@ -552,6 +552,31 @@ body::before {
     linear-gradient(to top left, rgb(var(--c-canvas) / 0.3), transparent 42%);
 }
 
+/* Bintik halus di atas gradasi, untuk membubarkan PITA WARNA.
+   
+   Gradien panjang dengan perubahan warna yang landai memperlihatkan
+   tangga mendatar di layar 8-bit per kanal: dua warna bertetangga
+   dibulatkan ke nilai yang sama sepanjang beberapa piksel, lalu melompat
+   sekaligus. Menambah perhentian warna tidak menolong -- peramban tetap
+   membulatkan ke 256 nilai yang sama.
+   
+   Yang menolong adalah mengacak pembulatannya. Bintik samar sebesar
+   kurang dari satu persen membuat piksel di sekitar batas membulat ke
+   dua arah yang berbeda, sehingga tangganya pecah dan mata membacanya
+   sebagai peralihan mulus. Ini cara yang sama yang dipakai industri
+   cetak, dan namanya dithering.
+   
+   Bintiknya digambar sebagai SVG di dalam CSS -- tidak ada berkas
+   gambar yang perlu diunduh. */
+.kepala-pegawai::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='b'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23b)'/%3E%3C/svg%3E");
+}
+
 /* Isi kepala layar harus berada di ATAS kedua lapisan itu. */
 .kepala-pegawai > * {
   position: relative;
