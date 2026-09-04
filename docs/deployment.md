@@ -228,11 +228,66 @@ Backup otomatis tiap hari jam 02:00 (crontab -e):
 0 2 * * * docker exec cloud_absen_db pg_dump -U postgres cloud_absen > /root/backups/cloud_absen-$(date +\%F).sql
 ```
 
-Restore:
+### Memulihkan
+
+Perhatikan: dump dikembalikan ke basis data **kosong**, bukan ditimpakan
+ke basis data yang sedang berisi. Menimpakannya di atas data yang ada
+akan menabrak baris yang sudah ada dan berhenti separuh jalan.
 
 ```bash
-docker exec -i cloud_absen_db psql -U postgres -d cloud_absen < backup-2026-07-18.sql
+# 1. Basis data baru yang kosong
+docker exec cloud_absen_db psql -U postgres -c "CREATE DATABASE cloud_absen_pulih;"
+
+# 2. Kembalikan dumpnya ke situ
+docker exec -i cloud_absen_db psql -U postgres -d cloud_absen_pulih \
+  -v ON_ERROR_STOP=1 < backup-2026-07-18.sql
+
+# 3. Setelah diperiksa benar, tukar namanya
+docker exec cloud_absen_db psql -U postgres -c "ALTER DATABASE cloud_absen RENAME TO cloud_absen_lama;"
+docker exec cloud_absen_db psql -U postgres -c "ALTER DATABASE cloud_absen_pulih RENAME TO cloud_absen;"
 ```
+
+`-v ON_ERROR_STOP=1` penting: tanpa itu psql melanjutkan setelah galat,
+dan pemulihan yang separuh gagal tetap terlihat berhasil.
+
+### Uji pulih — WAJIB dilakukan berkala
+
+**Backup yang belum pernah dicoba dikembalikan bukan backup, melainkan
+berkas yang belum terbukti berguna.** Satu-satunya cara mengetahui
+backup Anda benar adalah memulihkannya, dan waktu yang paling buruk
+untuk mengetahuinya adalah saat data aslinya sudah hilang.
+
+Lakukan sekali setiap kali ada migrasi baru, dan minimal tiap tiga
+bulan. Prosedurnya sudah dijalankan dan terbukti bekerja:
+
+```bash
+# Bandingkan jumlah baris tiap tabel: asal vs hasil pulih
+for t in users projects attendance leave_requests notifications shifts \
+         holidays correction_requests wfa_assignments admin_logs \
+         attendance_edits departments; do
+  a=$(docker exec cloud_absen_db psql -U postgres -d cloud_absen     -qtAc "SELECT COUNT(*) FROM $t")
+  b=$(docker exec cloud_absen_db psql -U postgres -d cloud_absen_pulih -qtAc "SELECT COUNT(*) FROM $t")
+  [ "$a" = "$b" ] && echo "OK   $t $a" || echo "BEDA $t $a vs $b"
+done
+
+# Bukti yang lebih kuat daripada jumlah baris: jalankan seluruh pengujian
+# di atas basis data hasil pulih. Ini membuktikan skema, kunci asing, dan
+# indeksnya ikut utuh -- bukan cuma isinya.
+cd backend
+DB_NAME=cloud_absen_pulih npm test
+```
+
+**Hasil uji terakhir** (4 September 2026, PostgreSQL 16):
+
+| Yang diperiksa | Hasil |
+|---|---|
+| 12 tabel dibandingkan jumlah barisnya | seluruhnya sama |
+| Kunci asing pada basis data hasil pulih | 16 terpasang |
+| Indeks | 35 terpasang |
+| Relasi pegawai ke proyek | menunjuk proyek yang benar |
+| 54 pengujian dijalankan di atas hasil pulih | lolos semua, nol dilewati |
+
+Catat hasil uji berikutnya di tabel ini, berikut tanggalnya.
 
 ## 8. (Opsional) Email Peringatan Terjadwal
 
