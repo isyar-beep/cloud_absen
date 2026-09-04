@@ -15,8 +15,7 @@
 -- Menyimpannya juga berarti pemberitahuan tidak hilang saat aplikasi
 -- ditutup -- hal yang tidak bisa dijamin push.
 --
--- Jalankan: docker exec -i cloud_absen_db psql -U postgres -d cloud_absen \
---             < database/migrations/011_notifications.sql
+-- Jalankan: psql -U postgres -d cloud_absen -f database/migrations/011_notifications.sql
 -- ============================================
 
 CREATE TABLE IF NOT EXISTS notifications (
