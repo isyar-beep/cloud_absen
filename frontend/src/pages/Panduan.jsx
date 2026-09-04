@@ -74,6 +74,42 @@ const UMUM = (
         </>
       }
     />
+
+    {/* Bagian ini ditujukan kepada orang yang datanya diambil, bukan kepada
+        yang memasang sistemnya. Kebijakan privasi yang hanya hidup sebagai
+        berkas di repositori tidak pernah dibaca pegawai; yang dibacanya
+        adalah layar yang ada di depannya. */}
+    <Bagian
+      judul="Data Anda"
+      anak={
+        <>
+          <Tanya t="Foto dan lokasi diambil hanya saat Anda menekan tombol absen.">
+            Aplikasi tidak melacak posisi Anda di latar belakang dan tidak membuka
+            kamera di luar layar absensi. Di luar dua saat itu, tidak ada apa pun
+            yang direkam.
+          </Tanya>
+          <Tanya t="Foto absensi tidak terbuka untuk umum.">
+            Foto tidak bisa dibuka dengan menebak alamatnya. Setiap pembukaan
+            memerlukan izin berumur pendek yang diperiksa kepemilikannya, jadi
+            tautan yang terlanjur bocor keluar akan mati dengan sendirinya.
+          </Tanya>
+          <Tanya t="Kata sandi Anda tidak bisa dilihat siapa pun, termasuk admin.">
+            Yang disimpan bukan kata sandinya, melainkan hasil pengacakannya. Admin
+            hanya bisa menetapkan yang baru — tidak pernah membaca yang lama.
+          </Tanya>
+          <Tanya t="Siapa yang bisa melihat data Anda.">
+            Anda sendiri; konsultan penanggung jawab proyek tempat Anda ditugaskan;
+            dan admin dinas. Konsultan proyek lain tidak bisa, walau ia mengetik
+            alamatnya langsung.
+          </Tanya>
+          <Tanya t="Riwayat absensi tidak ikut terhapus saat akun dinonaktifkan.">
+            Riwayat itu dasar pembayaran yang sudah terjadi dan bisa diperiksa
+            kemudian, jadi ia tetap tersimpan. Yang berhenti adalah aksesnya, dan
+            itu berlaku seketika.
+          </Tanya>
+        </>
+      }
+    />
   </>
 );
 

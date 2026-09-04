@@ -14,6 +14,19 @@ cloud_absen/
 └── docs/             Dokumentasi tambahan
 ```
 
+### Dokumen yang perlu dibaca sebelum dipakai sungguhan
+
+| Berkas | Isinya |
+|---|---|
+| [docs/KEBIJAKAN-PRIVASI.md](docs/KEBIJAKAN-PRIVASI.md) | data apa yang dikumpulkan, siapa yang bisa melihatnya, berapa lama disimpan |
+| [docs/BATAS-SISTEM.md](docs/BATAS-SISTEM.md) | apa yang **belum** dilakukan sistem ini, apa yang bisa membuatnya berhenti, dan kewajiban perawatan setelah serah terima |
+| [docs/deployment.md](docs/deployment.md) | pemasangan di VPS, cadangan, dan uji pulih |
+
+BATAS-SISTEM.md memuat tiga hal yang harus diputuskan dinas dan tidak bisa
+diputuskan oleh pembuat aplikasi — di antaranya berapa lama foto absensi
+wajib disimpan, karena tanpa keputusan itu foto menumpuk sampai disk penuh
+dan disk penuh mematikan basis data.
+
 ---
 
 ## 1. Setup Backend
