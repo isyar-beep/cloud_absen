@@ -65,3 +65,14 @@ export function formatJam(nilai) {
     ? jamLokal(nilai).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
     : '-';
 }
+
+// Date -> "2026-09-04", memakai bagian tanggal WAKTU LOKAL.
+//
+// Sengaja tidak memakai toISOString(), yang mengubah ke UTC lebih dulu:
+// di WITA (UTC+8) tanggal 4 September pukul 07.00 akan berubah menjadi
+// "2026-09-03" -- mundur satu hari. Untuk tanggal kalender seperti
+// tanggal pengajuan izin, pergeseran itu salah dan sulit dilacak.
+export function tanggalIso(d) {
+  const p = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}

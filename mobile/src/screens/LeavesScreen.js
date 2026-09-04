@@ -6,8 +6,9 @@ import {
 import { useWarna } from '../theme';
 import * as DocumentPicker from 'expo-document-picker';
 import api from '../services/api';
+import KolomTanggal from '../components/KolomTanggal';
 import { pesanGalat } from '../services/galat';
-import { formatTanggal } from '../utils/tanggal';
+import { formatTanggal, tanggalLokal } from '../utils/tanggal';
 
 // Nama peran, disamakan dengan frontend/src/utils/peran.js. Dituliskan
 // ulang di sini karena web dan HP tidak berbagi kode -- kalau salah satunya
@@ -78,10 +79,13 @@ export default function LeavesScreen() {
   }, [fetchLeaves]);
 
   async function handleSubmit() {
-    // Validasi format tanggal sederhana (YYYY-MM-DD) sebelum dikirim ke backend
+    // Tanggalnya kini datang dari kalender, jadi bentuknya tidak mungkin
+    // salah -- yang tersisa hanya kemungkinan BELUM DIPILIH. Pemeriksaan
+    // bentuknya tetap dipertahankan sebagai jaring pengaman, tapi
+    // kalimatnya tidak lagi menyuruh mengetik format apa pun.
     const formatTanggalValid = /^\d{4}-\d{2}-\d{2}$/;
     if (!formatTanggalValid.test(form.start_date) || !formatTanggalValid.test(form.end_date)) {
-      Alert.alert('Perhatian', 'Isi tanggal dengan format YYYY-MM-DD, contoh: 2026-07-25');
+      Alert.alert('Perhatian', 'Pilih tanggal mulai dan tanggal selesai dulu.');
       return;
     }
     if (!form.reason.trim()) {
@@ -146,23 +150,27 @@ export default function LeavesScreen() {
         </View>
         <View style={styles.row}>
           <View style={styles.half}>
-            <Text style={styles.label}>Dari (YYYY-MM-DD)</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="2026-07-25"
-          placeholderTextColor={w.teksSamar}
-              value={form.start_date}
-              onChangeText={(v) => setForm({ ...form, start_date: v })}
+            <Text style={styles.label}>Dari tanggal</Text>
+            <KolomTanggal
+              nilai={form.start_date}
+              onUbah={(v) => setForm((f) => ({
+                ...f,
+                start_date: v,
+                // Tanggal selesai ikut maju kalau jadi mendahului tanggal
+                // mulai. Membiarkannya berarti pegawai menyiapkan
+                // pengajuan yang sudah pasti ditolak server.
+                end_date: !f.end_date || f.end_date < v ? v : f.end_date,
+              }))}
             />
           </View>
           <View style={styles.half}>
-            <Text style={styles.label}>Sampai (YYYY-MM-DD)</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="2026-07-26"
-          placeholderTextColor={w.teksSamar}
-              value={form.end_date}
-              onChangeText={(v) => setForm({ ...form, end_date: v })}
+            <Text style={styles.label}>Sampai tanggal</Text>
+            {/* Tidak bisa memilih sebelum tanggal mulai -- dicegah di
+                kalendernya, bukan ditolak setelah dikirim. */}
+            <KolomTanggal
+              nilai={form.end_date}
+              minimum={form.start_date ? tanggalLokal(form.start_date) : undefined}
+              onUbah={(v) => setForm((f) => ({ ...f, end_date: v }))}
             />
           </View>
         </View>
