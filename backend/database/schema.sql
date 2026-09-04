@@ -56,5 +56,12 @@ INSERT INTO departments (name) VALUES
   ('IT'), ('HR'), ('Sales'), ('Finance'), ('Operations')
 ON CONFLICT (name) DO NOTHING;
 
--- Akun admin default (password: admin123 -- WAJIB diganti setelah login pertama)
--- Hash ini dibuat dari bcrypt('admin123', 10) -- lihat backend/database/seed.js untuk generate ulang
+-- Akun admin TIDAK dibuat di sini, dan itu disengaja.
+--
+-- Skema ini terbaca siapa pun yang bisa melihat repositori. Sandi apa
+-- pun yang ditanam di dalamnya sudah diketahui umum sejak menit pertama,
+-- dan pemasangan yang lupa menggantinya tidak akan menunjukkan gejala
+-- apa pun bahwa pintunya terbuka.
+--
+-- Akun admin pertama dibuat lewat `npm run seed`, yang membangkitkan
+-- sandi acak dan mencetaknya sekali di layar.

@@ -25,8 +25,14 @@ export default function UbahPasswordModal({ onTutup, onSelesai }) {
     // Ketiga pemeriksaan ini juga ada di server. Yang di sini hanya supaya
     // pegawai tidak perlu menunggu perjalanan bolak-balik untuk tahu
     // ketikannya keliru.
-    if (form.baru.length < 6) {
-      setError('Password baru minimal 6 karakter.');
+    //
+    // Sengaja hanya yang paling kasar yang diperiksa di sini. Aturan
+    // selebihnya -- sandi umum, deret, nama sendiri -- dijaga server dan
+    // pesannya ditampilkan apa adanya. Menyalinnya ke sini berarti tiga
+    // salinan aturan yang sama di tiga tempat, dan salinan seperti itu
+    // selalu berakhir berbeda diam-diam.
+    if (form.baru.length < 8) {
+      setError('Password baru minimal 8 karakter.');
       return;
     }
     if (form.baru !== form.ulang) {
@@ -67,7 +73,9 @@ export default function UbahPasswordModal({ onTutup, onSelesai }) {
       >
         <div className="px-5 py-4 border-b border-line">
           <p className="text-sm font-bold text-strong">Ubah Password</p>
-          <p className="text-xs text-muted mt-0.5">Minimal 6 karakter</p>
+          <p className="text-xs text-muted mt-0.5">
+            Minimal 8 karakter, bukan nama Anda, dan bukan sandi yang umum dipakai
+          </p>
         </div>
 
         <form onSubmit={kirim} className="p-5 space-y-4">

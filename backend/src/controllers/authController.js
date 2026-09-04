@@ -2,6 +2,8 @@ const bcrypt = require('bcryptjs');
 const { query } = require('../config/db');
 const { generateToken } = require('../utils/jwt');
 const { uploadFotoProfil, hapusFotoLama } = require('../utils/uploadPhoto');
+const { periksaKataSandi } = require('../utils/kataSandi');
+const gembok = require('../utils/gemboklogin');
 
 // POST /api/auth/login
 async function login(req, res, next) {
@@ -12,6 +14,16 @@ async function login(req, res, next) {
       return res.status(400).json({ message: 'Email dan password wajib diisi.' });
     }
 
+    // Diperiksa sebelum menyentuh basis data. Selain lebih murah, ini
+    // juga membuat lamanya balasan tidak berbeda antara akun yang ada
+    // dan yang tidak -- beda waktu itu sendiri sebuah petunjuk.
+    const keadaan = gembok.periksa(email);
+    if (keadaan.terkunci) {
+      return res.status(429).json({
+        message: `Terlalu banyak percobaan login gagal untuk akun ini. Coba lagi dalam ${Math.ceil(keadaan.sisaDetik / 60)} menit.`,
+      });
+    }
+
     const result = await query(
       'SELECT id, name, email, password_hash, role, is_active, avatar_url FROM users WHERE email = $1',
       [email]
@@ -20,14 +32,17 @@ async function login(req, res, next) {
     const user = result.rows[0];
 
     if (!user || !user.is_active) {
+      gembok.catatGagal(email);
       return res.status(401).json({ message: 'Email atau password salah.' });
     }
 
     const isValid = await bcrypt.compare(password, user.password_hash);
     if (!isValid) {
+      gembok.catatGagal(email);
       return res.status(401).json({ message: 'Email atau password salah.' });
     }
 
+    gembok.catatBerhasil(email);
     const token = generateToken(user);
 
     res.json({
@@ -85,8 +100,10 @@ async function changePassword(req, res, next) {
     if (!oldPassword || !newPassword) {
       return res.status(400).json({ message: 'Password lama dan baru wajib diisi.' });
     }
-    if (newPassword.length < 6) {
-      return res.status(400).json({ message: 'Password baru minimal 6 karakter.' });
+
+    const keluhan = periksaKataSandi(newPassword, { nama: req.user.name, email: req.user.email });
+    if (keluhan) {
+      return res.status(400).json({ message: keluhan });
     }
 
     const result = await query('SELECT password_hash FROM users WHERE id = $1', [req.user.id]);
@@ -95,6 +112,12 @@ async function changePassword(req, res, next) {
     const isValid = await bcrypt.compare(oldPassword, user.password_hash);
     if (!isValid) {
       return res.status(401).json({ message: 'Password lama tidak sesuai.' });
+    }
+
+    // Mengganti dengan yang sama persis membuat orang mengira sandinya
+    // sudah diperbarui padahal tidak berubah sama sekali.
+    if (newPassword === oldPassword) {
+      return res.status(400).json({ message: 'Password baru harus berbeda dari password lama.' });
     }
 
     const newHash = await bcrypt.hash(newPassword, 10);

@@ -7,10 +7,18 @@ const {
 const { authenticate } = require('../middleware/auth');
 const upload = require('../middleware/upload');
 
-// Rate limit khusus login untuk memperlambat percobaan tebak password.
+// Pembatasan per ALAMAT IP: menahan satu mesin yang menembak membabi buta
+// ke banyak akun sekaligus.
+//
 // skipSuccessfulRequests: hanya login GAGAL yang dihitung. Tanpa ini, satu
 // kantor yang berbagi satu IP publik akan saling mengunci di jam masuk --
 // 10 pegawai login normal sudah cukup memblokir sisanya.
+//
+// Ambangnya sengaja longgar justru karena alasan itu, dan itulah yang
+// membuatnya tidak cukup sendirian: satu akun yang ditebak pelan-pelan
+// dari banyak IP tidak akan pernah menyalakannya. Yang menahan hal itu
+// adalah gembok per akun di utils/gemboklogin.js. Keduanya menjaga
+// serangan yang berbeda, jadi keduanya dipasang.
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 menit
   max: 20,

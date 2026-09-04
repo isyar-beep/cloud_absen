@@ -32,8 +32,11 @@ export default function UbahPasswordModal({ onTutup, onSelesai }) {
       setError('Password lama dan baru wajib diisi.');
       return;
     }
-    if (baru.length < 6) {
-      setError('Password baru minimal 6 karakter.');
+    // Sengaja hanya yang paling kasar yang diperiksa di sini. Aturan
+    // selebihnya -- sandi umum, deret, nama sendiri -- dijaga server dan
+    // pesannya ditampilkan apa adanya.
+    if (baru.length < 8) {
+      setError('Password baru minimal 8 karakter.');
       return;
     }
     if (baru !== ulang) {
@@ -71,7 +74,7 @@ export default function UbahPasswordModal({ onTutup, onSelesai }) {
         <View style={styles.panel}>
           <ScrollView keyboardShouldPersistTaps="handled">
             <Text style={styles.judul}>Ubah Password</Text>
-            <Text style={styles.subjudul}>Minimal 6 karakter</Text>
+            <Text style={styles.subjudul}>Minimal 8 karakter, bukan nama Anda</Text>
 
             {error ? <Text style={styles.error}>{error}</Text> : null}
 

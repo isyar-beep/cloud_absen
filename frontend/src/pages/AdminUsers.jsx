@@ -155,7 +155,7 @@ export default function AdminUsers() {
                 <input
                   required
                   type="password"
-                  placeholder="Minimal 6 karakter"
+                  placeholder="Minimal 8 karakter, bukan nama pegawainya"
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
                   className={`${inputClass} w-full`}

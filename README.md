@@ -58,8 +58,13 @@ migration otomatis ikut dijalankan hanya saat volume database masih baru.
 ```bash
 npm run seed
 ```
-Ini akan membuat akun `admin@company.com` dengan password `admin123`.
-**Segera ganti password ini setelah login pertama kali.**
+Perintah ini membangkitkan sandi acak dan **mencetaknya sekali** di layar.
+Catat saat itu juga -- sandinya tidak tersimpan di mana pun dan tidak bisa
+ditampilkan ulang. Untuk menentukan sendiri, isi `ADMIN_EMAIL` dan
+`ADMIN_PASSWORD` di `backend/.env` sebelum menjalankannya.
+
+Tidak ada sandi bawaan yang tertulis di repositori ini. Sandi bawaan yang
+tertulis di berkas yang bisa dibaca umum sama saja dengan tidak ada sandi.
 
 **Isi data contoh untuk peragaan (opsional):**
 ```bash
@@ -256,15 +261,41 @@ Upload isi folder `dist/` ke `public_html` di Hostinger (via File Manager atau F
 
 ---
 
-## 5. Akun Default
+## 5. Akun Admin Pertama
 
-Setelah menjalankan `npm run seed` di backend:
+Dibuat lewat `npm run seed` di backend. Emailnya `admin@company.com`
+(atau `ADMIN_EMAIL` bila diisi), dan **sandinya acak, dicetak sekali** saat
+perintah itu dijalankan.
 
-| Email | Password | Role |
-|---|---|---|
-| admin@company.com | admin123 | admin |
+Tidak ada sandi bawaan. Yang tertulis di repositori bisa dibaca siapa saja,
+dan pemasangan yang lupa menggantinya tidak akan menunjukkan gejala apa pun.
 
-**Wajib diganti setelah login pertama kali untuk keamanan.**
+### Syarat kata sandi
+
+Berlaku di ketiga tempat -- admin membuat akun, admin mereset, dan pengguna
+mengganti sendiri:
+
+- minimal 8 karakter;
+- bukan sandi yang umum dipakai (`password`, `admin123`, `qwerty123`, ...);
+- bukan deret berurutan (`12345678`, `abcdefgh`) atau satu huruf diulang;
+- tidak boleh hanya angka -- tanggal lahir dan NIP ada di berkas kepegawaian;
+- tidak memuat nama atau alamat email pemiliknya.
+
+Tidak ada kewajiban simbol atau huruf besar, dan tidak ada kewajiban ganti
+berkala. Syarat seperti itu terbukti mendorong orang menulis sandinya di
+kertas yang ditempel di meja.
+
+### Percobaan login
+
+Dua penjagaan yang berbeda berjalan bersamaan:
+
+- **per alamat IP** -- 20 kegagalan / 15 menit, menahan satu mesin yang
+  menembak membabi buta;
+- **per akun** -- 8 kegagalan / 15 menit, lalu terkunci 15 menit. Ini yang
+  menahan satu akun ditebak pelan-pelan dari banyak IP, keadaan yang tidak
+  akan pernah menyalakan penjagaan per IP.
+
+Admin yang mereset sandi seseorang sekaligus membuka gemboknya.
 
 ---
 

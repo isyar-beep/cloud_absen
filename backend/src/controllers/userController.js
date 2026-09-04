@@ -2,6 +2,8 @@ const bcrypt = require('bcryptjs');
 const { lupakanPengguna } = require('../middleware/auth');
 const { query } = require('../config/db');
 const { batasiPerPegawai, bolehAksesPegawai } = require('../utils/lingkupProyek');
+const { periksaKataSandi } = require('../utils/kataSandi');
+const gembok = require('../utils/gemboklogin');
 
 // GET /api/users -- daftar semua pengguna (admin only)
 async function getAllUsers(req, res, next) {
@@ -66,8 +68,9 @@ async function createUser(req, res, next) {
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'Nama, email, dan password wajib diisi.' });
     }
-    if (password.length < 6) {
-      return res.status(400).json({ message: 'Password minimal 6 karakter.' });
+    const keluhan = periksaKataSandi(password, { nama: name, email });
+    if (keluhan) {
+      return res.status(400).json({ message: keluhan });
     }
     if (role && !['admin', 'konsultan', 'staff'].includes(role)) {
       return res.status(400).json({ message: "Role harus 'admin', 'konsultan', atau 'staff'." });
@@ -194,8 +197,22 @@ async function updateUser(req, res, next) {
 async function resetPassword(req, res, next) {
   try {
     const { newPassword } = req.body;
-    if (!newPassword || newPassword.length < 6) {
-      return res.status(400).json({ message: 'Password baru minimal 6 karakter.' });
+
+    // Nama dan email pemiliknya diambil dulu supaya sandi yang ditetapkan
+    // admin ikut diperiksa terhadap keduanya. Justru di sinilah godaannya
+    // paling besar: admin yang mereset puluhan akun cenderung memakai
+    // nama orangnya sebagai sandi sementara.
+    const sasaran = await query('SELECT name, email FROM users WHERE id = $1', [req.params.id]);
+    if (sasaran.rows.length === 0) {
+      return res.status(404).json({ message: 'Pengguna tidak ditemukan.' });
+    }
+
+    const keluhan = periksaKataSandi(newPassword, {
+      nama: sasaran.rows[0].name,
+      email: sasaran.rows[0].email,
+    });
+    if (keluhan) {
+      return res.status(400).json({ message: keluhan });
     }
 
     const passwordHash = await bcrypt.hash(newPassword, 10);
@@ -203,6 +220,12 @@ async function resetPassword(req, res, next) {
       passwordHash,
       req.params.id,
     ]);
+
+    // Reset oleh admin membuka gembok akunnya. Alasan orang menghubungi
+    // admin biasanya justru karena terkunci; kalau gemboknya dibiarkan,
+    // sandi barunya pun tetap ditolak dan admin akan mengira resetnya
+    // gagal.
+    gembok.lupakan(sasaran.rows[0].email);
 
     res.json({ message: 'Password pengguna berhasil direset.' });
   } catch (err) {

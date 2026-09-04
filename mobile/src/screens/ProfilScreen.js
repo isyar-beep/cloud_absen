@@ -202,7 +202,7 @@ export default function ProfilScreen({ navigation }) {
           </View>
           <View style={styles.menuTeks}>
             <Text style={styles.menuJudul}>Ubah Password</Text>
-            <Text style={styles.menuKeterangan}>Minimal 6 karakter</Text>
+            <Text style={styles.menuKeterangan}>Minimal 8 karakter</Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={w.teksSamar} />
         </TouchableOpacity>
