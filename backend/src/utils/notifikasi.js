@@ -1,4 +1,5 @@
 const { query } = require('../config/db');
+const { catatan, dariGalat } = require('./catatan');
 const { sendPushNotifications } = require('./pushNotification');
 
 // ============================================================
@@ -48,7 +49,7 @@ async function kirimNotifikasi({ userIds, jenis, judul, pesan, tautan, push = tr
       }
     } catch (err) {
       // Sengaja hanya dicatat. Lihat catatan di atas.
-      console.error('Push gagal, pemberitahuan tetap tersimpan:', err.message);
+      catatan.ingat('Push gagal, pemberitahuan tetap tersimpan', dariGalat(err, { tumpukan: false }));
     }
   }
 
@@ -77,7 +78,7 @@ async function kirimNotifikasi({ userIds, jenis, judul, pesan, tautan, push = tr
     );
   } catch (err) {
     // Gagal membersihkan bukan alasan menggagalkan pemberitahuannya.
-    console.error('Gagal membersihkan pemberitahuan lama:', err.message);
+    catatan.ingat('Gagal membersihkan pemberitahuan lama', dariGalat(err, { tumpukan: false }));
   }
 
   return { dibuat: hasil.rows.length };

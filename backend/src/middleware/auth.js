@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { query } = require('../config/db');
+const { catatan, dariGalat } = require('../utils/catatan');
 
 // ============================================================
 // Penjagaan permintaan masuk.
@@ -113,7 +114,9 @@ async function authenticate(req, res, next) {
     // Basis data tidak terjangkau. Sengaja MENOLAK, bukan melanjutkan
     // dengan isi token: melanjutkan berarti setiap gangguan basis data
     // otomatis mengembalikan lubang yang justru ditutup berkas ini.
-    console.error('Gagal memeriksa keadaan akun:', err.message);
+    catatan.galat('Gagal memeriksa keadaan akun', {
+      kode: req.kode, jalur: req.originalUrl, ...dariGalat(err),
+    });
     return res.status(503).json({ message: 'Server sedang bermasalah. Coba lagi sebentar lagi.' });
   }
 }

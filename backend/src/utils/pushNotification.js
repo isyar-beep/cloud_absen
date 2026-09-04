@@ -1,5 +1,6 @@
 // Kirim push notification lewat Expo Push API (https://exp.host/--/api/v2/push/send).
 // Tidak perlu akun/kredensial tambahan -- Expo push service gratis untuk app berbasis Expo.
+const { catatan, dariGalat } = require('./catatan');
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
 
 // Kirim satu atau beberapa notifikasi sekaligus.
@@ -29,7 +30,7 @@ async function sendPushNotifications(messages) {
 
     if (!res.ok) {
       hasil.error = `layanan push menolak permintaan (HTTP ${res.status})`;
-      console.error('Gagal kirim push notification, status:', res.status);
+      catatan.ingat('Layanan push menolak permintaan', { status: res.status });
       return hasil;
     }
 
@@ -37,7 +38,7 @@ async function sendPushNotifications(messages) {
     return hasil;
   } catch (err) {
     hasil.error = `tidak bisa menghubungi layanan push (${err.message})`;
-    console.error('Gagal kirim push notification:', err.message);
+    catatan.ingat('Gagal menghubungi layanan push', dariGalat(err, { tumpukan: false }));
     return hasil;
   }
 }

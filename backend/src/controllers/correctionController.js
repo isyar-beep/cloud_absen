@@ -14,6 +14,7 @@ const { query, pool } = require('../config/db');
 const { jendelaAbsen, shiftPegawai } = require('../utils/shiftWindow');
 const { batasiPerPegawai, bolehAksesPegawai } = require('../utils/lingkupProyek');
 const { kirimNotifikasi, penyeliaPegawai } = require('../utils/notifikasi');
+const { catatan, dariGalat } = require('../utils/catatan');
 
 const STATUS_VALID = ['hadir', 'terlambat', 'izin', 'alpha'];
 
@@ -224,7 +225,7 @@ async function ajukanKoreksi(req, res, next) {
         tautan: '/admin/leaves?tab=koreksi',
       });
     } catch (e) {
-      console.error('Gagal membuat pemberitahuan koreksi baru:', e.message);
+      catatan.ingat('Gagal membuat pemberitahuan koreksi baru', dariGalat(e, { tumpukan: false }));
     }
 
     res.status(201).json({ message: 'Pengajuan koreksi terkirim.', correction: hasil.rows[0] });
@@ -429,7 +430,7 @@ async function reviewKoreksi(req, res, next) {
         tautan: '/history',
       });
     } catch (e) {
-      console.error('Gagal membuat pemberitahuan hasil koreksi:', e.message);
+      catatan.ingat('Gagal membuat pemberitahuan hasil koreksi', dariGalat(e, { tumpukan: false }));
     }
 
     res.json({

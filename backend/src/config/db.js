@@ -1,5 +1,6 @@
 const { Pool, types } = require('pg');
 require('dotenv').config();
+const { catatan, dariGalat } = require('../utils/catatan');
 
 // Kolom DATE dikembalikan apa adanya sebagai teks "YYYY-MM-DD".
 //
@@ -28,7 +29,7 @@ const pool = new Pool({
 });
 
 pool.on('error', (err) => {
-  console.error('Unexpected error pada koneksi database:', err);
+  catatan.galat('Galat tak terduga pada sambungan basis data', dariGalat(err));
 });
 
 // Helper query supaya controller lebih ringkas

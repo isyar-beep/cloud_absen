@@ -2,6 +2,7 @@ const { pool, query } = require('../config/db');
 const { kirimNotifikasi, penyeliaPegawai } = require('../utils/notifikasi');
 const { uploadDokumenIzin } = require('../utils/uploadPhoto');
 const { batasiPerPegawai, bolehAksesPegawai } = require('../utils/lingkupProyek');
+const { catatan, dariGalat } = require('../utils/catatan');
 
 // Jenis pengajuan. Ketiganya berujung pada status absensi 'izin' -- yang
 // dibedakan hanya keterangannya untuk HRD. Mengubah daftar status absensi
@@ -112,7 +113,7 @@ async function createLeave(req, res, next) {
         tautan: '/admin/leaves',
       });
     } catch (e) {
-      console.error('Gagal membuat pemberitahuan pengajuan baru:', e.message);
+      catatan.ingat('Gagal membuat pemberitahuan pengajuan baru', dariGalat(e, { tumpukan: false }));
     }
 
     // Yang memutuskan bukan lagi "admin" saja. Konsultan penanggung jawab
@@ -292,7 +293,7 @@ async function reviewLeave(req, res, next) {
         tautan: '/leaves',
       });
     } catch (e) {
-      console.error('Gagal membuat pemberitahuan hasil pengajuan:', e.message);
+      catatan.ingat('Gagal membuat pemberitahuan hasil pengajuan', dariGalat(e, { tumpukan: false }));
     }
 
     res.json({

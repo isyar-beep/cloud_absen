@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { catatan, dariGalat } = require('./catatan');
 const crypto = require('crypto');
 
 // Direktori tempat foto disimpan di server (bukan cloud storage).
@@ -124,7 +125,7 @@ async function hapusFotoLama(url) {
   try {
     await fs.promises.unlink(target);
   } catch (err) {
-    if (err.code !== 'ENOENT') console.error('Gagal hapus foto lama:', err.message);
+    if (err.code !== 'ENOENT') catatan.ingat('Gagal hapus foto lama', dariGalat(err, { tumpukan: false }));
   }
 }
 

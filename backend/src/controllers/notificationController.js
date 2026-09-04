@@ -5,6 +5,7 @@ const { todayLocal } = require('../utils/date');
 const { jendelaSemuaPegawai } = require('../utils/shiftWindow');
 const { hitungRate } = require('../utils/attendanceRate');
 const { cekHariKerja } = require('../utils/workday');
+const { catatan, dariGalat } = require('../utils/catatan');
 
 const NAMA_BULAN = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -75,7 +76,9 @@ async function sendLowAttendanceWarning(req, res, next) {
         });
         terkirim.push({ id: row.id, name: row.name, email: row.email, attendance_rate: rate });
       } catch (mailErr) {
-        console.error(`Gagal kirim email ke ${row.email}:`, mailErr.message);
+        catatan.ingat('Gagal kirim email pemberitahuan', {
+          pengguna: row.id, ...dariGalat(mailErr, { tumpukan: false }),
+        });
         gagal.push({ id: row.id, name: row.name, email: row.email });
       }
 
@@ -91,7 +94,9 @@ async function sendLowAttendanceWarning(req, res, next) {
             },
           ]);
         } catch (pushErr) {
-          console.error(`Gagal kirim push ke user ${row.id}:`, pushErr.message);
+          catatan.ingat('Gagal kirim push pemberitahuan', {
+          pengguna: row.id, ...dariGalat(pushErr, { tumpukan: false }),
+        });
         }
       }
     }

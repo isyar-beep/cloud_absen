@@ -19,6 +19,8 @@ const holidayRoutes = require('./routes/holidayRoutes');
 const photoRoutes = require('./routes/photoRoutes');
 const projectRoutes = require('./routes/projectRoutes');
 const errorHandler = require('./middleware/errorHandler');
+const { penandaPermintaan } = require('./middleware/penanda');
+const { catatan, dariGalat } = require('./utils/catatan');
 const { query } = require('./config/db');
 
 const app = express();
@@ -28,6 +30,12 @@ const app = express();
 if (process.env.NODE_ENV === 'production') {
   app.set('trust proxy', 1);
 }
+
+// Penanda dipasang PALING AWAL, sebelum helmet dan limiter. Permintaan
+// yang ditolak limiter pun perlu punya penanda: justru keluhan "tiba-tiba
+// tidak bisa absen" di jam masuk sering berujung ke sana, dan tanpa
+// penanda tak ada cara membuktikannya.
+app.use(penandaPermintaan);
 
 // Header keamanan standar (X-Content-Type-Options, HSTS, dll.)
 // crossOriginResourcePolicy dilonggarkan supaya foto absensi bisa ditampilkan
@@ -97,7 +105,11 @@ app.get('/health', async (req, res) => {
     // Pesannya tidak diteruskan apa adanya: isinya bisa memuat host,
     // nama basis data, dan nama pengguna, sedangkan endpoint ini
     // terbuka tanpa login.
-    console.error('Health check gagal:', err.message);
+    catatan.galat('Health check gagal', {
+      kode: req.kode,
+      balas_ms: Date.now() - mulai,
+      ...dariGalat(err, { tumpukan: false }),
+    });
     res.status(503).json({
       status: 'gagal',
       basis_data: 'tidak terhubung',
@@ -122,7 +134,18 @@ app.use('/api/photos', photoRoutes);
 app.use('/api/projects', projectRoutes);
 
 // 404 handler
+// 404 handler.
+//
+// Ikut dicatat, dan itu bukan sekadar kerapian: 404 yang bertubi-tubi ke
+// jalur yang tidak pernah ada (/wp-admin, /.env, /phpmyadmin) adalah
+// pemindaian otomatis, dan pola itu hanya terlihat kalau tercatat.
 app.use((req, res) => {
+  catatan.ingat('Endpoint tidak ditemukan', {
+    kode: req.kode,
+    metode: req.method,
+    jalur: req.originalUrl,
+    status: 404,
+  });
   res.status(404).json({ message: 'Endpoint tidak ditemukan.' });
 });
 

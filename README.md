@@ -454,6 +454,80 @@ email untuk peringatan attendance rendah kalau SMTP dikonfigurasi).
 
 ---
 
+## Membaca Catatan Galat
+
+Setiap permintaan diberi **penanda enam huruf**. Kalau permintaannya gagal,
+penanda itu ikut muncul di layar pengguna:
+
+> Terjadi kesalahan pada server. (Kode: 675u5z)
+
+Pegawai membacakan kode itu lewat telepon, dan pencariannya satu perintah:
+
+```bash
+grep 675u5z /var/log/cloud_absen.log
+```
+
+yang mengembalikan satu baris berisi endpoint, siapa penggunanya, berapa lama,
+dan galat aslinya:
+
+```json
+{"waktu":"2026-09-05T07:06:08","taraf":"galat","pesan":"Permintaan gagal",
+ "kode":"675u5z","metode":"POST","jalur":"/api/users","status":500,
+ "pengguna":174,"peran":"admin","ms":96,
+ "sebab":"insert or update on table \"users\" violates foreign key constraint ...",
+ "kode_pg":"23503","tabel":"users","batasan":"users_project_id_fkey"}
+```
+
+Tanpa penanda ini, keluhan "tadi pagi gagal absen" berhadapan dengan puluhan
+galat pagi itu yang semuanya berbunyi sama, dan tidak ada cara mengetahui yang
+mana. Itu sebab laporan gangguan sering berakhir tanpa jawaban — bukan karena
+galatnya sulit, tapi karena galatnya tidak pernah ketemu.
+
+Penandanya juga dikirim sebagai header `X-Kode-Permintaan`, jadi bisa dibaca
+dari tab Network peramban walau balasannya bukan JSON.
+
+### Menyaring
+
+Di produksi satu kejadian = satu baris JSON, jadi bisa dibaca `jq`:
+
+```bash
+# semua galat server hari ini
+jq 'select(.status >= 500)' /var/log/cloud_absen.log
+
+# endpoint apa yang paling sering gagal
+jq -r 'select(.status >= 500) | .jalur' /var/log/cloud_absen.log | sort | uniq -c | sort -rn
+
+# permintaan yang lambat (di atas 2 detik)
+jq 'select(.ms > 2000)' /var/log/cloud_absen.log
+
+# pemindaian otomatis: 404 bertubi-tubi ke jalur yang tak pernah ada
+jq -r 'select(.status == 404) | .jalur' /var/log/cloud_absen.log | sort | uniq -c | sort -rn
+```
+
+Saat pengembangan (`NODE_ENV` bukan `production`) bentuknya berwarna dan ringkas,
+bukan JSON.
+
+### Yang sengaja TIDAK dicatat
+
+Isi badan permintaan tidak pernah ikut tercatat. Di dalamnya ada kata sandi,
+foto wajah, dan koordinat; catatan yang menyimpannya berubah dari alat bantu
+menjadi kebocoran yang menunggu giliran.
+
+### Rotasi berkas
+
+Catatan ditulis ke stdout, jadi rotasinya urusan pengelola proses. Dengan PM2:
+
+```bash
+pm2 install pm2-logrotate
+pm2 set pm2-logrotate:max_size 50M
+pm2 set pm2-logrotate:retain 30
+```
+
+Tanpa ini berkasnya tumbuh terus sampai disk VPS penuh — dan disk penuh
+mematikan PostgreSQL, bukan cuma pencatatannya.
+
+---
+
 ## Troubleshooting
 
 **Kamera tidak muncul di web app**

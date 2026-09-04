@@ -20,6 +20,7 @@
 
 const sharp = require('sharp');
 const { zonaWaktu, labelZona } = require('./date');
+const { catatan, dariGalat } = require('./catatan');
 
 // Sisi terpanjang foto absensi setelah diolah. Kamera HP modern
 // menghasilkan foto beberapa MB; wajah tetap jelas di 1000px sementara
@@ -158,7 +159,7 @@ async function tanamCap(bufferFoto, { latitude, longitude, waktu = new Date() } 
       .jpeg({ quality: 85 })
       .toBuffer();
   } catch (err) {
-    console.error('Gagal menanam cap pada foto absensi:', err.message);
+    catatan.ingat('Gagal menanam cap pada foto absensi', dariGalat(err, { tumpukan: false }));
     return bufferFoto;
   }
 }
