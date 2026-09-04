@@ -11,6 +11,8 @@
     "seed:demo": "node database/seed-demo.js",
     "reset:data": "node database/reset-data.js",
     "purge:photos": "node database/purge-photos.js",
+    "foto:lihat": "node scripts/retensiFoto.js lihat",
+    "foto:arsip": "node scripts/retensiFoto.js arsip",
     "test": "node --test \"tests/*.test.js\"",
     "test:watch": "node --test --watch \"tests/*.test.js\""
   },

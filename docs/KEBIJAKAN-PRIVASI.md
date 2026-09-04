@@ -109,11 +109,16 @@ dengan sendirinya.
 |---|---|
 | Pemberitahuan yang sudah dibaca | 90 hari, lalu dihapus otomatis |
 | Pemberitahuan apa pun | 180 hari, lalu dihapus otomatis |
-| Data absensi, foto, dan lampiran | **selama akun masih ada — belum ada penghapusan otomatis** |
+| **Foto absensi dan lampiran pengajuan** | **24 bulan**, lalu berkasnya dihapus |
+| Baris absensi (tanggal, jam, status, koordinat) | selama akun masih ada |
 
-Yang terakhir itu perlu dibaca apa adanya. Foto absensi dan lampiran
-pengajuan **menumpuk terus** dan tidak dibuang sendiri oleh sistem. Itu
-keputusan yang belum diambil, bukan fitur yang sudah berjalan; lihat
+Perhatikan bahwa dua baris terakhir berbeda, dan itu disengaja. Setelah 24
+bulan yang dihapus hanya **gambarnya**; catatan kehadirannya tetap utuh,
+sehingga riwayat dan laporan tetap lengkap.
+
+Sebelum dihapus, foto disalin lebih dulu ke penyimpanan dinas sebagai
+arsip mereka, dan penghapusan **ditolak sistem** selama salinan itu belum
+ada dan belum terbukti utuh. Rinciannya di
 [BATAS-SISTEM.md](BATAS-SISTEM.md) bagian 4.
 
 Menonaktifkan akun **tidak menghapus datanya**. Riwayat absensi orang yang

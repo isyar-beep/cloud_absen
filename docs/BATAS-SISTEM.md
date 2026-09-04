@@ -79,11 +79,34 @@ keterangannya.
 
 ---
 
-## 4. Foto dan lampiran menumpuk terus
+## 4. Foto dan lampiran perlu diarsipkan sebelum dibuang
 
-**Belum ada penghapusan otomatis** untuk foto absensi dan lampiran
-pengajuan. Keduanya bertambah setiap hari dan tidak pernah dibuang
-sendiri.
+Masa simpannya **24 bulan**, dan ini keputusan yang sudah diambil, bukan
+saran. Angkanya menutup satu tahun anggaran penuh ditambah masa
+pemeriksaannya di tahun berikutnya.
+
+Yang dibuang hanya **berkasnya**. Baris absensinya — tanggal, jam, status,
+koordinat — tetap utuh selamanya, dan baris itu kecil sekali. Jadi riwayat
+lengkap tetap bisa dibaca dan dilaporkan; yang hilang hanya gambarnya.
+
+**Dinas menyimpan sendiri foto tiap tahun sebagai datanya.** Karena itu
+penghapusan tidak boleh berjalan sebelum penyalinan, dan sistem
+menegakkannya: `npm run purge:photos` **menolak** menghapus foto yang
+belum diarsipkan, menyebutkan bulan mana yang tertahan, lalu berhenti.
+Urutannya:
+
+```bash
+npm run foto:lihat      # apa yang sudah lewat masa simpan
+npm run foto:arsip      # salin ke ARSIP_DIR, sha256 tiap berkas diperiksa
+#                       # -> serahkan salinannya ke dinas
+npm run purge:photos    # baru menghapus
+```
+
+Yang dibuktikan sistem bukan bahwa dinas sudah mengambil salinannya —
+tidak ada kode yang bisa membuktikan itu. Yang dibuktikan: seseorang
+benar-benar menjalankan penyalinan, salinannya masih ada, dan isinya
+masih sama persis dengan aslinya. Itu jauh lebih baik daripada berharap
+seseorang mengingatnya.
 
 Angkanya diukur, bukan dikira-kira: foto kamera depan 1080×1440 sebesar
 980 KB menjadi **272 KB** setelah dikecilkan ke 1000 piksel dan dicap.
@@ -103,10 +126,13 @@ cadangan, serta sistem operasinya sendiri, sehingga waktu nyatanya lebih
 pendek. **Disk penuh mematikan PostgreSQL**, bukan hanya menghentikan
 unggahan foto, jadi ini perlu diputuskan sebelum terjadi, bukan sesudah.
 
-Keputusan yang perlu diambil dinas: berapa lama foto absensi wajib
-disimpan. Setelah angkanya ada, penghapusan otomatis mudah ditambahkan.
-Yang tidak bisa diputuskan oleh pembuat aplikasi adalah angkanya sendiri,
-karena itu menyangkut kewajiban pemeriksaan dan pembayaran.
+Dengan masa simpan 24 bulan, penyimpanan **berhenti tumbuh** di sekitar
+26 GB untuk 100 pegawai — bukan naik terus tanpa batas.
+
+Yang masih perlu dipastikan dinas: apakah **Jadwal Retensi Arsip (JRA)**
+instansi menyebut angka yang lebih panjang untuk dokumen pendukung
+pembayaran. Bila ya, angka itu yang berlaku, dan tinggal diubah lewat
+`PHOTO_RETENTION_YEARS` di `.env`.
 
 Pemantauan sisa disk perlu didaftarkan bersama pemantauan `/health`.
 
@@ -196,8 +222,8 @@ perbaikan mendesak.
 
 ## 9. Ringkasan yang perlu diputuskan dinas
 
-1. Berapa lama foto absensi dan lampiran pengajuan wajib disimpan
-   (bagian 4).
+1. Apakah JRA dinas menuntut masa simpan lebih panjang dari 24 bulan
+   untuk dokumen pendukung pembayaran (bagian 4).
 2. Siapa yang bertanggung jawab menanggapi peringatan pemantauan, dan
    lewat jalur apa (bagian 1).
 3. Apakah perawatan tahunan aplikasi Android masuk dalam kontrak lanjutan

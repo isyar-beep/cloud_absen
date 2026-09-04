@@ -470,20 +470,64 @@ Foto absensi menumpuk cepat: 50 pegawai x 2 foto per hari kerja kira-kira
 dihapus. **Catatan absensinya (tanggal, jam, status) tetap utuh** — yang
 hilang hanya file gambarnya, jadi laporan dan statistik tidak terpengaruh.
 
-Jalankan manual:
+### Arsipkan dulu, baru hapus
+
+Dinas menyimpan sendiri foto tiap tahun sebagai datanya. Karena itu
+`purge:photos` **menolak menghapus foto yang belum diarsipkan** — ia
+melewatinya, menyebutkan bulan mana yang tertahan, lalu berhenti.
+
+Urutan tahunannya:
 
 ```bash
+# 1. Apa yang sudah lewat masa simpan, dan sudah siap dihapus atau belum
+docker exec cloud_absen_api npm run foto:lihat
+
+# 2. Salin ke ARSIP_DIR. sha256 tiap berkas hasil salinan diperiksa,
+#    dan pengarsipan dibatalkan bila ada satu saja yang tidak cocok.
+docker exec cloud_absen_api npm run foto:arsip
+
+# 3. Serahkan isi folder arsip ke penyimpanan dinas (hard disk, NAS,
+#    atau penyimpanan awan mereka). Ini langkah yang dikerjakan manusia
+#    dan tidak bisa diwakilkan ke skrip mana pun.
+
+# 4. Baru menghapus
 docker exec cloud_absen_api npm run purge:photos
 ```
 
-Terjadwal tiap tanggal 1 jam 03:00 (crontab -e):
+Yang dijaga sistem bukan bahwa dinas sudah mengambil salinannya — tidak
+ada kode yang bisa membuktikan itu. Yang dijaga: penyalinan benar-benar
+pernah dijalankan, salinannya masih ada, dan isinya masih sama persis
+dengan aslinya. Foto yang masuk **setelah** pengarsipan — misalnya dari
+koreksi absensi yang disetujui belakangan — ikut tertahan sampai
+diarsipkan ulang.
+
+### Cron
 
 ```cron
 0 3 1 * * docker exec cloud_absen_api npm run purge:photos >> /root/purge-photos.log 2>&1
 ```
 
-Ganti masa simpan lewat `PHOTO_RETENTION_YEARS` di `.env` backend
-(misal `PHOTO_RETENTION_YEARS=3`), lalu restart API.
+**Cron ini tidak akan menghapus apa pun sampai pengarsipan dijalankan,**
+dan itu memang yang dikehendaki. Ia berjalan tiap bulan, melapor apa yang
+tertahan ke `/root/purge-photos.log`, dan baru benar-benar membersihkan
+setelah langkah 2 dan 3 di atas dikerjakan. Periksa berkas log itu sekali
+setahun; kalau isinya "DILEWATI" terus-menerus, berarti pengarsipan
+tahunannya belum dikerjakan.
+
+Bila memang tidak menghendaki penyalinan sama sekali, pengamanannya bisa
+dimatikan dengan `WAJIB_ARSIP=false` di `.env`. Itu pilihan yang sah, tapi
+harus diambil dengan sengaja — bukan menjadi bawaan yang tidak pernah
+disadari sampai ada yang mencari foto lama dan tidak menemukannya.
+
+### Pengaturan
+
+| Variabel | Bawaan | Guna |
+|---|---|---|
+| `PHOTO_RETENTION_YEARS` | `2` | masa simpan foto. Dipakai pengarsipan **dan** penghapusan, jadi keduanya tidak bisa berbeda. |
+| `ARSIP_DIR` | `<UPLOAD_DIR>/../arsip` | tempat salinan ditulis. Arahkan ke volume atau disk lain. |
+| `WAJIB_ARSIP` | `true` | menolak menghapus yang belum diarsipkan. |
+
+Setelah mengubahnya, restart API.
 
 Untuk memantau pemakaian disk volume foto:
 
