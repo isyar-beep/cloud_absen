@@ -6,7 +6,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useWarna, LENGKUNG } from '../theme';
 import PilihTema from '../components/PilihTema';
-import api from '../services/api';
+import api, { API_URL } from '../services/api';
 import { pesanGalat } from '../services/galat';
 import { useAuthStore } from '../store/authStore';
 import { registerForPushNotifications } from '../services/notifications';
@@ -106,12 +106,27 @@ export default function LoginScreen({ navigation }) {
         <Text style={styles.hakCipta}>
           © {new Date().getFullYear()} by : PERCIPKAR — Sistem Absensi Konsultan
         </Text>
+
+        {/* Hanya saat pengembangan: alamat server yang sedang dituju.
+            Alamat backend di HP adalah sumber kebingungan yang paling
+            sering -- "localhost" berarti HP itu sendiri, adapter virtual
+            bisa terpilih keliru, dan berkas .env kadang belum terbaca
+            karena cache. Menampilkannya di layar mengubah tebak-tebakan
+            jadi satu kali lihat. Tidak pernah muncul di APK produksi. */}
+        {__DEV__ && (
+          <Text style={styles.alamatServer} selectable>
+            server: {API_URL}
+          </Text>
+        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
 const buatGaya = (w) => StyleSheet.create({
+  alamatServer: {
+    fontSize: 10, color: w.teksSamar, textAlign: 'center', marginTop: 6,
+  },
   container: { flex: 1, backgroundColor: w.latar },
   isi: { flexGrow: 1, justifyContent: 'center', padding: 24 },
   logo: {
