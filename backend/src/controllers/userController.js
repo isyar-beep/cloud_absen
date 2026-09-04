@@ -1,4 +1,5 @@
 const bcrypt = require('bcryptjs');
+const { lupakanPengguna } = require('../middleware/auth');
 const { query } = require('../config/db');
 const { batasiPerPegawai, bolehAksesPegawai } = require('../utils/lingkupProyek');
 
@@ -178,6 +179,11 @@ async function updateUser(req, res, next) {
       return res.status(404).json({ message: 'Pengguna tidak ditemukan.' });
     }
 
+    // Peran dan status aktif ikut berubah di sini, dan keduanya dipakai
+    // menjaga setiap permintaan. Tanpa pembatalan ini, keadaan lamanya
+    // masih terpakai sampai ingatan di middleware kedaluwarsa.
+    lupakanPengguna(req.params.id);
+
     res.json({ message: 'Pengguna berhasil diperbarui.', user: result.rows[0] });
   } catch (err) {
     next(err);
@@ -218,6 +224,12 @@ async function deactivateUser(req, res, next) {
     await query('UPDATE users SET is_active = FALSE, updated_at = NOW() WHERE id = $1', [
       req.params.id,
     ]);
+
+    // Yang paling penting dari seluruh pemanggilan lupakanPengguna:
+    // penonaktifan harus berlaku SEKETIKA. Jeda sekecil apa pun berarti
+    // orang yang baru dipecat masih sempat mengubah data.
+    lupakanPengguna(req.params.id);
+
     res.json({ message: 'Akun pengguna telah dinonaktifkan.' });
   } catch (err) {
     next(err);

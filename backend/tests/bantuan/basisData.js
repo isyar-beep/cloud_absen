@@ -9,9 +9,20 @@
 // Semua baris diberi awalan penanda supaya bisa dibuang lagi tanpa
 // menyentuh data lain sedikit pun -- termasuk kalau ujinya dijalankan
 // pada basis data pengembangan yang sedang dipakai.
+//
+// Penandanya BERBEDA PER BERKAS UJI. node --test menjalankan berkas
+// secara serentak, dan dengan satu penanda bersama, penyiapan di satu
+// berkas menghapus data yang sedang dipakai berkas lain. Gejalanya
+// menyesatkan -- galat kunci asing yang seolah menunjuk cacat produk,
+// padahal cuma dua uji yang berebut baris yang sama. Terbukti saat
+// berkas ketiga ditambahkan: masing-masing lulus sendiri-sendiri,
+// bersama-sama gagal.
 // ============================================================
 
-const PENANDA = '__uji__';
+const PENANDA_DASAR = '__uji__';
+
+// Diisi oleh siapkan(); tiap berkas uji menyebut namanya sendiri.
+let penanda = PENANDA_DASAR;
 
 let pool = null;
 
@@ -53,7 +64,8 @@ async function adaBasisData() {
 // Dua proyek dengan konsultan berbeda, satu konsultan tanpa proyek, dan
 // satu pegawai yang belum ditempatkan. Susunan ini yang membuat kebocoran
 // antar proyek bisa terbukti -- bukan sekadar diasumsikan.
-async function siapkan() {
+async function siapkan(label = 'umum') {
+  penanda = `${PENANDA_DASAR}${label}_`;
   const p = ambilPool();
   await bersihkan();
 
@@ -61,7 +73,7 @@ async function siapkan() {
     const r = await p.query(
       `INSERT INTO users (name, email, password_hash, role, is_active)
        VALUES ($1, $2, 'x', $3, TRUE) RETURNING id`,
-      [`${PENANDA}${nama}`, `${PENANDA}${nama}@uji.local`, peran]
+      [`${penanda}${nama}`, `${penanda}${nama}@uji.local`, peran]
     );
     return r.rows[0].id;
   };
@@ -74,7 +86,7 @@ async function siapkan() {
   const buatProyek = async (nama, konsultan) => {
     const r = await p.query(
       `INSERT INTO projects (name, consultant_id) VALUES ($1, $2) RETURNING id`,
-      [`${PENANDA}${nama}`, konsultan]
+      [`${penanda}${nama}`, konsultan]
     );
     return r.rows[0].id;
   };
@@ -94,16 +106,19 @@ async function siapkan() {
 }
 
 // Urutannya penting: baris yang menunjuk ke baris lain dibuang lebih dulu.
+// Hanya membuang baris milik berkas ini. Memakai penanda bersama akan
+// menghapus data berkas lain yang sedang berjalan serentak.
 async function bersihkan() {
   const p = ambilPool();
-  await p.query(`DELETE FROM notifications WHERE user_id IN (SELECT id FROM users WHERE name LIKE $1)`, [`${PENANDA}%`]);
-  await p.query(`UPDATE users SET project_id = NULL WHERE name LIKE $1`, [`${PENANDA}%`]);
-  await p.query(`DELETE FROM projects WHERE name LIKE $1`, [`${PENANDA}%`]);
-  await p.query(`DELETE FROM users WHERE name LIKE $1`, [`${PENANDA}%`]);
+  const pola = `${penanda}%`;
+  await p.query(`DELETE FROM notifications WHERE user_id IN (SELECT id FROM users WHERE name LIKE $1)`, [pola]);
+  await p.query(`UPDATE users SET project_id = NULL WHERE name LIKE $1`, [pola]);
+  await p.query(`DELETE FROM projects WHERE name LIKE $1`, [pola]);
+  await p.query(`DELETE FROM users WHERE name LIKE $1`, [pola]);
 }
 
 async function tutup() {
   if (pool) { await pool.end(); pool = null; }
 }
 
-module.exports = { adaBasisData, siapkan, bersihkan, tutup, PENANDA, ambilPool };
+module.exports = { adaBasisData, siapkan, bersihkan, tutup, ambilPool };

@@ -22,7 +22,7 @@ test('penyebaran pemberitahuan', async (t) => {
     return;
   }
 
-  const d = await siapkan();
+  const d = await siapkan('notif');
   const p = ambilPool();
   t.after(async () => { await bersihkan(); await tutup(); });
 

@@ -29,7 +29,7 @@ test('pembatasan proyek', async (t) => {
     return;
   }
 
-  const d = await siapkan();
+  const d = await siapkan('lingkup');
   t.after(async () => { await bersihkan(); await tutup(); });
 
   await t.test('admin melihat semua tanpa syarat tambahan', async () => {
