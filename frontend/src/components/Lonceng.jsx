@@ -20,6 +20,7 @@ import { formatTanggalSingkat, jamLokal } from '../utils/tanggal';
 
 const SELANG_SEGARKAN = 60000;
 const SEHALAMAN = 20;
+const TINGGI_KEPALA = 49; // baris judul "Pemberitahuan" + garis bawahnya
 
 // "3 menit lalu", "2 jam lalu", lalu berganti tanggal. Bentuk relatif hanya
 // berguna untuk yang baru; untuk yang lampau, tanggal jauh lebih menolong.
@@ -31,7 +32,8 @@ function usia(waktu) {
   return formatTanggalSingkat(waktu);
 }
 
-export default function Lonceng() {
+// arah="atas" untuk tombol yang duduk di dasar layar; bawaannya turun.
+export default function Lonceng({ arah = 'bawah' }) {
   const [buka, setBuka] = useState(false);
   const [items, setItems] = useState([]);
   const [belum, setBelum] = useState(0);
@@ -53,12 +55,39 @@ export default function Lonceng() {
     const el = akarRef.current;
     if (!el) return;
     const r = el.getBoundingClientRect();
-    // Digantung di kanan tombol bila muat, kalau tidak digeser ke kiri
-    // secukupnya supaya tetap di dalam layar. Di layar sempit sidebar
-    // sudah jadi laci penuh, jadi kasus ini jarang, tapi tetap dijaga.
-    const left = Math.max(SELA, Math.min(r.left, window.innerWidth - LEBAR_PANEL - SELA));
-    setPosisi({ left, top: r.bottom + 8, maks: window.innerHeight - r.bottom - 24 });
-  }, []);
+    // Panelnya digeser MELEWATI sidebar, bukan sekadar disejajarkan dengan
+    // tombolnya. Tombol ini duduk di dalam sidebar, jadi panel yang lurus
+    // di atasnya akan menutupi menu navigasi -- persis keluhan yang
+    // membuat loncengnya dipindah ke sini.
+    //
+    // Yang dicari adalah <aside> terdekat: baik sidebar melayang di layar
+    // lebar maupun laci di layar sempit sama-sama <aside>, jadi satu aturan
+    // ini melayani keduanya tanpa perlu tahu sedang di tata letak mana.
+    const wadah = el.closest('aside');
+    const kiriDiinginkan = wadah ? wadah.getBoundingClientRect().right + SELA : r.left;
+
+    // Tetap dijepit ke dalam layar. Di layar sempit laci hampir selebar
+    // jendela, jadi panel tidak mungkin benar-benar lolos darinya -- lebih
+    // baik menimpanya sedikit daripada tergunting di tepi jendela.
+    const left = Math.max(SELA, Math.min(kiriDiinginkan, window.innerWidth - LEBAR_PANEL - SELA));
+
+    // Ruang yang benar-benar tersedia di tiap arah, diukur bukan dikira.
+    // Arah yang diminta hanya dituruti kalau ruangnya memang cukup; kalau
+    // tidak, panel dibalik ke sisi yang lebih lapang. Tanpa pemeriksaan
+    // ini, sidebar pendek di layar 768px membuat panel ke atas terpotong
+    // di tepi jendela.
+    const ruangAtas = r.top - SELA * 2;
+    const ruangBawah = window.innerHeight - r.bottom - SELA * 2;
+    const keAtas = arah === 'atas' ? ruangAtas > 220 || ruangAtas >= ruangBawah : false;
+
+    setPosisi({
+      left,
+      keAtas,
+      top: keAtas ? undefined : r.bottom + 8,
+      bawah: keAtas ? window.innerHeight - r.top + 8 : undefined,
+      maks: keAtas ? ruangAtas : ruangBawah,
+    });
+  }, [arah]);
 
   useLayoutEffect(() => {
     if (buka) hitungPosisi();
@@ -152,7 +181,13 @@ export default function Lonceng() {
       {buka && posisi && createPortal(
         <div
           ref={panelRef}
-          style={{ position: 'fixed', left: posisi.left, top: posisi.top, width: LEBAR_PANEL }}
+          style={{
+            position: 'fixed',
+            left: posisi.left,
+            top: posisi.top,
+            bottom: posisi.bawah,
+            width: LEBAR_PANEL,
+          }}
           className="z-[60] kaca-pekat border border-line rounded-2xl shadow-glass overflow-hidden animate-[muncul_140ms_ease-out]"
         >
           <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-line">
@@ -164,7 +199,11 @@ export default function Lonceng() {
             )}
           </div>
 
-          <div className="overflow-y-auto" style={{ maxHeight: Math.min(352, posisi.maks) }}>
+          {/* TINGGI_KEPALA dikurangkan karena `maks` mengukur ruang untuk
+              SELURUH panel, sementara batas ini hanya mengatur daftarnya.
+              Tanpa pengurangan itu, panel setinggi ruang penuh masih
+              ditambah kepalanya, lalu menembus tepi jendela. */}
+          <div className="overflow-y-auto" style={{ maxHeight: Math.max(120, Math.min(352, posisi.maks - TINGGI_KEPALA)) }}>
             {items.map((n) => (
               <button
                 key={n.id}

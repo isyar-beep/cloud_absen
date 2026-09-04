@@ -69,9 +69,12 @@ function Isi({ user, aktifKah, onPindah, onKeluar, lipat = false, onLipat }) {
           )}
         </div>
 
+        {/* Hanya kendali TAMPILAN di sini: tema dan lipat. Lonceng sempat
+            ikut, tapi tempatnya keliru -- ia bukan pengatur tampilan
+            melainkan barang milik pemakainya, jadi sekarang berkumpul
+            dengan identitasnya di kartu pengguna paling bawah. */}
         <div className={`flex items-center gap-1.5 mt-2.5 ${lipat ? 'flex-col' : 'justify-start'}`}>
           <ThemeToggle ringkas />
-          <Lonceng />
           {onLipat && (
             <button
               onClick={onLipat}
@@ -152,6 +155,10 @@ function Isi({ user, aktifKah, onPindah, onKeluar, lipat = false, onLipat }) {
               <p className="text-xs text-faint truncate">{namaPeran(user?.role)}</p>
             </div>
           )}
+          {/* Panelnya dibuka ke ATAS. Kartu ini menempel di dasar sidebar,
+              jadi panel yang turun akan keluar layar; naik ke atas juga
+              berarti ia melayang di ruang kosong, bukan menimpa menu. */}
+          <Lonceng arah="atas" />
           <button
             onClick={onKeluar}
             title="Keluar"
