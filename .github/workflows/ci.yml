@@ -1,0 +1,145 @@
+# ============================================================
+# Pemeriksaan otomatis tiap perubahan.
+#
+# Yang diperiksa dipilih menurut "apa yang diam-diam bisa rusak", bukan
+# menurut apa yang mudah diperiksa:
+#
+#   backend  -- pengujian logika absensi, DENGAN PostgreSQL sungguhan.
+#               Tanpa basis data, uji pembatasan proyek dan penyebaran
+#               pemberitahuan akan dilewati -- dan justru dua itu yang
+#               paling perlu dijaga. Pemeriksaan yang melewati bagian
+#               terpentingnya hanya memberi rasa aman yang keliru.
+#
+#   frontend -- build sungguhan. Kesalahan JSX dan impor yang salah nama
+#               tidak terlihat sampai sesuatu dibangun.
+#
+#   mobile   -- pemeriksaan sintaks seluruh berkas. Aplikasi HP tidak
+#               punya tahap build yang bisa dijalankan di CI tanpa akun
+#               Expo, jadi ini batas yang jujur: ia menangkap berkas
+#               rusak, bukan menjamin aplikasinya berjalan.
+# ============================================================
+
+name: Pemeriksaan
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  backend:
+    name: Backend + pengujian
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: cloud_absen
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          # Harus sama dengan zona waktu server. Tanggal absensi dan batas
+          # terlambat dihitung dari sini; beda zona berarti uji shift malam
+          # menguji hal yang berbeda dari yang dijalankan di produksi.
+          TZ: Asia/Makassar
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      TZ: Asia/Makassar
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_NAME: cloud_absen
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Pasang dependensi
+        working-directory: backend
+        run: npm ci
+
+      - name: Siapkan skema dan seluruh migrasi
+        working-directory: backend
+        # Migrasi dijalankan berurutan, sama seperti di README. Kalau ada
+        # migrasi baru yang rusak, CI gagal di sini -- bukan nanti saat
+        # dijalankan orang di server sungguhan.
+        run: |
+          export PGPASSWORD=postgres
+          psql -h localhost -U postgres -d cloud_absen -v ON_ERROR_STOP=1 -f database/schema.sql
+          for f in database/migrations/*.sql; do
+            echo "-> $f"
+            psql -h localhost -U postgres -d cloud_absen -v ON_ERROR_STOP=1 -f "$f"
+          done
+
+      - name: Jalankan pengujian
+        working-directory: backend
+        run: npm test
+
+      - name: Pastikan tidak ada uji yang dilewati diam-diam
+        working-directory: backend
+        # Uji basis data yang dilewati akan tetap membuat `npm test`
+        # berhasil. Di CI itu tidak boleh terjadi: kalau sampai dilewati,
+        # berarti sambungan basis datanya gagal dan pemeriksaan yang
+        # paling penting tidak pernah berjalan.
+        run: |
+          if npm test 2>&1 | grep -q "# SKIP"; then
+            echo "::error::Ada pengujian yang dilewati. Di CI seluruh uji harus berjalan."
+            exit 1
+          fi
+
+  frontend:
+    name: Frontend build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Pasang dependensi
+        working-directory: frontend
+        run: npm ci
+      - name: Build
+        working-directory: frontend
+        run: npm run build
+
+  mobile:
+    name: Mobile periksa sintaks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - name: Pasang dependensi
+        working-directory: mobile
+        run: npm ci
+      - name: Periksa sintaks seluruh berkas
+        working-directory: mobile
+        # esbuild sudah ikut terpasang bersama Expo. Ia hanya memeriksa
+        # bentuk kodenya -- berkas yang lolos di sini belum tentu berjalan
+        # benar, tapi berkas yang gagal pasti merusak aplikasi.
+        run: |
+          gagal=0
+          for f in $(find App.js index.js src -name '*.js'); do
+            if ! npx esbuild --loader=jsx --log-level=error < "$f" > /dev/null; then
+              echo "::error file=$f::Sintaks tidak valid"
+              gagal=1
+            fi
+          done
+          exit $gagal

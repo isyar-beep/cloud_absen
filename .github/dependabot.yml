@@ -1,0 +1,74 @@
+# ============================================================
+# Pemeriksaan kerentanan paket, otomatis dan di sisi GitHub.
+#
+# Ini menggantikan `npm audit` manual, yang sudah terbukti tidak bisa
+# diandalkan: layanannya membalas timeout dari komputer pengembang dan
+# 503 dari lingkungan lain, pada hari yang sama. Dependabot berjalan di
+# sisi GitHub, jadi tidak bergantung koneksi siapa pun, dan membuka pull
+# request sendiri kalau ada yang perlu dinaikkan.
+#
+# Yang penting bukan sekadar menyalakannya, melainkan menjaganya tetap
+# LAYAK DIBACA. Pemberitahuan yang terlalu sering diabaikan orang, dan
+# begitu diabaikan ia sama saja tidak ada.
+# ============================================================
+
+version: 2
+
+updates:
+  # --- Backend: ini yang terbuka ke internet ---
+  - package-ecosystem: npm
+    directory: /backend
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: 'backend'
+    labels: ['dependensi', 'backend']
+
+  # --- Frontend ---
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: 'frontend'
+    labels: ['dependensi', 'frontend']
+
+  # --- Mobile ---
+  #
+  # Sengaja dibuat paling sepi. Aplikasi HP membawa ratusan paket
+  # perkakas build (metro, image-size, postcss, xcode) yang jalan di
+  # komputer pengembang dan TIDAK ikut ke dalam APK. Peringatan atasnya
+  # nyata sebagai catatan, tapi tidak berlaku bagi pegawai yang memasang
+  # aplikasinya -- dan kalau ikut dibuatkan pull request tiap minggu,
+  # yang sungguhan ikut tenggelam.
+  #
+  # Paket Expo juga tidak boleh dinaikkan sendiri-sendiri: versinya
+  # dipasangkan per SDK, dan menaikkan satu di antaranya justru merusak
+  # kecocokan. Kenaikan SDK dikerjakan sekaligus dan sadar, lewat
+  # `npx expo install --fix`.
+  - package-ecosystem: npm
+    directory: /mobile
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: 'mobile'
+    labels: ['dependensi', 'mobile']
+    ignore:
+      - dependency-name: 'expo'
+      - dependency-name: 'expo-*'
+      - dependency-name: 'react-native'
+      - dependency-name: '@expo/*'
+      - dependency-name: 'metro'
+      - dependency-name: 'metro-*'
+
+  # --- Actions yang dipakai CI itu sendiri ---
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    labels: ['dependensi', 'ci']
