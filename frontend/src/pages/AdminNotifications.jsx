@@ -207,14 +207,18 @@ export default function AdminNotifications() {
                 <p className="px-1 mb-2 text-[11px] font-extrabold uppercase tracking-[0.13em] text-faint">
                   {kepalaHari(hari.iso)}
                 </p>
-                <div className="daftar-pil">
+                {/* `kartu-kaca` wajib menyertai `daftar-pil`, sama seperti
+                    di Kelola Pengguna dan Hari Libur. Tanpa kartunya, pil
+                    duduk langsung di atas latar halaman dan kehilangan
+                    badannya -- terbaca pucat, tidak seperti daftar lain. */}
+                <div className="kartu-kaca daftar-pil">
                   {hari.items.map((n) => {
                     const rupa = RUPA[n.jenis] || RUPA_BAWAAN;
                     return (
                       <button
                         key={n.id}
                         onClick={() => buka(n)}
-                        className={`baris-pil w-full text-left flex items-start gap-3.5 transition ${
+                        className={`baris-pil w-full text-left flex items-start gap-3.5 px-4 py-3.5 ${
                           n.dibaca ? '' : 'ring-1 ring-primary-500/25'
                         }`}
                       >
