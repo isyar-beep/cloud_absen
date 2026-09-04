@@ -15,7 +15,18 @@
 -- Menyimpannya juga berarti pemberitahuan tidak hilang saat aplikasi
 -- ditutup -- hal yang tidak bisa dijamin push.
 --
--- Jalankan: psql -U postgres -d cloud_absen -f database/migrations/011_notifications.sql
+-- Jalankan pada database yang SUDAH ada.
+--
+--   Database via Docker (cara yang dipakai README opsi A):
+--     docker exec -i cloud_absen_db psql -U postgres -d cloud_absen \
+--       < database/migrations/011_notifications.sql
+--
+--   PowerShell tidak mengenal pengalihan "<", jadi di Windows:
+--     Get-Content database/migrations/011_notifications.sql | `
+--       docker exec -i cloud_absen_db psql -U postgres -d cloud_absen
+--
+--   PostgreSQL terpasang langsung (README opsi B):
+--     psql -U postgres -d cloud_absen -f database/migrations/011_notifications.sql
 -- ============================================
 
 CREATE TABLE IF NOT EXISTS notifications (

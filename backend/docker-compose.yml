@@ -31,6 +31,7 @@ services:
       - ./database/migrations/008_leave_types.sql:/docker-entrypoint-initdb.d/90-leave-types.sql
       - ./database/migrations/009_shift_work_days.sql:/docker-entrypoint-initdb.d/91-shift-work-days.sql
       - ./database/migrations/010_projects.sql:/docker-entrypoint-initdb.d/92-projects.sql
+      - ./database/migrations/011_notifications.sql:/docker-entrypoint-initdb.d/93-notifications.sql
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-cloud_absen}']
       interval: 5s
