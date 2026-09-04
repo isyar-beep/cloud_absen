@@ -52,6 +52,34 @@ async function kirimNotifikasi({ userIds, jenis, judul, pesan, tautan, push = tr
     }
   }
 
+  // Buang yang sudah kedaluwarsa milik penerima yang sama.
+  //
+  // Dilakukan di sini, bukan lewat cron di VPS. Cron adalah satu lagi hal
+  // yang harus diingat dipasang saat pindah server, dan kalau terlupa
+  // tidak ada yang memberi tahu -- tabelnya cuma menggemuk diam-diam.
+  // Ditempelkan pada penulisan berarti pembersihannya berjalan tepat saat
+  // tabelnya bertambah, dan lingkupnya hanya penerima yang sedang ditulis
+  // sehingga tetap murah berapa pun besar tabelnya.
+  //
+  // Dua ambang, karena "sudah dibaca" dan "belum dibaca" menua berbeda:
+  // yang sudah dibaca tugasnya selesai, sedangkan yang belum dibaca masih
+  // menuntut tindakan -- sampai umur tertentu, saat pengajuan yang
+  // diberitahukannya sudah lama tidak relevan lagi.
+  try {
+    await query(
+      `DELETE FROM notifications
+       WHERE user_id = ANY($1::int[])
+         AND (
+           (dibaca_pada IS NOT NULL AND created_at < NOW() - INTERVAL '90 days')
+           OR created_at < NOW() - INTERVAL '180 days'
+         )`,
+      [tujuan]
+    );
+  } catch (err) {
+    // Gagal membersihkan bukan alasan menggagalkan pemberitahuannya.
+    console.error('Gagal membersihkan pemberitahuan lama:', err.message);
+  }
+
   return { dibuat: hasil.rows.length };
 }
 

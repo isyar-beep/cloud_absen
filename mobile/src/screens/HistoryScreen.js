@@ -63,14 +63,19 @@ export default function HistoryScreen() {
   const fetchHistory = useCallback(async (offset = 0, append = false) => {
     setLoading(true);
     try {
-      const params = { limit: LIMIT, offset };
+      // Satu baris LEBIH daripada yang ditampilkan, semata untuk menjawab
+      // "masih ada lagi?". Menyimpulkannya dari "jumlah baris == LIMIT"
+      // keliru tepat ketika sisanya kebetulan pas sejumlah LIMIT: tombol
+      // Muat Lebih Banyak tetap muncul lalu menghasilkan halaman kosong.
+      const params = { limit: LIMIT + 1, offset };
       if (statusFilter) params.status = statusFilter;
       if (rentang.start_date) params.start_date = rentang.start_date;
       if (rentang.end_date) params.end_date = rentang.end_date;
 
       const res = await api.get('/attendance/history', { params });
-      setItems((prev) => (append ? [...prev, ...res.data] : res.data));
-      setHasMore(res.data.length === LIMIT);
+      const baris = res.data.slice(0, LIMIT);
+      setItems((prev) => (append ? [...prev, ...baris] : baris));
+      setHasMore(res.data.length > LIMIT);
     } catch (err) {
       console.error(err);
     } finally {
@@ -94,14 +99,21 @@ export default function HistoryScreen() {
 
   // Status pengajuan koreksi milik sendiri, supaya baris yang sudah pernah
   // diajukan tidak menawarkan tombol "Ajukan koreksi" lagi.
+  // Ikut periode yang sedang dilihat. Dulu diambil tanpa penyaring dan
+  // server memotongnya di 50 teratas -- pada riwayat lama, keterangan
+  // koreksinya hilang dan tombol "Ajukan koreksi" muncul lagi untuk
+  // tanggal yang sudah pernah diajukan.
   const fetchAjuan = useCallback(async () => {
     try {
-      const res = await api.get('/corrections/me');
+      const params = {};
+      if (rentang.start_date) params.start_date = rentang.start_date;
+      if (rentang.end_date) params.end_date = rentang.end_date;
+      const res = await api.get('/corrections/me', { params });
       setAjuan(res.data);
     } catch (err) {
       console.error(err);
     }
-  }, []);
+  }, [rentang.start_date, rentang.end_date]);
 
   useEffect(() => {
     fetchHistory();

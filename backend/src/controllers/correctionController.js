@@ -233,19 +233,44 @@ async function ajukanKoreksi(req, res, next) {
   }
 }
 
-// GET /api/corrections/me
+// GET /api/corrections/me?start_date=&end_date=
+//
+// Sengaja TIDAK dipaginasi, walau sebelumnya dipotong "LIMIT 50". Daftar
+// ini bukan untuk ditelusuri pegawai; layar Riwayat memakainya sebagai
+// tabel pencarian -- untuk menempelkan status koreksi pada baris absensi,
+// dan untuk menyembunyikan tombol "Ajukan koreksi" pada tanggal yang sudah
+// pernah diajukan.
+//
+// Potongan berdasarkan jumlah karena itu salah bentuknya: pegawai yang
+// menelusuri riwayat lama akan melihat baris kehilangan keterangan
+// koreksinya, dan ditawari mengajukan koreksi untuk tanggal yang sudah ada
+// pengajuannya -- lalu ditolak 409 tanpa mengerti sebabnya.
+//
+// Yang membatasi seharusnya RENTANG TANGGAL yang sedang dilihat, bukan
+// cacahnya. Itu selalu sejalan dengan apa yang tampil di layar.
 async function getKoreksiSaya(req, res, next) {
   try {
+    const kondisi = ['c.user_id = $1'];
+    const params = [req.user.id];
+    const format = /^\d{4}-\d{2}-\d{2}$/;
+    if (format.test(req.query.start_date || '')) {
+      params.push(req.query.start_date);
+      kondisi.push(`c.date >= $${params.length}`);
+    }
+    if (format.test(req.query.end_date || '')) {
+      params.push(req.query.end_date);
+      kondisi.push(`c.date <= $${params.length}`);
+    }
+
     const hasil = await query(
       `SELECT c.id, to_char(c.date, 'YYYY-MM-DD') AS date,
               c.requested_check_in, c.requested_check_out, c.reason,
               c.status, c.admin_note, c.reviewed_at, u.name AS reviewed_by_name
        FROM correction_requests c
        LEFT JOIN users u ON c.reviewed_by = u.id
-       WHERE c.user_id = $1
-       ORDER BY c.created_at DESC
-       LIMIT 50`,
-      [req.user.id]
+       WHERE ${kondisi.join(' AND ')}
+       ORDER BY c.created_at DESC`,
+      params
     );
     res.json(hasil.rows);
   } catch (err) {
@@ -261,6 +286,13 @@ async function getKoreksiSaya(req, res, next) {
 async function getSemuaKoreksi(req, res, next) {
   try {
     const { status } = req.query;
+    // Dulu dipaku "LIMIT 200" tanpa kabar apa pun ke layar. Itu lebih buruk
+    // daripada tanpa batas: daftarnya tampak lengkap padahal tidak, dan
+    // admin bisa menyimpulkan tidak ada pengajuan lagi padahal masih ada.
+    // Sekarang batasnya ditentukan pemanggil, yang juga bisa meminta
+    // halaman berikutnya.
+    const limit = Math.min(Number(req.query.limit) || 50, 200);
+    const offset = Math.max(Number(req.query.offset) || 0, 0);
     const kondisi = [];
     const params = [];
     if (status && ['pending', 'approved', 'rejected'].includes(status)) {
@@ -284,9 +316,12 @@ async function getSemuaKoreksi(req, res, next) {
        LEFT JOIN projects pj ON u.project_id = pj.id
        LEFT JOIN attendance a ON a.user_id = c.user_id AND a.date = c.date
        ${kondisi.length ? `WHERE ${kondisi.join(' AND ')}` : ''}
-       ORDER BY c.status = 'pending' DESC, c.created_at DESC
-       LIMIT 200`,
-      params
+       -- c.id sebagai pemutus terakhir. Tanpa itu dua pengajuan dengan
+       -- created_at sama bisa bertukar urutan antar permintaan, dan
+       -- paginasi berbasis OFFSET akan melewatkan atau mengulang baris.
+       ORDER BY c.status = 'pending' DESC, c.created_at DESC, c.id DESC
+       LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+      [...params, limit, offset]
     );
     res.json(hasil.rows);
   } catch (err) {

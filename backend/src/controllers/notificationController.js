@@ -287,25 +287,37 @@ async function sendCheckinReminder(req, res, next) {
 // Pemberitahuan milik pemakai yang sedang masuk.
 // ============================================================
 
-// GET /api/notifications/saya?limit=
+// GET /api/notifications/saya?limit=&offset=
 async function daftarNotifikasi(req, res, next) {
   try {
     const limit = Math.min(Number(req.query.limit) || 30, 100);
+    const offset = Math.max(Number(req.query.offset) || 0, 0);
+
+    // Diminta satu baris LEBIH BANYAK daripada yang akan ditampilkan.
+    // Barisnya sendiri dibuang; keberadaannyalah yang menjawab "masih ada
+    // lagi?" tanpa perlu menghitung seluruh tabel. Menyimpulkannya dari
+    // "jumlah baris == limit" -- cara yang dipakai sebelumnya di halaman
+    // riwayat -- keliru tepat ketika sisanya kebetulan pas sejumlah limit:
+    // tombolnya tetap muncul lalu menghasilkan halaman kosong.
     const hasil = await query(
       `SELECT id, jenis, judul, pesan, tautan,
               dibaca_pada IS NOT NULL AS dibaca,
               created_at
        FROM notifications
        WHERE user_id = $1
-       ORDER BY created_at DESC
-       LIMIT $2`,
-      [req.user.id, limit]
+       ORDER BY created_at DESC, id DESC
+       LIMIT $2 OFFSET $3`,
+      [req.user.id, limit + 1, offset]
     );
     const belum = await query(
       'SELECT COUNT(*)::int AS n FROM notifications WHERE user_id = $1 AND dibaca_pada IS NULL',
       [req.user.id]
     );
-    res.json({ items: hasil.rows, belum_dibaca: belum.rows[0].n });
+    res.json({
+      items: hasil.rows.slice(0, limit),
+      ada_lagi: hasil.rows.length > limit,
+      belum_dibaca: belum.rows[0].n,
+    });
   } catch (err) {
     next(err);
   }

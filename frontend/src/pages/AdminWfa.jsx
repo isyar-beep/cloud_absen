@@ -8,6 +8,8 @@ import { keTanggal } from '../utils/periode';
 import Pilihan, { KELAS_PILIHAN } from '../components/Pilihan';
 import Tombol from '../components/Tombol';
 
+const LIMIT = 50;
+
 // Penetapan WFA (Work From Anywhere).
 //
 // Ditetapkan admin, bukan diajukan pegawai — jadi tidak ada alur
@@ -22,12 +24,19 @@ export default function AdminWfa() {
   const [error, setError] = useState('');
   const [pesan, setPesan] = useState('');
   const [loading, setLoading] = useState(false);
+  const [adaLagi, setAdaLagi] = useState(false);
 
-  const ambil = useCallback(async () => {
+  // Dulu server memotong daftar ini di 200 baris tanpa memberi tahu, dan
+  // layar tidak punya cara menampilkan sisanya. Satu baris lebih diminta
+  // daripada yang ditampilkan, semata untuk mengetahui apakah masih ada.
+  const ambil = useCallback(async (offset = 0, tambah = false) => {
     try {
-      const params = saringan === 'aktif' ? { aktif: 'true' } : {};
+      const params = { limit: LIMIT + 1, offset };
+      if (saringan === 'aktif') params.aktif = 'true';
       const res = await api.get('/wfa', { params });
-      setDaftar(res.data);
+      const baris = res.data.slice(0, LIMIT);
+      setDaftar((prev) => (tambah ? [...prev, ...baris] : baris));
+      setAdaLagi(res.data.length > LIMIT);
     } catch (err) {
       setError(err.response?.data?.message || 'Gagal memuat daftar WFA.');
     }
@@ -271,6 +280,15 @@ export default function AdminWfa() {
                 : 'Belum ada penetapan WFA.'}
             </p>
           </div>
+        )}
+
+        {adaLagi && (
+          <button
+            onClick={() => ambil(daftar.length, true)}
+            className="w-full bg-surface/75 backdrop-blur-xl border border-line text-body py-3 rounded-2xl text-sm font-semibold shadow-soft transition hover:border-line-strong"
+          >
+            Muat lebih banyak
+          </button>
         )}
       </div>
 

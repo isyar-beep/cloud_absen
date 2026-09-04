@@ -110,8 +110,10 @@ export default function AdminGallery() {
     setLoading(true);
     setLoadError('');
     try {
+      // Satu baris lebih daripada yang ditampilkan, hanya untuk mengetahui
+      // apakah masih ada lagi. Lihat catatan yang sama di History.jsx.
       const params = {
-        limit: LIMIT,
+        limit: LIMIT + 1,
         offset,
         with_photo: 'true',
         sort: filter.sort,
@@ -123,8 +125,9 @@ export default function AdminGallery() {
       if (filter.status) params.status = filter.status;
 
       const res = await api.get('/attendance/all', { params });
-      setItems((prev) => (tambah ? [...prev, ...res.data] : res.data));
-      setHasMore(res.data.length === LIMIT);
+      const baris = res.data.slice(0, LIMIT);
+      setItems((prev) => (tambah ? [...prev, ...baris] : baris));
+      setHasMore(res.data.length > LIMIT);
     } catch (err) {
       setLoadError(
         err.response?.data?.message ||

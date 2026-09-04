@@ -68,14 +68,17 @@ export default function AdminHistory() {
   const fetchHistory = useCallback(async (offset = 0, append = false) => {
     setLoading(true);
     try {
-      const params = { limit: LIMIT, offset };
+      // Satu baris lebih daripada yang ditampilkan, hanya untuk mengetahui
+      // apakah masih ada lagi. Lihat catatan yang sama di History.jsx.
+      const params = { limit: LIMIT + 1, offset };
       Object.entries(filter).forEach(([key, value]) => {
         if (value) params[key] = value;
       });
 
       const res = await api.get('/attendance/all', { params });
-      setItems((prev) => (append ? [...prev, ...res.data] : res.data));
-      setHasMore(res.data.length === LIMIT);
+      const baris = res.data.slice(0, LIMIT);
+      setItems((prev) => (append ? [...prev, ...baris] : baris));
+      setHasMore(res.data.length > LIMIT);
     } catch (err) {
       console.error(err);
     } finally {

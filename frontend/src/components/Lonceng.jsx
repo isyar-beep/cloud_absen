@@ -19,6 +19,7 @@ import { formatTanggalSingkat, jamLokal } from '../utils/tanggal';
 // ============================================================
 
 const SELANG_SEGARKAN = 60000;
+const SEHALAMAN = 20;
 
 // "3 menit lalu", "2 jam lalu", lalu berganti tanggal. Bentuk relatif hanya
 // berguna untuk yang baru; untuk yang lampau, tanggal jauh lebih menolong.
@@ -34,6 +35,7 @@ export default function Lonceng() {
   const [buka, setBuka] = useState(false);
   const [items, setItems] = useState([]);
   const [belum, setBelum] = useState(0);
+  const [adaLagi, setAdaLagi] = useState(false);
   const [posisi, setPosisi] = useState(null);
   const navigate = useNavigate();
   const akarRef = useRef(null);
@@ -62,10 +64,11 @@ export default function Lonceng() {
     if (buka) hitungPosisi();
   }, [buka, hitungPosisi]);
 
-  const muat = useCallback(async () => {
+  const muat = useCallback(async (offset = 0, tambah = false) => {
     try {
-      const res = await api.get('/notifications/saya', { params: { limit: 20 } });
-      setItems(res.data.items);
+      const res = await api.get('/notifications/saya', { params: { limit: SEHALAMAN, offset } });
+      setItems((d) => (tambah ? [...d, ...res.data.items] : res.data.items));
+      setAdaLagi(res.data.ada_lagi);
       setBelum(res.data.belum_dibaca);
     } catch {
       // Diam saja. Lonceng yang gagal memuat tidak boleh memunculkan pesan
@@ -74,9 +77,16 @@ export default function Lonceng() {
     }
   }, []);
 
+  // Penyegaran berkala DIHENTIKAN selagi panelnya terbuka. Dua sebabnya:
+  // penyegaran selalu kembali ke halaman pertama, jadi halaman tambahan
+  // yang sudah dimuat akan lenyap di tengah orang membacanya; dan daftar
+  // yang berubah sendiri di bawah kursor membuat salah klik.
+  const bukaRef = useRef(false);
+  bukaRef.current = buka;
+
   useEffect(() => {
     muat();
-    const t = setInterval(muat, SELANG_SEGARKAN);
+    const t = setInterval(() => { if (!bukaRef.current) muat(); }, SELANG_SEGARKAN);
     return () => clearInterval(t);
   }, [muat]);
 
@@ -182,6 +192,15 @@ export default function Lonceng() {
               <p className="text-sm text-muted text-center px-6 py-10">
                 Belum ada pemberitahuan.
               </p>
+            )}
+
+            {adaLagi && (
+              <button
+                onClick={() => muat(items.length, true)}
+                className="w-full px-4 py-3 text-[12px] font-semibold text-primary-600 dark:text-primary-400 hover:bg-surface-2/70 transition"
+              >
+                Muat lebih banyak
+              </button>
             )}
           </div>
         </div>,

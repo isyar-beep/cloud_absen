@@ -31,6 +31,11 @@ async function wfaBerlaku(userId, tanggal) {
 async function getSemuaWfa(req, res, next) {
   try {
     const { user_id, aktif } = req.query;
+    // Sebelumnya dipaku "LIMIT 200" tanpa penanda apa pun. Lihat catatan
+    // sejenis di correctionController: daftar yang dipotong diam-diam
+    // membuat layar berbohong tentang kelengkapannya.
+    const limit = Math.min(Number(req.query.limit) || 50, 200);
+    const offset = Math.max(Number(req.query.offset) || 0, 0);
     const kondisi = [];
     const params = [];
 
@@ -56,9 +61,11 @@ async function getSemuaWfa(req, res, next) {
        LEFT JOIN projects pj ON u.project_id = pj.id
        LEFT JOIN users pembuat ON w.created_by = pembuat.id
        ${kondisi.length ? `WHERE ${kondisi.join(' AND ')}` : ''}
-       ORDER BY w.start_date DESC
-       LIMIT 200`,
-      params
+       -- w.id sebagai pemutus terakhir supaya urutannya tetap sama antar
+       -- permintaan; tanpa itu paginasi OFFSET bisa melewatkan baris.
+       ORDER BY w.start_date DESC, w.id DESC
+       LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+      [...params, limit, offset]
     );
     res.json(hasil.rows);
   } catch (err) {

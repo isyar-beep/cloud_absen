@@ -18,6 +18,8 @@ import { formatTanggalSingkat, jamLokal } from '../utils/tanggal';
 // kapan pun -- push tinggal menjadi pengantar, bukan satu-satunya salinan.
 // ============================================================
 
+const SEHALAMAN = 25;
+
 // Ikon per jenis kejadian. Dipetakan di satu tempat supaya jenis baru di
 // backend cukup ditambahkan di sini, dengan cadangan yang tetap masuk akal
 // bila layar ini lebih tua daripada servernya.
@@ -47,15 +49,17 @@ function usia(waktu) {
 export default function NotifikasiScreen({ navigation }) {
   const [items, setItems] = useState([]);
   const [belum, setBelum] = useState(0);
+  const [adaLagi, setAdaLagi] = useState(false);
   const [memuat, setMemuat] = useState(true);
   const [menyegarkan, setMenyegarkan] = useState(false);
   const w = useWarna();
   const styles = useMemo(() => buatGaya(w), [w]);
 
-  const muat = useCallback(async () => {
+  const muat = useCallback(async (offset = 0, tambah = false) => {
     try {
-      const res = await api.get('/notifications/saya', { params: { limit: 50 } });
-      setItems(res.data.items);
+      const res = await api.get('/notifications/saya', { params: { limit: SEHALAMAN, offset } });
+      setItems((d) => (tambah ? [...d, ...res.data.items] : res.data.items));
+      setAdaLagi(res.data.ada_lagi);
       setBelum(res.data.belum_dibaca);
     } catch {
       // Dibiarkan diam: daftar kosong dengan keterangannya sendiri sudah
@@ -116,6 +120,16 @@ export default function NotifikasiScreen({ navigation }) {
             onRefresh={() => { setMenyegarkan(true); muat(); }}
             tintColor={w.utama}
           />
+        }
+        // Tombol, bukan gulir tak berhingga. Sama seperti layar Riwayat --
+        // dan pemuatan yang berjalan sendiri saat digulir membuat pemakainya
+        // kehilangan rasa "sudah sampai ujung".
+        ListFooterComponent={
+          adaLagi ? (
+            <TouchableOpacity style={styles.tombolLagi} onPress={() => muat(items.length, true)}>
+              <Text style={styles.tombolLagiTeks}>Muat Lebih Banyak</Text>
+            </TouchableOpacity>
+          ) : null
         }
         ListEmptyComponent={
           <View style={styles.tengah}>
@@ -190,6 +204,12 @@ function buatGaya(w) {
     waktu: { fontSize: 11, color: w.teksSamar, marginTop: 6 },
 
     titik: { width: 8, height: 8, borderRadius: 4, backgroundColor: w.utama, marginTop: 6 },
+
+    tombolLagi: {
+      marginTop: 4, paddingVertical: 13, borderRadius: 14, alignItems: 'center',
+      backgroundColor: w.permukaan, borderWidth: 1, borderColor: w.garis,
+    },
+    tombolLagiTeks: { fontSize: 13, fontWeight: '700', color: w.utama },
 
     kosongJudul: { fontSize: 15, fontWeight: '700', color: w.teks, marginTop: 6 },
     kosongPesan: { fontSize: 13, color: w.teksRedup, textAlign: 'center', lineHeight: 19 },

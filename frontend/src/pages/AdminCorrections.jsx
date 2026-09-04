@@ -4,6 +4,8 @@ import Avatar from '../components/Avatar';
 import StatusBadge from '../components/StatusBadge';
 import { formatTanggalHari, formatJam } from '../utils/tanggal';
 
+const LIMIT = 50;
+
 const SARINGAN = [
   { key: 'pending', label: 'Menunggu' },
   { key: 'approved', label: 'Disetujui' },
@@ -31,13 +33,21 @@ export default function AdminCorrections() {
   const [error, setError] = useState('');
   const [pesan, setPesan] = useState('');
   const [loading, setLoading] = useState(false);
+  const [adaLagi, setAdaLagi] = useState(false);
 
-  const ambil = useCallback(async () => {
+  // Dulu server memotong daftar ini di 200 baris tanpa memberi tahu, dan
+  // layar tidak punya cara menampilkan sisanya. Sekarang dimuat bertahap:
+  // satu baris lebih diminta daripada yang ditampilkan, semata untuk
+  // mengetahui apakah masih ada lagi.
+  const ambil = useCallback(async (offset = 0, tambah = false) => {
     setError('');
     try {
-      const params = saringan === 'all' ? {} : { status: saringan };
+      const params = { limit: LIMIT + 1, offset };
+      if (saringan !== 'all') params.status = saringan;
       const res = await api.get('/corrections', { params });
-      setItems(res.data);
+      const baris = res.data.slice(0, LIMIT);
+      setItems((prev) => (tambah ? [...prev, ...baris] : baris));
+      setAdaLagi(res.data.length > LIMIT);
     } catch (err) {
       setError(err.response?.data?.message || 'Gagal memuat pengajuan koreksi.');
     }
@@ -209,6 +219,16 @@ export default function AdminCorrections() {
                 : 'Tidak ada pengajuan koreksi pada saringan ini.'}
             </p>
           </div>
+        )}
+
+        {adaLagi && (
+          <button
+            onClick={() => ambil(items.length, true)}
+            disabled={loading}
+            className="w-full bg-surface/75 backdrop-blur-xl border border-line text-body py-3 rounded-2xl text-sm font-semibold shadow-soft transition hover:border-line-strong disabled:opacity-50"
+          >
+            Muat lebih banyak
+          </button>
         )}
       </div>
     </div>
