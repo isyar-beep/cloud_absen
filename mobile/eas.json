@@ -1,0 +1,48 @@
+{
+  "cli": {
+    "version": ">= 5.0.0",
+    "appVersionSource": "local"
+  },
+  "build": {
+    "//": [
+      "Tiga profil, dan yang paling sering dibutuhkan adalah 'preview'.",
+      "",
+      "Bawaan `eas build --platform android` menghasilkan AAB -- format",
+      "untuk diunggah ke Play Store, yang TIDAK BISA dipasang langsung di",
+      "HP. Untuk demo tender itu salah bentuk: panitia tidak akan",
+      "mengunggah apa pun ke Play Store, mereka ingin memasang dan",
+      "membuka. Karena itu profil preview memaksa buildType 'apk'.",
+      "",
+      "Alamat server ditanam lewat EXPO_PUBLIC_API_URL. JANGAN menyunting",
+      "src/services/api.js -- berkas itu memakai nilai env kalau ada, dan",
+      "kalau tidak ada ia mencari sendiri alamat komputer pengembang.",
+      "APK yang dibangun tanpa env akan menunjuk komputer yang tidak bisa",
+      "dijangkau siapa pun di luar jaringan itu."
+    ],
+
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "android": { "buildType": "apk" }
+    },
+
+    "preview": {
+      "distribution": "internal",
+      "android": { "buildType": "apk" },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://GANTI-DENGAN-ALAMAT-SERVER/api"
+      }
+    },
+
+    "production": {
+      "distribution": "store",
+      "android": { "buildType": "app-bundle" },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://GANTI-DENGAN-ALAMAT-SERVER/api"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

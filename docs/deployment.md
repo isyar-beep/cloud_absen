@@ -181,24 +181,79 @@ domain frontend (termasuk `https://`), lalu restart API:
 
 ## 5. Build APK Mobile
 
-Edit `mobile/src/services/api.js`:
+> **Jangan menyunting `mobile/src/services/api.js`.** Berkas itu membaca
+> alamat dari `EXPO_PUBLIC_API_URL`; kalau tidak ada, ia mencari sendiri
+> alamat komputer pengembang — berguna saat mengembangkan, dan berakibat
+> APK yang tidak bisa menghubungi apa pun kalau ikut terbawa ke produksi.
 
-```js
-const API_URL = 'https://api.perusahaan.com/api';
+### 5.1 Isi alamat server
+
+Buka `mobile/eas.json`, ganti `GANTI-DENGAN-ALAMAT-SERVER` pada profil
+`preview` dan `production` dengan alamat server sungguhan:
+
+```json
+"env": { "EXPO_PUBLIC_API_URL": "https://absensi.contoh.id/api" }
 ```
 
-Build dengan EAS:
+Kalau ada berkas `mobile/.env` sisa pengembangan yang memuat
+`EXPO_PUBLIC_API_URL`, **hapus dulu** — isinya bisa menimpa nilai di atas.
+
+### 5.2 Periksa sebelum membangun
 
 ```bash
 cd mobile
-npm install
-npm install -g eas-cli
-eas login
-eas build:configure
-eas build --platform android
+npm run periksa:build
 ```
 
-Link download APK muncul setelah build selesai (~10 menit).
+Build EAS berjalan sekitar sepuluh menit dan antre di server orang lain.
+Pemeriksaan ini selesai seketika dan menangkap kesalahan yang biasanya
+baru ketahuan setelah APK terpasang di HP:
+
+- alamat masih berisi contoh, atau menunjuk `localhost` / `192.168.x.x`
+  (HP pegawai di luar kantor tidak akan bisa menjangkaunya)
+- alamat memakai `http`, bukan `https` — absensi mengirim foto wajah dan
+  password
+- versi di `app.json` berselisih dengan `package.json`
+- izin `CAMERA` atau `ACCESS_FINE_LOCATION` belum didaftarkan
+- ada `mobile/.env` yang akan menimpa alamat produksi
+
+Perbaiki sampai ia menulis **Siap dibangun**.
+
+### 5.3 Bangun
+
+```bash
+npm install -g eas-cli
+eas login
+eas build --platform android --profile preview
+```
+
+Profil `preview` menghasilkan **APK** yang tinggal dipasang. Ini yang
+dipakai untuk demo dan untuk dibagikan langsung ke pegawai.
+
+Profil `production` menghasilkan **AAB** — format khusus untuk diunggah
+ke Play Store, dan **tidak bisa dipasang langsung dari berkas**. Jangan
+memakainya untuk demo.
+
+Tautan unduhan muncul setelah build selesai (~10 menit).
+
+### 5.4 Sebelum dibagikan, uji di HP yang bukan HP pengembang
+
+Ini yang membuktikan alamat servernya benar. Pasang APK-nya di HP yang
+**tidak pernah** tersambung ke jaringan kantor — pakai data seluler, bukan
+WiFi kantor — lalu login. Kalau berhasil, alamatnya sudah benar-benar
+terjangkau dari luar.
+
+APK yang diuji hanya di jaringan kantor bisa lolos karena alasan yang
+keliru, dan baru ketahuan saat pegawai pertama mencobanya di lapangan.
+
+### Catatan: jangan andalkan Expo Go untuk demo
+
+Expo Go diperbarui sendiri oleh Play Store, dan versi barunya menolak
+membuka proyek dengan SDK lama — hal ini sudah terjadi selama
+pengembangan sistem ini. Demo yang bergantung padanya bisa rusak kapan
+saja, termasuk pada hari presentasi.
+
+APK tidak punya masalah itu: versi SDK-nya tertanam di dalam.
 
 ## 6. Update Aplikasi (Redeploy)
 

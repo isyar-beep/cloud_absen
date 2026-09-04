@@ -6,7 +6,8 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "cek:kontras": "node scripts/cek-kontras.mjs"
+    "cek:kontras": "node scripts/cek-kontras.mjs",
+    "periksa:build": "node scripts/periksa-build.js"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.1.1",
