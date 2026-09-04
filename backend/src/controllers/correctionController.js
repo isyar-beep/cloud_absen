@@ -13,6 +13,7 @@
 const { query, pool } = require('../config/db');
 const { jendelaAbsen, shiftPegawai } = require('../utils/shiftWindow');
 const { batasiPerPegawai, bolehAksesPegawai } = require('../utils/lingkupProyek');
+const { kirimNotifikasi, penyeliaPegawai } = require('../utils/notifikasi');
 
 const STATUS_VALID = ['hadir', 'terlambat', 'izin', 'alpha'];
 
@@ -213,6 +214,19 @@ async function ajukanKoreksi(req, res, next) {
       [req.user.id, date, requested_check_in || null, requested_check_out || null, String(reason).trim()]
     );
 
+    try {
+      const pengaju = await query('SELECT name FROM users WHERE id = $1', [req.user.id]);
+      await kirimNotifikasi({
+        userIds: await penyeliaPegawai(req.user.id),
+        jenis: 'koreksi_baru',
+        judul: 'Pengajuan koreksi absensi',
+        pesan: `${pengaju.rows[0]?.name || 'Seorang pegawai'} mengajukan koreksi untuk ${date}.`,
+        tautan: '/admin/leaves?tab=koreksi',
+      });
+    } catch (e) {
+      console.error('Gagal membuat pemberitahuan koreksi baru:', e.message);
+    }
+
     res.status(201).json({ message: 'Pengajuan koreksi terkirim.', correction: hasil.rows[0] });
   } catch (err) {
     next(err);
@@ -368,6 +382,21 @@ async function reviewKoreksi(req, res, next) {
     }
 
     await klien.query('COMMIT');
+
+    try {
+      await kirimNotifikasi({
+        userIds: [k.user_id],
+        jenis: 'koreksi_diputus',
+        judul: status === 'approved' ? 'Koreksi absensi disetujui' : 'Koreksi absensi ditolak',
+        pesan: `Koreksi untuk ${k.tanggal} `
+          + `${status === 'approved' ? 'disetujui' : 'ditolak'}.`
+          + (admin_note ? ` Catatan: ${admin_note}` : ''),
+        tautan: '/history',
+      });
+    } catch (e) {
+      console.error('Gagal membuat pemberitahuan hasil koreksi:', e.message);
+    }
+
     res.json({
       message: status === 'approved'
         ? `Koreksi ${k.name} untuk ${k.tanggal} disetujui.`

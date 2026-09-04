@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import Avatar from './Avatar';
 import ThemeToggle from './ThemeToggle';
+import Lonceng from './Lonceng';
 import {
   HomeIcon, BriefcaseIcon, ChartIcon, ClockIcon, PhotoIcon, DocumentIcon,
   UsersIcon, ClipboardIcon, CalendarIcon, LogoutIcon, MenuIcon, CloseIcon,
@@ -70,6 +71,7 @@ function Isi({ user, aktifKah, onPindah, onKeluar, lipat = false, onLipat }) {
 
         <div className={`flex items-center gap-1.5 mt-2.5 ${lipat ? 'flex-col' : 'justify-start'}`}>
           <ThemeToggle ringkas />
+          <Lonceng />
           {onLipat && (
             <button
               onClick={onLipat}

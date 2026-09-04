@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import api from '../api/axios';
 import AdminSidebar from '../components/AdminSidebar';
 import KeadaanKosong from '../components/KeadaanKosong';
@@ -22,7 +23,13 @@ export default function AdminLeaves() {
   // Izin dan koreksi sama-sama "pengajuan pegawai yang menunggu keputusan
   // admin", jadi digabung di satu halaman sebagai tab -- lebih baik daripada
   // menambah satu lagi menu di bilah navigasi yang sudah panjang.
-  const [tab, setTab] = useState('izin');
+  //
+  // Tab awalnya bisa ditentukan lewat "?tab=koreksi" supaya pemberitahuan
+  // koreksi mendarat pada tab yang benar. Tanpa itu pemakainya sampai di
+  // halaman ini lalu masih harus mencari sendiri apa yang tadi diberitahukan.
+  const [pencarian, setPencarian] = useSearchParams();
+  const tab = pencarian.get('tab') === 'koreksi' ? 'koreksi' : 'izin';
+  const setTab = (t) => setPencarian(t === 'koreksi' ? { tab: 'koreksi' } : {}, { replace: true });
   const tokenFoto = useTokenFoto();
   const [reviewingId, setReviewingId] = useState(null);
   const [note, setNote] = useState('');

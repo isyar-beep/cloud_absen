@@ -9,6 +9,7 @@ import CameraScreen from './src/screens/CameraScreen';
 import LeavesScreen from './src/screens/LeavesScreen';
 import HistoryScreen from './src/screens/HistoryScreen';
 import ProfilScreen from './src/screens/ProfilScreen';
+import NotifikasiScreen from './src/screens/NotifikasiScreen';
 import { useAuthStore } from './src/store/authStore';
 import { useWarna, useThemeStore } from './src/theme';
 import { registerForPushNotifications } from './src/services/notifications';
@@ -76,6 +77,7 @@ export default function App() {
           <Stack.Screen name="Leaves" component={LeavesScreen} options={{ headerShown: true, title: 'Pengajuan Izin' }} />
           <Stack.Screen name="History" component={HistoryScreen} options={{ headerShown: true, title: 'Riwayat Absensi' }} />
           <Stack.Screen name="Profil" component={ProfilScreen} options={{ headerShown: true, title: 'Profil & Pengaturan' }} />
+          <Stack.Screen name="Notifikasi" component={NotifikasiScreen} options={{ headerShown: true, title: 'Pemberitahuan' }} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>

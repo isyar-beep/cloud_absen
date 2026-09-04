@@ -3,6 +3,7 @@ import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView, RefreshControl,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { useWarna, LENGKUNG } from '../theme';
 import Gradasi from '../components/Gradasi';
 import Avatar from '../components/Avatar';
@@ -70,6 +71,7 @@ export default function DashboardScreen({ navigation }) {
   const [history, setHistory] = useState([]);
   const [error, setError] = useState('');
   const [memuat, setMemuat] = useState(false);
+  const [belumDibaca, setBelumDibaca] = useState(0);
   const w = useWarna();
   const insets = useSafeAreaInsets();
   const tokenFoto = useTokenFoto();
@@ -81,16 +83,21 @@ export default function DashboardScreen({ navigation }) {
   // -- persis kejadian "statistik tidak muncul di HP" yang sulit dilacak.
   const ambilData = useCallback(async () => {
     setMemuat(true);
-    const [todayRes, statsRes, historyRes] = await Promise.allSettled([
+    const [todayRes, statsRes, historyRes, notifRes] = await Promise.allSettled([
       api.get('/attendance/today'),
       api.get('/stats/me'),
       api.get('/attendance/history?limit=5'),
+      api.get('/notifications/saya', { params: { limit: 1 } }),
     ]);
 
     if (todayRes.status === 'fulfilled') setInfo(todayRes.value.data);
     if (statsRes.status === 'fulfilled') setStats(statsRes.value.data);
     if (historyRes.status === 'fulfilled') setHistory(historyRes.value.data);
+    if (notifRes.status === 'fulfilled') setBelumDibaca(notifRes.value.data.belum_dibaca);
 
+    // Jumlah pemberitahuan sengaja TIDAK ikut menentukan pesan galat:
+    // lonceng yang gagal dimuat tidak boleh membuat layar absensi
+    // menyatakan dirinya bermasalah, karena absennya sendiri baik-baik saja.
     const gagal = [todayRes, statsRes, historyRes].find((r) => r.status === 'rejected');
     setError(
       gagal
@@ -189,13 +196,36 @@ export default function DashboardScreen({ navigation }) {
               ubah password, keluar. Avatar dipilih daripada ikon roda gigi
               karena sekaligus memberi tahu pegawai sedang masuk sebagai
               siapa -- penting di HP yang kadang dipakai bergantian. */}
-          <TouchableOpacity
-            style={styles.tombolProfil}
-            onPress={() => navigation.navigate('Profil')}
-            accessibilityLabel="Profil dan pengaturan"
-          >
-            <Avatar nama={user?.name} url={user?.avatar_url} token={tokenFoto} ukuran={40} />
-          </TouchableOpacity>
+          <View style={styles.heroAksi}>
+            {/* Lonceng di sebelah avatar, bukan tersembunyi di dalam menu:
+                pemberitahuan yang perlu dicari dulu sama saja dengan tidak
+                ada, dan pegawai yang push-nya sudah tersapu dari bilah HP
+                hanya punya jalan ini untuk menemukannya kembali. */}
+            <TouchableOpacity
+              style={styles.tombolLonceng}
+              onPress={() => navigation.navigate('Notifikasi')}
+              accessibilityLabel={
+                belumDibaca > 0 ? `Pemberitahuan, ${belumDibaca} belum dibaca` : 'Pemberitahuan'
+              }
+            >
+              <Ionicons name="notifications-outline" size={20} color={w.teksDiWarna} />
+              {belumDibaca > 0 && (
+                <View style={styles.lonceng}>
+                  <Text style={styles.loncengAngka}>
+                    {belumDibaca > 9 ? '9+' : belumDibaca}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.tombolProfil}
+              onPress={() => navigation.navigate('Profil')}
+              accessibilityLabel="Profil dan pengaturan"
+            >
+              <Avatar nama={user?.name} url={user?.avatar_url} token={tokenFoto} ukuran={40} />
+            </TouchableOpacity>
+          </View>
         </View>
       </Gradasi>
 
@@ -412,6 +442,23 @@ const buatGaya = (w) => StyleSheet.create({
     borderWidth: 2, borderColor: 'rgba(255,255,255,0.55)',
   },
 
+  heroAksi: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  tombolLonceng: {
+    width: 38, height: 38, borderRadius: 14,
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.35)',
+  },
+  // Angkanya ikut ditulis, bukan cuma titik: "ada sesuatu" dan "ada tujuh
+  // sesuatu" menuntut tindakan yang berbeda.
+  lonceng: {
+    position: 'absolute', top: -5, right: -5,
+    minWidth: 18, height: 18, paddingHorizontal: 4, borderRadius: 9,
+    backgroundColor: '#dc2626', alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.9)',
+  },
+  loncengAngka: { fontSize: 10, fontWeight: '800', color: '#ffffff' },
+
   isi: { paddingHorizontal: 16, marginTop: -42 },
   pesan: {
     fontSize: 12, color: w.hijau.teks, backgroundColor: w.hijau.latar,
@@ -425,8 +472,8 @@ const buatGaya = (w) => StyleSheet.create({
   },
 
   card: {
-    backgroundColor: w.kaca, borderColor: w.kacaGaris, borderWidth: 1, borderRadius: LENGKUNG.kartu, padding: 16,
-    borderWidth: 1, borderColor: w.garis, marginBottom: 12,
+    backgroundColor: w.kaca, borderColor: w.kacaGaris, borderWidth: 1,
+    borderRadius: LENGKUNG.kartu, padding: 16, marginBottom: 12,
   },
   shiftHeader: { flexDirection: 'row', justifyContent: 'space-between' },
   shiftKolom: { flex: 1 },
@@ -482,8 +529,9 @@ const buatGaya = (w) => StyleSheet.create({
   peringatanJudul: { fontSize: 13, fontWeight: '700', color: w.status.terlambat.teks },
   peringatanTeks: { fontSize: 11, color: w.status.terlambat.teks, opacity: 0.85, marginTop: 2 },
   statCard: {
-    width: '47.5%', flexGrow: 1, backgroundColor: w.kaca, borderColor: w.kacaGaris, borderWidth: 1, borderRadius: LENGKUNG.kartu,
-    borderWidth: 1, borderColor: w.garis, paddingVertical: 14, paddingHorizontal: 14,
+    width: '47.5%', flexGrow: 1,
+    backgroundColor: w.kaca, borderColor: w.kacaGaris, borderWidth: 1,
+    borderRadius: LENGKUNG.kartu, paddingVertical: 14, paddingHorizontal: 14,
   },
   statValue: { fontSize: 19, fontWeight: '700', color: w.teks },
   statLabel: { fontSize: 11, color: w.teksRedup, marginTop: 2 },
@@ -501,8 +549,8 @@ const buatGaya = (w) => StyleSheet.create({
 
   menuRow: { flexDirection: 'row', gap: 10, marginTop: 6 },
   menuButton: {
-    flex: 1, backgroundColor: w.kaca, borderColor: w.kacaGaris, borderWidth: 1, borderRadius: LENGKUNG.kartu, paddingVertical: 14,
-    alignItems: 'center', borderWidth: 1, borderColor: w.garis,
+    flex: 1, backgroundColor: w.kaca, borderColor: w.kacaGaris, borderWidth: 1,
+    borderRadius: LENGKUNG.kartu, paddingVertical: 14, alignItems: 'center',
   },
   menuButtonText: { fontSize: 13, color: w.teksBadan, fontWeight: '600' },
 });

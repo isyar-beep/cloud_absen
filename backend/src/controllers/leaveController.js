@@ -1,5 +1,5 @@
 const { pool, query } = require('../config/db');
-const { sendPushNotifications } = require('../utils/pushNotification');
+const { kirimNotifikasi, penyeliaPegawai } = require('../utils/notifikasi');
 const { uploadDokumenIzin } = require('../utils/uploadPhoto');
 const { batasiPerPegawai, bolehAksesPegawai } = require('../utils/lingkupProyek');
 
@@ -83,6 +83,25 @@ async function createLeave(req, res, next) {
                  document_url, document_name, created_at`,
       [userId, type, start_date, end_date, reason.trim(), dokumenUrl, dokumenNama]
     );
+
+    // Beri tahu yang berwenang memutuskan. Tanpa ini pengajuan masuk tanpa
+    // ada yang tahu, sampai seseorang kebetulan membuka menu Pengajuan.
+    // Kegagalannya tidak boleh menggagalkan pengajuannya -- pegawai sudah
+    // mengirim, dan itu yang penting.
+    try {
+      const pengaju = await query('SELECT name FROM users WHERE id = $1', [userId]);
+      const nama = pengaju.rows[0]?.name || 'Seorang pegawai';
+      await kirimNotifikasi({
+        userIds: await penyeliaPegawai(userId),
+        jenis: 'pengajuan_baru',
+        judul: `Pengajuan ${LABEL_JENIS[type].toLowerCase()} baru`,
+        pesan: `${nama} mengajukan ${LABEL_JENIS[type].toLowerCase()} `
+          + `${start_date}${end_date !== start_date ? ` s/d ${end_date}` : ''}.`,
+        tautan: '/admin/leaves',
+      });
+    } catch (e) {
+      console.error('Gagal membuat pemberitahuan pengajuan baru:', e.message);
+    }
 
     res.status(201).json({
       message: `Pengajuan ${LABEL_JENIS[type].toLowerCase()} berhasil dikirim. Menunggu persetujuan admin.`,
@@ -234,27 +253,25 @@ async function reviewLeave(req, res, next) {
 
     await client.query('COMMIT');
 
-    // Kirim push notification ke pegawai (best-effort -- kegagalan tidak menggagalkan review)
+    // Satu pintu: membuat baris pemberitahuan SEKALIGUS mengirim push.
+    // Sebelumnya di sini hanya ada push, sehingga pegawai yang tidak memakai
+    // aplikasi HP -- atau yang aplikasinya tertutup saat push dikirim --
+    // tidak pernah tahu pengajuannya sudah diputus.
     try {
-      const userResult = await query('SELECT push_token FROM users WHERE id = $1', [leave.user_id]);
-      const pushToken = userResult.rows[0]?.push_token;
-      if (pushToken) {
-        await sendPushNotifications([
-          {
-            to: pushToken,
-            title: status === 'approved'
-              ? `Pengajuan ${LABEL_JENIS[leave.type]} Disetujui`
-              : `Pengajuan ${LABEL_JENIS[leave.type]} Ditolak`,
-            body:
-              status === 'approved'
-                ? `${LABEL_JENIS[leave.type]} Anda (${leave.start_date} s/d ${leave.end_date}) telah disetujui.`
-                : `${LABEL_JENIS[leave.type]} Anda (${leave.start_date} s/d ${leave.end_date}) ditolak.${admin_note ? ` Catatan: ${admin_note}` : ''}`,
-            data: { type: 'leave_review', leaveId: leave.id, status },
-          },
-        ]);
-      }
-    } catch (pushErr) {
-      console.error('Gagal kirim push notification review izin:', pushErr.message);
+      await kirimNotifikasi({
+        userIds: [leave.user_id],
+        jenis: 'pengajuan_diputus',
+        judul: status === 'approved'
+          ? `Pengajuan ${LABEL_JENIS[leave.type]} disetujui`
+          : `Pengajuan ${LABEL_JENIS[leave.type]} ditolak`,
+        pesan: `${LABEL_JENIS[leave.type]} ${leave.start_date}`
+          + `${leave.end_date !== leave.start_date ? ` s/d ${leave.end_date}` : ''} `
+          + `${status === 'approved' ? 'disetujui' : 'ditolak'}.`
+          + (admin_note ? ` Catatan: ${admin_note}` : ''),
+        tautan: '/leaves',
+      });
+    } catch (e) {
+      console.error('Gagal membuat pemberitahuan hasil pengajuan:', e.message);
     }
 
     res.json({

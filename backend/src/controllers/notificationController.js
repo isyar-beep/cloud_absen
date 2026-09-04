@@ -281,4 +281,67 @@ async function sendCheckinReminder(req, res, next) {
   }
 }
 
-module.exports = { sendLowAttendanceWarning, sendCheckinReminder, getBelumCheckin };
+
+
+// ============================================================
+// Pemberitahuan milik pemakai yang sedang masuk.
+// ============================================================
+
+// GET /api/notifications/saya?limit=
+async function daftarNotifikasi(req, res, next) {
+  try {
+    const limit = Math.min(Number(req.query.limit) || 30, 100);
+    const hasil = await query(
+      `SELECT id, jenis, judul, pesan, tautan,
+              dibaca_pada IS NOT NULL AS dibaca,
+              created_at
+       FROM notifications
+       WHERE user_id = $1
+       ORDER BY created_at DESC
+       LIMIT $2`,
+      [req.user.id, limit]
+    );
+    const belum = await query(
+      'SELECT COUNT(*)::int AS n FROM notifications WHERE user_id = $1 AND dibaca_pada IS NULL',
+      [req.user.id]
+    );
+    res.json({ items: hasil.rows, belum_dibaca: belum.rows[0].n });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// PUT /api/notifications/:id/baca
+async function tandaiDibaca(req, res, next) {
+  try {
+    // user_id ikut disyaratkan: tanpa itu siapa pun yang menebak nomor bisa
+    // menandai pemberitahuan orang lain sudah dibaca.
+    await query(
+      `UPDATE notifications SET dibaca_pada = NOW()
+       WHERE id = $1 AND user_id = $2 AND dibaca_pada IS NULL`,
+      [req.params.id, req.user.id]
+    );
+    res.json({ message: 'Ditandai sudah dibaca.' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// PUT /api/notifications/baca-semua
+async function tandaiSemuaDibaca(req, res, next) {
+  try {
+    const hasil = await query(
+      `UPDATE notifications SET dibaca_pada = NOW()
+       WHERE user_id = $1 AND dibaca_pada IS NULL`,
+      [req.user.id]
+    );
+    res.json({ message: `${hasil.rowCount} pemberitahuan ditandai sudah dibaca.` });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = {
+  daftarNotifikasi,
+  tandaiDibaca,
+  tandaiSemuaDibaca, sendLowAttendanceWarning, sendCheckinReminder, getBelumCheckin };

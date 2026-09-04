@@ -4,6 +4,9 @@ const {
   sendLowAttendanceWarning,
   sendCheckinReminder,
   getBelumCheckin,
+  daftarNotifikasi,
+  tandaiDibaca,
+  tandaiSemuaDibaca,
 } = require('../controllers/notificationController');
 const { authenticate, authorize } = require('../middleware/auth');
 
@@ -17,5 +20,16 @@ router.get('/pending-checkin', authenticate, authorize('admin', 'konsultan'), ge
 // Tanpa body: ke semua yang belum absen (bentuk yang dipakai cron harian).
 // Dengan { user_ids: [...] }: hanya ke pegawai tertentu.
 router.post('/checkin-reminder', authenticate, authorize('admin'), sendCheckinReminder);
+
+// Pemberitahuan milik sendiri -- semua peran, karena semua peran menerima
+// pemberitahuan: pegawai saat pengajuannya diputus, konsultan dan dinas saat
+// ada pengajuan masuk.
+//
+// "baca-semua" harus didaftarkan SEBELUM "/:id/baca". Kalau terbalik,
+// Express mencocokkan "/baca-semua" sebagai ":id" dan permintaannya
+// nyasar ke penanda satuan dengan id "baca-semua".
+router.get('/saya', authenticate, daftarNotifikasi);
+router.put('/baca-semua', authenticate, tandaiSemuaDibaca);
+router.put('/:id/baca', authenticate, tandaiDibaca);
 
 module.exports = router;
