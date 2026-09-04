@@ -4,6 +4,7 @@ import {
   KeyboardAvoidingView, Platform,
 } from 'react-native';
 import api from '../services/api';
+import { pesanGalat } from '../services/galat';
 import { useWarna } from '../theme';
 
 // Ubah password sendiri, kembaran frontend/src/components/UbahPasswordModal.jsx.
@@ -52,7 +53,7 @@ export default function UbahPasswordModal({ onTutup, onSelesai }) {
       });
       onSelesai(res.data.message);
     } catch (err) {
-      setError(err.response?.data?.message || 'Gagal mengubah password.');
+      setError(pesanGalat(err, 'Gagal mengubah password.'));
     } finally {
       setLoading(false);
     }

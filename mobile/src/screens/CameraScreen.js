@@ -5,6 +5,7 @@ import { useWarna } from '../theme';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Location from 'expo-location';
 import api from '../services/api';
+import { pesanGalat } from '../services/galat';
 
 const JUDUL = { 'check-in': 'Absen Masuk', 'check-out': 'Absen Pulang' };
 
@@ -97,7 +98,7 @@ export default function CameraScreen({ route, navigation }) {
         { text: 'OK', onPress: () => navigation.goBack() },
       ]);
     } catch (err) {
-      Alert.alert('Gagal', err.response?.data?.message || 'Terjadi kesalahan saat mengirim absensi.');
+      Alert.alert('Gagal', pesanGalat(err, 'Terjadi kesalahan saat mengirim absensi.'));
     } finally {
       setLoading(false);
     }

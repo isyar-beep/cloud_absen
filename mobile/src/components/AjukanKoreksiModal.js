@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { useWarna } from '../theme';
 import api from '../services/api';
+import { pesanGalat } from '../services/galat';
 import { formatTanggalHari, formatJam } from '../utils/tanggal';
 
 // Kembaran frontend/src/components/AjukanKoreksiModal.jsx.
@@ -54,7 +55,7 @@ export default function AjukanKoreksiModal({ baris, onTutup, onKirim }) {
       });
       onKirim(res.data.message);
     } catch (err) {
-      setError(err.response?.data?.message || 'Gagal mengirim pengajuan.');
+      setError(pesanGalat(err, 'Gagal mengirim pengajuan.'));
     } finally {
       setLoading(false);
     }

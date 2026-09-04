@@ -6,6 +6,7 @@ import {
 import { useWarna } from '../theme';
 import * as DocumentPicker from 'expo-document-picker';
 import api from '../services/api';
+import { pesanGalat } from '../services/galat';
 import { formatTanggal } from '../utils/tanggal';
 
 // Nama peran, disamakan dengan frontend/src/utils/peran.js. Dituliskan
@@ -113,7 +114,7 @@ export default function LeavesScreen() {
       setBerkas(null);
       fetchLeaves();
     } catch (err) {
-      Alert.alert('Gagal', err.response?.data?.message || 'Gagal mengirim pengajuan.');
+      Alert.alert('Gagal', pesanGalat(err, 'Gagal mengirim pengajuan.'));
     } finally {
       setLoading(false);
     }

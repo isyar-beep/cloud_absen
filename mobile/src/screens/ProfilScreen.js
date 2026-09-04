@@ -5,6 +5,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import api from '../services/api';
+import { pesanGalat } from '../services/galat';
 import { useAuthStore } from '../store/authStore';
 import { unregisterPushToken } from '../services/notifications';
 import { useTokenFoto } from '../services/fotoUrl';
@@ -98,7 +99,7 @@ export default function ProfilScreen({ navigation }) {
       await perbaruiUser({ avatar_url: res.data.avatar_url });
       setPesan(res.data.message);
     } catch (err) {
-      Alert.alert('Gagal', err.response?.data?.message || 'Foto profil gagal diunggah.');
+      Alert.alert('Gagal', pesanGalat(err, 'Foto profil gagal diunggah.'));
     } finally {
       setMengunggah(false);
     }
@@ -120,7 +121,7 @@ export default function ProfilScreen({ navigation }) {
               await perbaruiUser({ avatar_url: null });
               setPesan(res.data.message);
             } catch (err) {
-              Alert.alert('Gagal', err.response?.data?.message || 'Foto profil gagal dihapus.');
+              Alert.alert('Gagal', pesanGalat(err, 'Foto profil gagal dihapus.'));
             }
           },
         },

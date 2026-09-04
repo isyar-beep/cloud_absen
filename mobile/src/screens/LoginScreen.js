@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useWarna, LENGKUNG } from '../theme';
 import PilihTema from '../components/PilihTema';
 import api from '../services/api';
+import { pesanGalat } from '../services/galat';
 import { useAuthStore } from '../store/authStore';
 import { registerForPushNotifications } from '../services/notifications';
 
@@ -31,7 +32,7 @@ export default function LoginScreen({ navigation }) {
       registerForPushNotifications(); // best-effort, tidak menunda navigasi
       navigation.replace('Dashboard');
     } catch (err) {
-      Alert.alert('Gagal login', err.response?.data?.message || 'Terjadi kesalahan.');
+      Alert.alert('Gagal login', pesanGalat(err, 'Terjadi kesalahan.'));
     } finally {
       setLoading(false);
     }
