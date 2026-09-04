@@ -8,6 +8,12 @@ import * as DocumentPicker from 'expo-document-picker';
 import api from '../services/api';
 import { formatTanggal } from '../utils/tanggal';
 
+// Nama peran, disamakan dengan frontend/src/utils/peran.js. Dituliskan
+// ulang di sini karena web dan HP tidak berbagi kode -- kalau salah satunya
+// diubah, yang lain harus ikut.
+const LABEL_PERAN = { admin: 'Dinas', konsultan: 'Konsultan', staff: 'Pegawai' };
+
+
 // Format & batas ukuran lampiran. Angkanya harus sama dengan
 // backend/src/middleware/uploadDocument.js -- diperiksa di sini lebih dulu
 // supaya pegawai di lapangan tidak menghabiskan kuota mengunggah berkas
@@ -223,8 +229,21 @@ export default function LeavesScreen() {
               // lampiran dari web.
               <Text style={styles.lampiran}>Lampiran: {item.document_name}</Text>
             ) : null}
+            {/* Siapa yang memutuskan. Sebelumnya pegawai hanya melihat
+                "Disetujui" tanpa tahu oleh siapa -- padahal kalau ada yang
+                perlu ditanyakan, justru itu keterangan pertama yang
+                dibutuhkannya. Perannya ikut ditulis karena nama saja tidak
+                memberi tahu apakah yang memutuskan konsultan proyeknya atau
+                dinas. */}
+            {item.status !== 'pending' && item.reviewed_by_name ? (
+              <Text style={styles.penyetuju}>
+                {item.status === 'approved' ? 'Disetujui' : 'Ditolak'} oleh{' '}
+                <Text style={styles.penyetujuNama}>{item.reviewed_by_name}</Text>
+                {item.reviewed_by_role ? ` (${LABEL_PERAN[item.reviewed_by_role] || item.reviewed_by_role})` : ''}
+              </Text>
+            ) : null}
             {item.admin_note ? (
-              <Text style={styles.adminNote}>Catatan admin: {item.admin_note}</Text>
+              <Text style={styles.adminNote}>Catatan: {item.admin_note}</Text>
             ) : null}
           </View>
         );
@@ -286,5 +305,7 @@ const buatGaya = (w) => StyleSheet.create({
   badgeText: { fontSize: 11, fontWeight: '600' },
   leaveReason: { fontSize: 13, color: w.teksRedup },
   adminNote: { fontSize: 12, color: w.teksSamar, marginTop: 4 },
+  penyetuju: { fontSize: 12, color: w.teksRedup, marginTop: 6 },
+  penyetujuNama: { fontWeight: '700', color: w.teksBadan },
   empty: { fontSize: 13, color: w.teksSamar, textAlign: 'center', paddingVertical: 24 },
 });

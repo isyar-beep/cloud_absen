@@ -102,7 +102,7 @@ async function getMyLeaves(req, res, next) {
               to_char(l.end_date, 'YYYY-MM-DD') AS end_date,
               l.reason, l.status, l.admin_note, l.created_at, l.reviewed_at,
               l.document_url, l.document_name,
-              r.name AS reviewed_by_name
+              r.name AS reviewed_by_name, r.role AS reviewed_by_role
        FROM leave_requests l
        LEFT JOIN users r ON l.reviewed_by = r.id
        WHERE l.user_id = $1
@@ -140,10 +140,16 @@ async function getAllLeaves(req, res, next) {
               l.reason, l.status, l.admin_note, l.created_at, l.reviewed_at,
               l.document_url, l.document_name,
               u.id AS user_id, u.name, u.avatar_url, pj.name AS project_name,
-              r.name AS reviewed_by_name
+              r.name AS reviewed_by_name, r.role AS reviewed_by_role,
+              -- Penanggung jawab proyeknya. Dinas perlu tahu siapa yang
+              -- semestinya memutuskan sebelum ia memutuskan sendiri:
+              -- konsultanlah yang tahu apakah pekerjaan lapangan bisa
+              -- ditinggal hari itu, dinas tidak.
+              k.id AS consultant_id, k.name AS consultant_name
        FROM leave_requests l
        JOIN users u ON l.user_id = u.id
        LEFT JOIN projects pj ON u.project_id = pj.id
+       LEFT JOIN users k ON pj.consultant_id = k.id
        LEFT JOIN users r ON l.reviewed_by = r.id
        ${kondisi.length ? `WHERE ${kondisi.join(' AND ')}` : ''}
        ORDER BY (l.status = 'pending') DESC, l.created_at DESC`,

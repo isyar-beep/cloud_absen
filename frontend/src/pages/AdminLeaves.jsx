@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import api from '../api/axios';
 import AdminSidebar from '../components/AdminSidebar';
 import KeadaanKosong from '../components/KeadaanKosong';
+import { useAuthStore } from '../store/authStore';
+import { WARNA_PERAN, namaPeran } from '../utils/peran';
 import { DocumentIcon } from '../components/Icons';
 import StatusBadge from '../components/StatusBadge';
 import JenisBadge from '../components/JenisBadge';
@@ -11,6 +13,7 @@ import AdminCorrections from './AdminCorrections';
 import { formatTanggal } from '../utils/tanggal';
 
 export default function AdminLeaves() {
+  const { user } = useAuthStore();
   const [leaves, setLeaves] = useState([]);
   const [filter, setFilter] = useState('pending');
   // Saringan jenis pengajuan (izin/sakit/cuti). Harus dideklarasikan di sini,
@@ -218,10 +221,34 @@ export default function AdminLeaves() {
                 </div>
               )}
 
+              {/* Penanggung jawab proyek, hanya pada pengajuan yang belum
+                  diputus dan hanya untuk dinas. Konsultanlah yang paling tahu
+                  apakah pekerjaan lapangan bisa ditinggal hari itu; dinas
+                  tetap boleh memutuskan bila konsultannya berhalangan, tapi
+                  ia perlu tahu bahwa itu bukan jalur biasanya. */}
+              {item.status === 'pending' && user?.role === 'admin' && item.consultant_name && (
+                <p className="text-xs text-muted border-t border-line pt-3">
+                  Penanggung jawab:{' '}
+                  <span className="font-semibold text-body">{item.consultant_name}</span>
+                  <span className="text-faint"> — biasanya konsultan yang memutuskan; putuskan sendiri bila ia berhalangan.</span>
+                </p>
+              )}
+
               {item.status !== 'pending' && (
-                <p className="text-xs text-faint border-t border-line pt-3">
-                  Direview oleh <span className="font-medium text-muted">{item.reviewed_by_name || '—'}</span>
-                  {item.admin_note && <span className="italic"> — "{item.admin_note}"</span>}
+                <p className="text-xs text-muted border-t border-line pt-3">
+                  {item.status === 'approved' ? 'Disetujui' : 'Ditolak'} oleh{' '}
+                  <span className="font-semibold text-body">{item.reviewed_by_name || '—'}</span>
+                  {/* Peran ikut ditulis: nama saja tidak memberi tahu apakah
+                      yang memutuskan konsultan proyeknya atau dinas, padahal
+                      justru itu yang ingin diketahui saat menelusuri. */}
+                  {item.reviewed_by_role && (
+                    <span className={`ml-1.5 text-[10.5px] font-semibold px-2 py-0.5 rounded-full ring-1 ring-inset ${
+                      WARNA_PERAN[item.reviewed_by_role] || WARNA_PERAN.staff
+                    }`}>
+                      {namaPeran(item.reviewed_by_role)}
+                    </span>
+                  )}
+                  {item.admin_note && <span className="italic text-faint"> — "{item.admin_note}"</span>}
                 </p>
               )}
             </div>
