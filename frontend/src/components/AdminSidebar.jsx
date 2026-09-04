@@ -3,13 +3,13 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import Avatar from './Avatar';
 import ThemeToggle from './ThemeToggle';
-import Lonceng from './Lonceng';
 import {
   HomeIcon, BriefcaseIcon, ChartIcon, ClockIcon, PhotoIcon, DocumentIcon,
   UsersIcon, ClipboardIcon, CalendarIcon, LogoutIcon, MenuIcon, CloseIcon,
-  PanelIcon,
+  PanelIcon, BellIcon,
 } from './Icons';
 import { namaPeran } from '../utils/peran';
+import { useNotifStore, SELANG_SEGARKAN } from '../store/notifStore';
 
 // Menu dikelompokkan menurut cara orang memakainya, bukan menurut urutan
 // pembuatannya: yang dilihat tiap hari di atas, yang disiapkan sesekali di
@@ -34,6 +34,10 @@ const KELOMPOK = [
       { to: '/admin/history', label: 'Riwayat', icon: ClockIcon },
       { to: '/admin/gallery', label: 'Galeri Foto', icon: PhotoIcon },
       { to: '/admin/leaves', label: 'Pengajuan', icon: DocumentIcon },
+      // Ditempatkan sekelompok dengan Pengajuan, karena hampir seluruh
+      // pemberitahuan memang mengabarkan pengajuan yang masuk atau
+      // diputus. `lencana` menandai menu yang menampilkan angka.
+      { to: '/admin/notifications', label: 'Pemberitahuan', icon: BellIcon, lencana: true },
     ],
   },
   {
@@ -47,6 +51,8 @@ const KELOMPOK = [
 ];
 
 function Isi({ user, aktifKah, onPindah, onKeluar, lipat = false, onLipat }) {
+  const belum = useNotifStore((s) => s.belum);
+
   return (
     <div className="flex flex-col h-full">
       {/* Identitas aplikasi + kendali tampilan.
@@ -69,10 +75,10 @@ function Isi({ user, aktifKah, onPindah, onKeluar, lipat = false, onLipat }) {
           )}
         </div>
 
-        {/* Hanya kendali TAMPILAN di sini: tema dan lipat. Lonceng sempat
-            ikut, tapi tempatnya keliru -- ia bukan pengatur tampilan
-            melainkan barang milik pemakainya, jadi sekarang berkumpul
-            dengan identitasnya di kartu pengguna paling bawah. */}
+        {/* Hanya kendali TAMPILAN di sini: tema dan lipat. Pemberitahuan
+            sempat ikut sebagai lonceng, tapi keliru dua kali -- ia bukan
+            pengatur tampilan, dan panel gantungnya menimpa menu di
+            bawahnya. Sekarang ia menjadi menu tersendiri. */}
         <div className={`flex items-center gap-1.5 mt-2.5 ${lipat ? 'flex-col' : 'justify-start'}`}>
           <ThemeToggle ringkas />
           {onLipat && (
@@ -130,8 +136,24 @@ function Isi({ user, aktifKah, onPindah, onKeluar, lipat = false, onLipat }) {
                           : 'text-body hover:bg-white/45 dark:hover:bg-white/[0.06] hover:text-strong font-semibold lg:hover:translate-x-1'
                       }`}
                     >
-                      <item.icon className={`w-[18px] h-[18px] shrink-0 ${aktif ? '' : 'text-muted'}`} />
+                      {/* Saat terlipat, angkanya menempel di sudut ikon --
+                          satu-satunya tempat yang tersisa. Saat terbentang,
+                          ia berdiri sendiri di ujung kanan baris supaya
+                          tidak menindih label menunya. */}
+                      <span className="relative shrink-0">
+                        <item.icon className={`w-[18px] h-[18px] ${aktif ? '' : 'text-muted'}`} />
+                        {item.lencana && belum > 0 && lipat && (
+                          <span className="absolute -top-1.5 -right-1.5 min-w-[15px] h-[15px] px-1 rounded-full bg-red-600 text-white text-[9px] font-bold flex items-center justify-center">
+                            {belum > 9 ? '9+' : belum}
+                          </span>
+                        )}
+                      </span>
                       {!lipat && <span className="truncate">{item.label}</span>}
+                      {item.lencana && belum > 0 && !lipat && (
+                        <span className="ml-auto min-w-[20px] h-5 px-1.5 rounded-full bg-red-600 text-white text-[11px] font-bold flex items-center justify-center shrink-0">
+                          {belum > 99 ? '99+' : belum}
+                        </span>
+                      )}
                     </Link>
                   );
                 })}
@@ -155,10 +177,6 @@ function Isi({ user, aktifKah, onPindah, onKeluar, lipat = false, onLipat }) {
               <p className="text-xs text-faint truncate">{namaPeran(user?.role)}</p>
             </div>
           )}
-          {/* Panelnya dibuka ke ATAS. Kartu ini menempel di dasar sidebar,
-              jadi panel yang turun akan keluar layar; naik ke atas juga
-              berarti ia melayang di ruang kosong, bukan menimpa menu. */}
-          <Lonceng arah="atas" />
           <button
             onClick={onKeluar}
             title="Keluar"
@@ -178,6 +196,17 @@ export default function AdminSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const [buka, setBuka] = useState(false);
+  const segarkanNotif = useNotifStore((s) => s.segarkan);
+
+  // Angka di menu disegarkan dari SINI, bukan dari <Isi>. Isi digambar dua
+  // kali -- sekali untuk sidebar layar lebar, sekali untuk laci layar
+  // sempit -- jadi memasang selangnya di sana berarti dua penghitung
+  // waktu dan dua kali permintaan tiap menit untuk satu angka yang sama.
+  useEffect(() => {
+    segarkanNotif();
+    const t = setInterval(segarkanNotif, SELANG_SEGARKAN);
+    return () => clearInterval(t);
+  }, [segarkanNotif]);
 
   // Pilihan melipat diingat per perangkat: orang yang bekerja di layar
   // sempit biasanya ingin menu tetap ringkas setiap kali membuka aplikasi,

@@ -287,11 +287,23 @@ async function sendCheckinReminder(req, res, next) {
 // Pemberitahuan milik pemakai yang sedang masuk.
 // ============================================================
 
-// GET /api/notifications/saya?limit=&offset=
+// GET /api/notifications/saya?limit=&offset=&belum=1&jenis=
 async function daftarNotifikasi(req, res, next) {
   try {
     const limit = Math.min(Number(req.query.limit) || 30, 100);
     const offset = Math.max(Number(req.query.offset) || 0, 0);
+
+    // Penyaring halaman Pemberitahuan. Keduanya dipasang di SQL, bukan
+    // disaring di layar setelah data tiba: menyaring di layar berarti
+    // "20 terbaru" diambil dulu lalu dibuang sebagian, sehingga halaman
+    // bisa tampil kosong padahal yang dicari ada di halaman berikutnya.
+    const kondisi = ['user_id = $1'];
+    const params = [req.user.id];
+    if (req.query.belum === '1') kondisi.push('dibaca_pada IS NULL');
+    if (req.query.jenis) {
+      params.push(req.query.jenis);
+      kondisi.push(`jenis = $${params.length}`);
+    }
 
     // Diminta satu baris LEBIH BANYAK daripada yang akan ditampilkan.
     // Barisnya sendiri dibuang; keberadaannyalah yang menjawab "masih ada
@@ -304,11 +316,16 @@ async function daftarNotifikasi(req, res, next) {
               dibaca_pada IS NOT NULL AS dibaca,
               created_at
        FROM notifications
-       WHERE user_id = $1
+       WHERE ${kondisi.join(' AND ')}
        ORDER BY created_at DESC, id DESC
-       LIMIT $2 OFFSET $3`,
-      [req.user.id, limit + 1, offset]
+       LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+      [...params, limit + 1, offset]
     );
+
+    // Selalu dihitung tanpa penyaring: angka di menu berarti "berapa yang
+    // belum saya baca", bukan "berapa yang belum saya baca di antara yang
+    // sedang saya saring". Kalau ikut tersaring, angkanya berubah-ubah
+    // hanya karena pemakainya mengganti tab.
     const belum = await query(
       'SELECT COUNT(*)::int AS n FROM notifications WHERE user_id = $1 AND dibaca_pada IS NULL',
       [req.user.id]
