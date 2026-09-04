@@ -134,11 +134,13 @@ export default function AdminNotifications() {
     <div className="min-h-screen transition-[padding] duration-200 lg:pl-[var(--lebar-sidebar)]">
       <AdminSidebar />
 
-      {/* Seluruh halaman dibatasi selebar daftarnya, bukan hanya daftarnya
-          saja. Kalau hanya daftar yang dibatasi, tombol "Tandai semua
-          dibaca" melayang sendirian di ujung kanan layar lebar -- jauh
-          dari barang yang ditandainya. */}
-      <div className="wadah-petak px-5 lg:px-8 py-7 max-w-4xl">
+      {/* Selebar halaman admin lainnya. Sempat dibatasi max-w-4xl dengan
+          alasan baris teks panjang melelahkan dibaca, tapi akibatnya
+          halaman ini berdiri sendiri di antara sembilan menu yang semuanya
+          selebar layar -- dan ketidakseragaman itu lebih mengganggu
+          daripada barisnya yang lebar. Judul, tombol, dan kartunya kini
+          berbagi satu tepi kanan, sama seperti Kelola Pengguna. */}
+      <div className="wadah-petak px-5 lg:px-8 py-7">
         <div className="flex justify-between items-center mb-6 gap-3 flex-wrap">
           <div>
             <h1 className="text-[1.75rem] leading-tight font-extrabold text-strong tracking-[-0.02em]">
