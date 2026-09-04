@@ -6,6 +6,7 @@ import KeadaanKosong from '../components/KeadaanKosong';
 import { KerangkaBaris } from '../components/Kerangka';
 import { useNotifStore } from '../store/notifStore';
 import { formatJam, jamLokal, tanggalIso } from '../utils/tanggal';
+import { tautanAman } from '../utils/tautan';
 import {
   DocumentIcon, ClockIcon, CheckIcon, BellIcon,
 } from '../components/Icons';
@@ -112,7 +113,11 @@ export default function AdminNotifications() {
       kurangiBelum();
       api.put(`/notifications/${n.id}/baca`).catch(() => {});
     }
-    if (n.tautan) navigate(n.tautan);
+    // Disaring dulu, tidak dipakai apa adanya. Lihat utils/tautan.js --
+    // teks dari basis data yang langsung masuk ke navigate() adalah pola
+    // yang dibobol lewat celah react-router GHSA-wrjc-x8rr-h8h6.
+    const tujuan = tautanAman(n.tautan);
+    if (tujuan) navigate(tujuan);
   }
 
   async function bacaSemua() {
