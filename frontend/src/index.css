@@ -499,3 +499,61 @@ body::before {
   --lebar-sidebar: 16rem;
   --sela-sidebar: 0.875rem;
 }
+
+/* ============================================================
+   Kepala layar pegawai (web).
+
+   Sebelumnya satu blok gradien diagonal yang BERHENTI MENDADAK di
+   tepi bawahnya: sebuah garis lurus mendatar tempat biru bertemu
+   latar halaman. Batas sekeras itu terbaca sebagai stiker yang
+   ditempel, bukan sebagai bagian dari halaman.
+
+   Perlakuannya kini disamakan dengan kepala layar aplikasi HP,
+   supaya web dan HP terbaca sebagai satu sistem:
+
+   - Gradasi tegak yang ujungnya TEMBUS PANDANG, jadi birunya larut
+     ke latar halaman alih-alih berhenti pada satu garis.
+   - Perhentiannya dirapatkan di atas: warnanya bertahan pekat di
+     belakang teks putih, dan seluruh peluruhan terjadi di sepertiga
+     bawah -- tempat yang memang sudah tidak ada teks.
+   - Dua sapuan diagonal memudarkan sudut kiri-bawah dan kanan-bawah.
+     Arah diagonal, bukan mendatar: sapuan mendatar setinggi penuh
+     ikut memucatkan latar di belakang nama pegawai, dan kontras teks
+     putih di situ tidak punya sisa untuk dikorbankan.
+
+   Nilai birunya ditulis sebagai kanal RGB, bukan memakai kelas
+   Tailwind, karena tahap terakhirnya perlu alfa nol -- sesuatu yang
+   tidak bisa dinyatakan dengan `to-primary-700`.
+   ============================================================ */
+.kepala-pegawai {
+  position: relative;
+  /* primary-600 #2563eb dan primary-700 #1d4ed8 */
+  background-image: linear-gradient(
+    to bottom,
+    rgb(37 99 235) 0%,
+    rgb(37 99 235) 42%,
+    rgb(29 78 216) 72%,
+    rgb(29 78 216 / 0.55) 88%,
+    rgb(29 78 216 / 0) 100%
+  );
+}
+
+/* Sudut bawah diluruhkan ke warna latar halaman. Dipisah sebagai
+   lapisan sendiri supaya tidak bercampur dengan gradasi tegaknya.
+   --c-canvas sudah mengikuti tema, jadi satu aturan melayani terang
+   maupun gelap. */
+.kepala-pegawai::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to top right, rgb(var(--c-canvas) / 0.3), transparent 42%),
+    linear-gradient(to top left, rgb(var(--c-canvas) / 0.3), transparent 42%);
+}
+
+/* Isi kepala layar harus berada di ATAS kedua lapisan itu. */
+.kepala-pegawai > * {
+  position: relative;
+  z-index: 1;
+}

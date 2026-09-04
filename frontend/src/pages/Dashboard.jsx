@@ -73,7 +73,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen">
       {/* Hero header dengan gradien */}
-      <div className="bg-gradient-to-br from-primary-600 via-primary-700 to-indigo-800 pb-20">
+      <div className="kepala-pegawai pb-20">
         <div className="max-w-2xl mx-auto px-4 pt-6">
           <div className="flex justify-between items-start">
             <div>
