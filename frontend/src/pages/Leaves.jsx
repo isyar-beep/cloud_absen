@@ -115,7 +115,7 @@ export default function Leaves() {
 
         <h1 className="text-xl font-bold text-strong tracking-tight mb-1">Pengajuan Izin</h1>
         <p className="text-sm text-muted mb-6">
-          Ajukan izin, sakit, atau cuti. Status berubah setelah direview admin.
+          Ajukan izin, sakit, atau cuti. Status berubah setelah direview konsultan atau dinas.
         </p>
 
         {message && (

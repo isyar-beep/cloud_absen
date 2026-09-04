@@ -137,7 +137,7 @@ export default function AjukanKoreksiModal({ baris, onTutup, onKirim }) {
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.petunjuk}>Absensi baru berubah setelah admin menyetujui.</Text>
+            <Text style={styles.petunjuk}>Absensi baru berubah setelah pengajuan ini disetujui.</Text>
           </ScrollView>
         </View>
       </KeyboardAvoidingView>

@@ -84,13 +84,25 @@ async function createLeave(req, res, next) {
       [userId, type, start_date, end_date, reason.trim(), dokumenUrl, dokumenNama]
     );
 
+    // Nama pengaju dan konsultan penanggung jawab proyeknya. Dipakai dua
+    // kali di bawah: untuk isi pemberitahuan, dan untuk memberi tahu
+    // pegawainya siapa yang sekarang ditunggu.
+    const pengaju = await query(
+      `SELECT u.name, k.name AS konsultan
+       FROM users u
+       LEFT JOIN projects p ON u.project_id = p.id
+       LEFT JOIN users k ON k.id = p.consultant_id AND k.is_active = TRUE
+       WHERE u.id = $1`,
+      [userId]
+    );
+    const nama = pengaju.rows[0]?.name || 'Seorang pegawai';
+    const konsultan = pengaju.rows[0]?.konsultan || null;
+
     // Beri tahu yang berwenang memutuskan. Tanpa ini pengajuan masuk tanpa
     // ada yang tahu, sampai seseorang kebetulan membuka menu Pengajuan.
     // Kegagalannya tidak boleh menggagalkan pengajuannya -- pegawai sudah
     // mengirim, dan itu yang penting.
     try {
-      const pengaju = await query('SELECT name FROM users WHERE id = $1', [userId]);
-      const nama = pengaju.rows[0]?.name || 'Seorang pegawai';
       await kirimNotifikasi({
         userIds: await penyeliaPegawai(userId),
         jenis: 'pengajuan_baru',
@@ -103,8 +115,17 @@ async function createLeave(req, res, next) {
       console.error('Gagal membuat pemberitahuan pengajuan baru:', e.message);
     }
 
+    // Yang memutuskan bukan lagi "admin" saja. Konsultan penanggung jawab
+    // proyeknyalah yang biasanya memutuskan, dan dinas tetap bisa
+    // bertindak bila ia berhalangan -- jadi keduanya disebut, dengan
+    // konsultannya dinamai supaya pegawai tahu ke siapa harus menanyakan.
+    // Pegawai yang belum ditempatkan di proyek mana pun hanya menunggu
+    // dinas; menyebut konsultan di situ hanya membingungkan.
     res.status(201).json({
-      message: `Pengajuan ${LABEL_JENIS[type].toLowerCase()} berhasil dikirim. Menunggu persetujuan admin.`,
+      message: `Pengajuan ${LABEL_JENIS[type].toLowerCase()} berhasil dikirim. `
+        + (konsultan
+          ? `Menunggu persetujuan ${konsultan} atau dinas.`
+          : 'Menunggu persetujuan dinas.'),
       leave: result.rows[0],
     });
   } catch (err) {

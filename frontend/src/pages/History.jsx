@@ -308,7 +308,7 @@ export default function History() {
                         : 'text-red-500'
                     }>
                       Koreksi {
-                        ajuanPerTanggal[item.date].status === 'pending' ? 'menunggu keputusan admin'
+                        ajuanPerTanggal[item.date].status === 'pending' ? 'menunggu keputusan'
                           : ajuanPerTanggal[item.date].status === 'approved' ? 'disetujui'
                           : 'ditolak'
                       }

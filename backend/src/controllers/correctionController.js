@@ -202,7 +202,7 @@ async function ajukanKoreksi(req, res, next) {
     );
     if (adaPending.rows.length > 0) {
       return res.status(409).json({
-        message: 'Sudah ada pengajuan koreksi untuk tanggal ini yang masih menunggu keputusan admin.',
+        message: 'Sudah ada pengajuan koreksi untuk tanggal ini yang masih menunggu keputusan.',
       });
     }
 

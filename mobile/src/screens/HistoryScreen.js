@@ -32,7 +32,7 @@ const periodeOptions = [
 ];
 
 const TEKS_KOREKSI = {
-  pending: 'Koreksi menunggu keputusan admin',
+  pending: 'Koreksi menunggu keputusan',
   approved: 'Koreksi disetujui',
   rejected: 'Koreksi ditolak',
 };
