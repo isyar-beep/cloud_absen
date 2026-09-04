@@ -289,7 +289,85 @@ DB_NAME=cloud_absen_pulih npm test
 
 Catat hasil uji berikutnya di tabel ini, berikut tanggalnya.
 
-## 8. (Opsional) Email Peringatan Terjadwal
+## 8. Pemantauan (WAJIB sebelum dipakai sungguhan)
+
+Tanpa pemantauan, yang pertama tahu server mati adalah **pegawai yang
+gagal absen** — dan mereka mengetahuinya pukul tujuh pagi, saat tidak ada
+yang bisa memperbaikinya dengan cepat. Penyiapan di bawah ini di bawah
+lima belas menit dan menutup risiko itu.
+
+### Apa yang diperiksa `/health`
+
+Endpoint ini **menyentuh basis data**, bukan sekadar membalas "ok":
+
+```bash
+curl https://absensi.contoh.id/health
+```
+
+Sehat — HTTP **200**:
+
+```json
+{"status":"ok","basis_data":"terhubung","balas_ms":8,
+ "zona_waktu":"Asia/Makassar","time":"2026-09-04T10:15:54.456Z"}
+```
+
+Rusak — HTTP **503**:
+
+```json
+{"status":"gagal","basis_data":"tidak terhubung",
+ "time":"2026-09-04T10:16:18.640Z"}
+```
+
+Pembedaan ini penting. Kalau `/health` hanya membuktikan Express hidup, ia
+akan tetap menjawab "ok" saat PostgreSQL mati — pemantauan tetap hijau,
+dan tidak ada yang tahu apa pun sampai keesokan paginya. Pemantauan yang
+berbohong lebih buruk daripada tidak ada pemantauan, karena ia membuat
+orang berhenti memeriksa sendiri.
+
+Dua nilai lain yang berguna dibaca sesekali:
+
+- `balas_ms` — lama basis data menjawab. Angka yang merangkak naik dari
+  belasan ke ratusan milidetik adalah peringatan dini **sebelum** ia mati.
+- `zona_waktu` — harus `Asia/Makassar`. Kalau kosong atau berbeda,
+  tanggal absensi dan batas terlambat akan salah tanpa ada galat apa pun.
+
+### Menyiapkan pemantauan luar
+
+Pakai layanan gratis mana pun yang bisa memanggil URL berkala —
+UptimeRobot, Better Stack, dan sejenisnya semuanya cukup. Yang penting
+setelannya:
+
+| Setelan | Nilai | Alasan |
+|---|---|---|
+| URL | `https://.../health` | bukan halaman depan; halaman depan tetap tampil walau basis data mati |
+| Selang | 5 menit | cukup rapat untuk tahu sebelum jam masuk |
+| Dianggap gagal bila | kode HTTP bukan 200 | 503 harus memicu peringatan |
+| Peringatan ke | surel **dan** WhatsApp/Telegram bila tersedia | surel saja mudah terlewat dini hari |
+
+Kalau layanannya mendukung pemeriksaan isi balasan, tambahkan syarat
+badan memuat `"status":"ok"`. Itu menangkap kasus langka ketika proxy
+membalas 200 padahal aplikasinya sendiri tidak menjawab.
+
+### Memeriksa bahwa peringatannya benar-benar sampai
+
+Pemantauan yang tidak pernah diuji sama tidak bisa dipercayanya dengan
+backup yang tidak pernah dipulihkan. Sekali saja, matikan container
+basis datanya dan pastikan peringatannya tiba:
+
+```bash
+docker stop cloud_absen_db
+# tunggu satu selang pemeriksaan, pastikan peringatan masuk
+docker start cloud_absen_db
+# pastikan pemberitahuan "pulih" juga masuk
+```
+
+Catat tanggal ujinya di sini:
+
+| Tanggal | Peringatan sampai? | Catatan |
+|---|---|---|
+| _(belum diuji)_ | | |
+
+## 9. (Opsional) Email Peringatan Terjadwal
 
 Kirim peringatan attendance rendah otomatis tiap tanggal 1 jam 08:00
 (crontab -e; ganti TOKEN dengan token login admin yang masih berlaku,
@@ -330,7 +408,7 @@ masih ada dan tetap bisa dipanggil manual bila diperlukan. Untuk membetulkan
 satu catatan absensi, gunakan menu Riwayat > Koreksi di web admin -- jalur itu
 mencatat jejak audit, sedangkan menjalankan ulang mark-alpha tidak.
 
-## 9. Pembersihan Foto Lama (Masa Simpan)
+## 10. Pembersihan Foto Lama (Masa Simpan)
 
 Foto absensi menumpuk cepat: 50 pegawai x 2 foto per hari kerja kira-kira
 8 GB per tahun. Kebijakan default menyimpan foto 2 tahun, lalu berkasnya

@@ -19,6 +19,7 @@ const holidayRoutes = require('./routes/holidayRoutes');
 const photoRoutes = require('./routes/photoRoutes');
 const projectRoutes = require('./routes/projectRoutes');
 const errorHandler = require('./middleware/errorHandler');
+const { query } = require('./config/db');
 
 const app = express();
 
@@ -63,9 +64,46 @@ app.use(express.urlencoded({ extended: true }));
 // Foto wajah adalah data pribadi -- sekarang disajikan lewat /api/photos yang
 // memeriksa token dan kepemilikan. Lihat controllers/photoController.js
 
-// Health check -- untuk memastikan server hidup (dipakai monitoring/Hostinger)
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', time: new Date().toISOString() });
+// Health check -- dipanggil layanan pemantauan tiap beberapa menit.
+//
+// SENGAJA menyentuh basis data, bukan sekadar membalas "ok".
+//
+// Sebelumnya endpoint ini hanya membuktikan Express masih hidup. Itu
+// justru bentuk pemantauan yang paling berbahaya: kalau PostgreSQL mati
+// atau kehabisan sambungan, Express tetap menjawab "ok" dengan gembira,
+// pemantauan tetap hijau, dan tidak ada yang tahu apa pun sampai pegawai
+// gagal absen keesokan paginya. Pemantauan yang berbohong lebih buruk
+// daripada tidak ada pemantauan, karena ia membuat orang berhenti
+// memeriksa sendiri.
+//
+// Kueri yang dipakai sengaja yang paling murah -- ia menguji "apakah
+// sambungannya hidup", bukan membebani basis data tiap beberapa menit.
+//
+// 200 = sehat, 503 = ada yang rusak. Kode itulah yang dibaca layanan
+// pemantauan; isi JSON-nya untuk manusia yang membukanya.
+app.get('/health', async (req, res) => {
+  const mulai = Date.now();
+  try {
+    await query('SELECT 1');
+    res.json({
+      status: 'ok',
+      basis_data: 'terhubung',
+      // Berguna untuk melihat basis data yang melambat SEBELUM ia mati.
+      balas_ms: Date.now() - mulai,
+      zona_waktu: process.env.TZ || null,
+      time: new Date().toISOString(),
+    });
+  } catch (err) {
+    // Pesannya tidak diteruskan apa adanya: isinya bisa memuat host,
+    // nama basis data, dan nama pengguna, sedangkan endpoint ini
+    // terbuka tanpa login.
+    console.error('Health check gagal:', err.message);
+    res.status(503).json({
+      status: 'gagal',
+      basis_data: 'tidak terhubung',
+      time: new Date().toISOString(),
+    });
+  }
 });
 
 // Routes utama
