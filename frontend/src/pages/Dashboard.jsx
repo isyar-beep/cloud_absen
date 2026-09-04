@@ -150,9 +150,18 @@ export default function Dashboard() {
           </button>
           <button
             onClick={() => setUbahPassword(true)}
-            className="col-span-2 bg-surface/80 backdrop-blur-xl border border-line text-body py-3 rounded-2xl text-sm font-medium shadow-soft transition hover:bg-surface/90 hover:border-line-strong"
+            className="bg-surface/80 backdrop-blur-xl border border-line text-body py-3 rounded-2xl text-sm font-medium shadow-soft transition hover:bg-surface/90 hover:border-line-strong"
           >
             Ubah Password
+          </button>
+          {/* Petunjuk sengaja ditaruh di layar utama, bukan disembunyikan
+              di dalam menu. Orang yang bingung tidak akan mencarinya di
+              tempat yang perlu dicari lebih dulu. */}
+          <button
+            onClick={() => navigate('/panduan')}
+            className="bg-surface/80 backdrop-blur-xl border border-line text-body py-3 rounded-2xl text-sm font-medium shadow-soft transition hover:bg-surface/90 hover:border-line-strong"
+          >
+            Petunjuk
           </button>
         </div>
 

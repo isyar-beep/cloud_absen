@@ -17,6 +17,7 @@ import AdminGallery from './pages/AdminGallery';
 import AdminLeaves from './pages/AdminLeaves';
 import AdminProjects from './pages/AdminProjects';
 import AdminNotifications from './pages/AdminNotifications';
+import Panduan from './pages/Panduan';
 import ProtectedRoute from './components/ProtectedRoute';
 
 export default function App() {
@@ -146,6 +147,15 @@ export default function App() {
           element={
             <ProtectedRoute allowedRole={['admin', 'konsultan']}>
               <AdminNotifications />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/panduan"
+          element={
+            <ProtectedRoute>
+              <Panduan />
             </ProtectedRoute>
           }
         />

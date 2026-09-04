@@ -6,7 +6,7 @@ import ThemeToggle from './ThemeToggle';
 import {
   HomeIcon, BriefcaseIcon, ChartIcon, ClockIcon, PhotoIcon, DocumentIcon,
   UsersIcon, ClipboardIcon, CalendarIcon, LogoutIcon, MenuIcon, CloseIcon,
-  PanelIcon, BellIcon,
+  PanelIcon, BellIcon, BookIcon,
 } from './Icons';
 import { namaPeran } from '../utils/peran';
 import { useNotifStore, SELANG_SEGARKAN } from '../store/notifStore';
@@ -46,9 +46,13 @@ const KELOMPOK = [
       { to: '/admin/users', label: 'Pengguna', icon: UsersIcon },
       { to: '/admin/shifts', label: 'Shift & WFA', icon: ClipboardIcon, admin: true },
       { to: '/admin/holidays', label: 'Hari Libur', icon: CalendarIcon, admin: true },
+      { to: '/panduan', label: 'Petunjuk', icon: BookIcon },
     ],
   },
 ];
+
+// Ditanam saat build dari package.json -- lihat vite.config.js.
+const VERSI = typeof __VERSI_APLIKASI__ !== 'undefined' ? __VERSI_APLIKASI__ : '';
 
 function Isi({ user, aktifKah, onPindah, onKeluar, lipat = false, onLipat }) {
   const belum = useNotifStore((s) => s.belum);
@@ -186,6 +190,13 @@ function Isi({ user, aktifKah, onPindah, onKeluar, lipat = false, onLipat }) {
             <LogoutIcon className="w-[18px] h-[18px]" />
           </button>
         </div>
+
+        {/* Versi ditampilkan supaya laporan masalah bisa menyebut versi
+            mana yang sedang dipakai. Tanpa itu, "sudah saya coba dan
+            tetap begitu" tidak bisa dipastikan menunjuk kode yang sama. */}
+        {!lipat && VERSI && (
+          <p className="text-[10px] text-faint text-center mt-2 tracking-wide">v{VERSI}</p>
+        )}
       </div>
     </div>
   );

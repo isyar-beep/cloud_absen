@@ -3,6 +3,7 @@ import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import Constants from 'expo-constants';
 import * as ImagePicker from 'expo-image-picker';
 import api from '../services/api';
 import { pesanGalat } from '../services/galat';
@@ -213,6 +214,18 @@ export default function ProfilScreen({ navigation }) {
         <Text style={styles.keluarTeks}>Keluar dari Akun</Text>
       </TouchableOpacity>
 
+      {/* Versi aplikasi. Dibaca dari app.json lewat expo-constants, bukan
+          ditulis ulang di sini -- nomor yang disalin ke dua tempat pasti
+          berselisih cepat atau lambat, dan versi yang salah lebih
+          menyesatkan daripada tidak ada versi sama sekali.
+
+          Gunanya nyata saat pegawai melapor: tanpa ini, "sudah saya coba
+          dan tetap begitu" tidak bisa dipastikan menunjuk kode yang sama
+          dengan yang sedang diperiksa. */}
+      <Text style={styles.versi} selectable>
+        Absensi Konsultan v{Constants.expoConfig?.version || '-'}
+      </Text>
+
       {ubahPassword ? (
         <UbahPasswordModal
           onTutup={() => setUbahPassword(false)}
@@ -289,6 +302,10 @@ const buatGaya = (w) => StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
     marginTop: 28, minHeight: 48, borderRadius: 14,
     backgroundColor: w.merah.latar, borderWidth: 1, borderColor: w.merah.garis,
+  },
+  versi: {
+    fontSize: 11, color: w.teksSamar, textAlign: 'center',
+    marginTop: 14, marginBottom: 4,
   },
   keluarTeks: { fontSize: 14, fontWeight: '700', color: w.merah.teks },
 });
