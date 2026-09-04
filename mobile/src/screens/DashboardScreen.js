@@ -170,6 +170,7 @@ export default function DashboardScreen({ navigation }) {
       <Gradasi
         atas={w.heroAtas}
         bawah={w.heroBawah}
+        latar={w.latar}
         style={[styles.hero, { paddingTop: insets.top + 14 }]}
       >
         <View style={styles.heroRow}>
