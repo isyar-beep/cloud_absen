@@ -119,7 +119,7 @@ sehingga riwayat dan laporan tetap lengkap.
 Sebelum dihapus, foto disalin lebih dulu ke penyimpanan dinas sebagai
 arsip mereka, dan penghapusan **ditolak sistem** selama salinan itu belum
 ada dan belum terbukti utuh. Rinciannya di
-[BATAS-SISTEM.md](BATAS-SISTEM.md) bagian 4.
+[BATAS-SISTEM.md](BATAS-SISTEM.md) bagian 5.
 
 Menonaktifkan akun **tidak menghapus datanya**. Riwayat absensi orang yang
 sudah berhenti tetap tersimpan, karena riwayat itu adalah dasar pembayaran

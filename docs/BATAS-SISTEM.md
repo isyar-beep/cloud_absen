@@ -43,7 +43,63 @@ server mati. Tanpa itu, yang pertama tahu adalah pegawai yang gagal absen.
 
 ---
 
-## 2. Absensi tidak bisa dilakukan saat sinyal hilang
+## 2. Rencana pemulihan bencana belum lengkap
+
+Ada bagian yang sudah berjalan dan sudah teruji, dan ada bagian yang
+belum ada sama sekali. Keduanya perlu dibedakan dengan jelas, karena
+"sudah ada backup" dan "sudah ada rencana pemulihan bencana" adalah dua
+klaim yang berbeda.
+
+**Yang sudah ada dan sudah dibuktikan bekerja:**
+
+- cadangan basis data harian (`pg_dump`, terjadwal jam 02:00);
+- prosedur pemulihan sudah benar-benar diuji, bukan sekadar ditulis:
+  jumlah baris 12 tabel dibandingkan, kunci asing dan indeks diperiksa
+  utuh, dan **seluruh pengujian otomatis dijalankan di atas basis data
+  hasil pulih** — lihat `deployment.md` bagian 7 untuk hasil uji terakhir.
+
+**Yang belum ada, dan ini bukan detail kecil:**
+
+1. **Cadangan disimpan di server yang sama dengan data aslinya.**
+   Berkas `pg_dump` ada di `/root/backups/` pada VPS yang sama. Bila
+   VPS itu sendiri rusak total — disk gagal, kena serangan, atau
+   providernya bermasalah — data asli dan cadangannya hilang bersamaan.
+   Cadangan yang tersimpan di tempat yang sama dengan yang dilindunginya
+   bukan cadangan dalam arti yang sesungguhnya.
+
+2. **Foto absensi tidak ikut tercadangkan sama sekali.** Perintah
+   `pg_dump` hanya mencadangkan baris basis data, bukan folder
+   `uploads/` tempat berkas foto disimpan. Bila disk VPS rusak, basis
+   data bisa dipulihkan lengkap dengan URL fotonya — tapi berkas
+   fotonya sendiri hilang selamanya, karena tidak pernah disalin ke
+   mana pun di luar server itu.
+
+3. **Tidak ada RTO/RPO yang ditulis.** RTO (*Recovery Time Objective*)
+   menjawab "berapa lama sampai sistem bisa dipakai lagi". RPO
+   (*Recovery Point Objective*) menjawab "data sampai jam berapa yang
+   boleh hilang". Tanpa angka ini, "sudah ada backup" tidak menjawab
+   pertanyaan yang sebenarnya penting: VPS mati total jam 14.00, jam
+   berapa sistem jalan lagi, dan data jam berapa yang hilang?
+
+4. **Uji pulihnya bergantung diingat orang.** "Minimal tiap tiga
+   bulan" adalah instruksi, bukan sesuatu yang dipaksa sistem. Kalau
+   terlewat enam bulan tanpa ada yang sadar, tidak ada gejala apa pun
+   sampai hari cadangannya benar-benar dibutuhkan.
+
+**Perbaikannya murah dan tidak menuntut arsitektur baru** — sejalan
+dengan batasan satu server di bagian 1, bukan menggantikannya:
+
+- salin berkas `pg_dump` ke penyimpanan di luar VPS (penyimpanan awan,
+  atau sekadar diunduh berkala ke komputer lain);
+- masukkan folder `uploads/` ke dalam rutinitas pencadangan yang sama
+  (`tar` sederhana sudah cukup), bukan cuma basis datanya;
+- tuliskan angka RTO/RPO yang disepakati dinas, supaya harapan soal
+  "seberapa cepat pulih" dan "seberapa banyak boleh hilang" jelas
+  sebelum insiden terjadi, bukan didebat saat insiden sedang berlangsung.
+
+---
+
+## 3. Absensi tidak bisa dilakukan saat sinyal hilang
 
 Aplikasi HP mengirim absensi **saat itu juga**. Bila sinyal di lokasi
 proyek sedang tidak ada, absensi gagal dan harus diulang saat sinyal
@@ -61,7 +117,7 @@ tercatat beserta siapa yang memutuskan.
 
 ---
 
-## 3. Foto wajah tidak diverifikasi mesin
+## 4. Foto wajah tidak diverifikasi mesin
 
 Sistem menyimpan dan menampilkan foto wajah, tapi **tidak membandingkan**
 wajah itu dengan wajah pemilik akun. Yang menilai adalah manusia yang
@@ -79,7 +135,7 @@ keterangannya.
 
 ---
 
-## 4. Foto dan lampiran perlu diarsipkan sebelum dibuang
+## 5. Foto dan lampiran perlu diarsipkan sebelum dibuang
 
 Masa simpannya **24 bulan**, dan ini keputusan yang sudah diambil, bukan
 saran. Angkanya menutup satu tahun anggaran penuh ditambah masa
@@ -138,7 +194,7 @@ Pemantauan sisa disk perlu didaftarkan bersama pemantauan `/health`.
 
 ---
 
-## 5. Batas jumlah pengguna
+## 6. Batas jumlah pengguna
 
 Sistem ini dirancang untuk skala **puluhan sampai ratusan pegawai** dalam
 satu dinas. Yang paling menentukan bukan jumlah pegawainya, tapi
@@ -152,7 +208,7 @@ antrean terpisah.
 
 ---
 
-## 6. Kewajiban perawatan setelah serah terima
+## 7. Kewajiban perawatan setelah serah terima
 
 Ini bagian yang paling sering terlupakan saat menghitung biaya, dan
 paling mahal akibatnya bila terlewat.
@@ -188,7 +244,7 @@ itu perlu diulang berkala, dan hasilnya dicatat.
 
 ---
 
-## 7. Yang sengaja tidak dibuat
+## 8. Yang sengaja tidak dibuat
 
 Bukan karena tidak sempat, tapi karena masing-masing punya alasan.
 
@@ -206,7 +262,7 @@ bukan penemuan bahwa hal itu terlupakan.
 
 ---
 
-## 8. Keadaan versi saat ini
+## 9. Keadaan versi saat ini
 
 Versi **1.0.0-beta.1**. Beta, dan disebut beta dengan sengaja: seluruh
 alurnya sudah berjalan ujung ke ujung dan sudah bisa diperagakan, tapi
@@ -220,14 +276,17 @@ perbaikan mendesak.
 
 ---
 
-## 9. Ringkasan yang perlu diputuskan dinas
+## 10. Ringkasan yang perlu diputuskan dinas
 
 1. Apakah JRA dinas menuntut masa simpan lebih panjang dari 24 bulan
-   untuk dokumen pendukung pembayaran (bagian 4).
+   untuk dokumen pendukung pembayaran (bagian 5).
 2. Siapa yang bertanggung jawab menanggapi peringatan pemantauan, dan
    lewat jalur apa (bagian 1).
 3. Apakah perawatan tahunan aplikasi Android masuk dalam kontrak lanjutan
-   (bagian 6.1).
+   (bagian 7.1).
+4. Berapa RTO/RPO yang bisa diterima, dan apakah penyalinan cadangan ke
+   luar VPS serta pencadangan folder foto masuk kontrak lanjutan
+   (bagian 2).
 
-Ketiganya tidak bisa diputuskan oleh pembuat aplikasi, dan ketiganya akan
-menagih sendiri bila dibiarkan.
+Keempatnya tidak bisa diputuskan oleh pembuat aplikasi, dan keempatnya
+akan menagih sendiri bila dibiarkan.
