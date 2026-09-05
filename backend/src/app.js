@@ -37,6 +37,41 @@ if (process.env.NODE_ENV === 'production') {
 // penanda tak ada cara membuktikannya.
 app.use(penandaPermintaan);
 
+// HTTPS dipaksa dari sisi aplikasi, bukan hanya diserahkan ke Nginx.
+//
+// Nginx + Certbot memang yang menangani TLS (lihat deployment.md), tapi
+// itu berarti keamanannya bergantung sepenuhnya pada satu berkas
+// konfigurasi yang ditulis tangan. Kalau suatu hari konfigurasinya salah,
+// diganti, atau server dipasang tanpa reverse proxy sama sekali, aplikasi
+// ini akan tetap melayani permintaan di HTTP polos dengan gembira -- dan
+// yang lewat di dalamnya adalah kata sandi, foto wajah, dan koordinat.
+//
+// Ini jaring pengaman kedua, bukan pengganti Nginx.
+//
+// Hanya di produksi: memaksanya saat mengembangkan akan mematikan
+// localhost, dan pengembang yang harus melumpuhkan penjagaan keamanan
+// supaya bisa bekerja akan melumpuhkannya untuk selamanya.
+if (process.env.NODE_ENV === 'production') {
+  app.use((req, res, next) => {
+    // Di belakang reverse proxy, sambungan aslinya ada di header ini --
+    // req.secure hanya melihat sambungan Nginx->Node yang memang HTTP.
+    const asli = req.get('x-forwarded-proto');
+    if (asli && asli !== 'https') {
+      // GET dialihkan supaya orang yang salah ketik alamat tetap sampai.
+      // Selain GET tidak boleh dialihkan: badan permintaannya -- termasuk
+      // kata sandi dan foto -- sudah terkirim polos, dan mengalihkannya
+      // hanya membuat data yang sama dikirim dua kali.
+      if (req.method === 'GET' || req.method === 'HEAD') {
+        return res.redirect(308, `https://${req.get('host')}${req.originalUrl}`);
+      }
+      return res.status(403).json({
+        message: 'Permintaan harus lewat HTTPS.',
+      });
+    }
+    return next();
+  });
+}
+
 // Header keamanan standar (X-Content-Type-Options, HSTS, dll.)
 // crossOriginResourcePolicy dilonggarkan supaya foto absensi bisa ditampilkan
 // dari domain frontend yang berbeda (mis. app.domain.com vs api.domain.com).

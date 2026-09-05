@@ -174,6 +174,21 @@ export default function Dashboard() {
           {/* Petunjuk sengaja ditaruh di layar utama, bukan disembunyikan
               di dalam menu. Orang yang bingung tidak akan mencarinya di
               tempat yang perlu dicari lebih dulu. */}
+          {/* Keamanan akun ditaruh sebagai tombol, bukan kartu tersendiri.
+              Dashboard tempat hal yang diperiksa tiap hari; memutus sesi
+              perangkat lain dilakukan orang hampir tidak pernah, hanya saat
+              curiga. Kartu yang selalu ada tapi tak pernah dibaca justru
+              melatih mata untuk melewatinya.
+
+              Kabar "ada login dari perangkat baru" tidak lagi menunggu
+              dicari di sini -- ia datang sebagai pemberitahuan. */}
+          <button
+            onClick={keluarkanPerangkatLain}
+            disabled={memutusSesi}
+            className="bg-surface/80 backdrop-blur-xl border border-line text-body py-3 rounded-2xl text-sm font-medium shadow-soft transition hover:bg-surface/90 hover:border-line-strong disabled:opacity-50"
+          >
+            {memutusSesi ? 'Memutus...' : 'Keluarkan Perangkat Lain'}
+          </button>
           <button
             onClick={() => navigate('/panduan')}
             className="bg-surface/80 backdrop-blur-xl border border-line text-body py-3 rounded-2xl text-sm font-medium shadow-soft transition hover:bg-surface/90 hover:border-line-strong"
@@ -282,31 +297,6 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Keamanan akun.
-            Jejak login adalah satu-satunya hal yang bisa diperiksa sendiri
-            oleh pemiliknya untuk menyadari akunnya dipakai orang lain --
-            tanpa menunggu ada yang melapor. */}
-        <div className="kartu-kaca p-5 mt-5">
-          <p className="text-[15px] font-bold text-strong tracking-[-0.01em]">Keamanan Akun</p>
-          {profile?.login_terakhir_pada ? (
-            <p className="text-xs text-muted mt-1.5">
-              Login sebelumnya: {new Date(profile.login_terakhir_pada).toLocaleString('id-ID')}
-              {profile.login_terakhir_ip ? ` · dari ${profile.login_terakhir_ip}` : ''}
-            </p>
-          ) : (
-            <p className="text-xs text-muted mt-1.5">Belum ada catatan login sebelumnya.</p>
-          )}
-          <p className="text-xs text-faint mt-1">
-            Kalau waktu atau lokasinya tidak Anda kenali, ganti password dan keluarkan perangkat lain.
-          </p>
-          <button
-            onClick={keluarkanPerangkatLain}
-            disabled={memutusSesi}
-            className="mt-3 bg-surface/80 backdrop-blur-xl border border-line text-body px-4 py-2 rounded-xl text-sm font-medium shadow-soft transition hover:bg-surface/90 hover:border-line-strong disabled:opacity-50"
-          >
-            {memutusSesi ? 'Memutus...' : 'Keluarkan Perangkat Lain'}
-          </button>
-        </div>
       </div>
 
 

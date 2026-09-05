@@ -7,6 +7,7 @@ const {
 } = require('../controllers/authController');
 const { authenticate } = require('../middleware/auth');
 const upload = require('../middleware/upload');
+const periksaBerkas = require('../middleware/periksaBerkas');
 
 // Pembatasan per ALAMAT IP: menahan satu mesin yang menembak membabi buta
 // ke banyak akun sekaligus.
@@ -33,7 +34,7 @@ router.post('/change-password', authenticate, changePassword);
 // Memutus sesi di perangkat lain. Dipakai pemilik akun sendiri, tanpa admin.
 router.post('/keluar-semua', authenticate, keluarSemua);
 router.put('/push-token', authenticate, registerPushToken);
-router.put('/avatar', authenticate, upload.single('photo'), uploadAvatar);
+router.put('/avatar', authenticate, upload.single('photo'), periksaBerkas, uploadAvatar);
 router.delete('/avatar', authenticate, deleteAvatar);
 
 module.exports = router;

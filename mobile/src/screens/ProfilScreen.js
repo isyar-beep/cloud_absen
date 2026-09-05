@@ -253,11 +253,15 @@ export default function ProfilScreen({ navigation }) {
             <Text style={styles.menuJudul}>
               {memutusSesi ? 'Memutus sesi...' : 'Keluarkan Perangkat Lain'}
             </Text>
-            <Text style={styles.menuKeterangan}>
-              {profil?.login_terakhir_pada
-                ? `Login sebelumnya: ${new Date(profil.login_terakhir_pada).toLocaleString('id-ID')}`
-                : 'Akhiri sesi di perangkat selain ini'}
-            </Text>
+            {/* Dulu di sini tertulis "Login sebelumnya" -- padahal yang
+                ditampilkan justru login SAAT ITU JUGA, karena kolomnya
+                sudah ditimpa saat login. Keterangan yang tidak akan
+                pernah bisa menunjukkan penyusup.
+
+                Kabar itu sekarang datang sebagai pemberitahuan
+                "Login dari perangkat baru", bukan keterangan pasif yang
+                harus dicari sendiri. */}
+            <Text style={styles.menuKeterangan}>Akhiri sesi di perangkat selain ini</Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={w.teksSamar} />
         </TouchableOpacity>

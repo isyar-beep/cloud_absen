@@ -15,6 +15,47 @@ if (kosong.length > 0) {
   process.exit(1);
 }
 
+// JWT_SECRET yang lemah = seluruh sistem token bisa ditembus.
+//
+// Sebelumnya yang diperiksa hanya "ada isinya", sehingga JWT_SECRET=asdf
+// lolos tanpa keberatan apa pun. deployment.md memang menyuruh memakai
+// `openssl rand -hex 32`, tapi itu instruksi yang bisa dilewatkan orang
+// yang sedang buru-buru memasang -- dan kalau dilewatkan, tidak ada satu
+// pun gejala yang menunjukkannya. Sistemnya berjalan normal sambil
+// tokennya bisa dipalsukan siapa saja yang menebak kuncinya.
+//
+// Karena itu diperiksa di sini, bukan diserahkan pada kedisiplinan orang.
+const RAHASIA_MINIMAL = 32;
+const rahasia = process.env.JWT_SECRET;
+const rahasiaContoh = ['rahasia', 'secret', 'changeme', 'testsecret1234567890'];
+
+if (process.env.NODE_ENV === 'production') {
+  const keluhan = [];
+  if (rahasia.length < RAHASIA_MINIMAL) {
+    keluhan.push(`panjangnya hanya ${rahasia.length} karakter, minimal ${RAHASIA_MINIMAL}`);
+  }
+  // Nilai contoh yang tersalin apa adanya dari dokumentasi atau berkas uji.
+  if (rahasiaContoh.some((c) => rahasia.toLowerCase().includes(c))) {
+    keluhan.push('isinya memuat kata yang lazim dipakai sebagai contoh');
+  }
+  // Satu huruf diulang, atau variasi karakternya terlalu sedikit untuk
+  // bisa disebut acak.
+  if (new Set(rahasia).size < 8) {
+    keluhan.push('variasi karakternya terlalu sedikit untuk nilai acak');
+  }
+
+  if (keluhan.length > 0) {
+    console.error('JWT_SECRET tidak layak dipakai di produksi:');
+    keluhan.forEach((k) => console.error(`  - ${k}`));
+    console.error('');
+    console.error('Buat yang baru:  openssl rand -hex 32');
+    console.error('');
+    console.error('CATATAN: mengganti JWT_SECRET membuat seluruh sesi yang');
+    console.error('sedang berjalan berakhir. Semua orang perlu login ulang.');
+    process.exit(1);
+  }
+}
+
 const app = require('./app');
 const { catatan, dariGalat } = require('./utils/catatan');
 

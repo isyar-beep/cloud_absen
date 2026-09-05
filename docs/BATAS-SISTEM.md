@@ -99,7 +99,52 @@ dengan batasan satu server di bagian 1, bukan menggantikannya:
 
 ---
 
-## 3. Absensi tidak bisa dilakukan saat sinyal hilang
+## 3. Penjagaan yang ditegakkan kode, bukan diserahkan pada kedisiplinan
+
+Tiga hal yang dulu hanya berupa instruksi di `deployment.md` — dan
+instruksi bisa dilewatkan orang yang sedang buru-buru memasang, tanpa
+satu pun gejala yang menunjukkannya.
+
+**1. `JWT_SECRET` yang lemah menolak menyalakan server.** Dulu yang
+diperiksa hanya "ada isinya", sehingga `JWT_SECRET=asdf` lolos tanpa
+keberatan. Sekarang di produksi ditolak bila kurang dari 32 karakter,
+memuat kata yang lazim dipakai sebagai contoh, atau variasi karakternya
+terlalu sedikit untuk disebut acak. Kunci token yang lemah berarti
+seluruh sistem sesi bisa ditembus, dan sistemnya akan berjalan normal
+sambil terbuka.
+
+Catatan: mengganti `JWT_SECRET` mengakhiri seluruh sesi yang sedang
+berjalan. Semua orang perlu login ulang.
+
+**2. HTTPS dipaksa dari sisi aplikasi.** Nginx + Certbot tetap yang
+menangani TLS, tapi itu berarti keamanannya bergantung sepenuhnya pada
+satu berkas konfigurasi yang ditulis tangan. Sekarang bila reverse proxy
+melaporkan sambungan aslinya HTTP, permintaan GET dialihkan ke HTTPS dan
+selain GET ditolak. Yang lewat di dalamnya kata sandi, foto wajah, dan
+koordinat.
+
+Selain GET sengaja **tidak** dialihkan: badannya sudah terkirim polos,
+dan mengalihkannya hanya membuat data yang sama dikirim dua kali.
+
+Hanya berlaku di produksi. Memaksanya saat mengembangkan akan mematikan
+`localhost`, dan pengembang yang harus melumpuhkan penjagaan keamanan
+supaya bisa bekerja akan melumpuhkannya untuk selamanya.
+
+**3. Jenis berkas unggahan diperiksa dari isinya.** `multer` menyaring
+memakai `Content-Type` yang **ditulis klien** — siapa pun yang menyusun
+permintaannya sendiri bisa menuliskan `application/pdf` pada berkas apa
+saja. Untuk foto bahayanya kecil karena `sharp` memproses ulang
+gambarnya; **lampiran pengajuan tidak diproses ulang**, jadi sebelum ini
+tidak ada yang memeriksanya sama sekali. Sekarang bita pertama berkasnya
+dicocokkan dengan jenis yang diakuinya.
+
+Ini **bukan pemindai virus** dan tidak berpura-pura begitu. Yang
+dicegahnya satu hal saja, dan itu memang yang bisa dicegah: berkas jenis
+lain menyamar sebagai PDF atau gambar.
+
+---
+
+## 4. Absensi tidak bisa dilakukan saat sinyal hilang
 
 Aplikasi HP mengirim absensi **saat itu juga**. Bila sinyal di lokasi
 proyek sedang tidak ada, absensi gagal dan harus diulang saat sinyal
@@ -117,7 +162,7 @@ tercatat beserta siapa yang memutuskan.
 
 ---
 
-## 4. Foto wajah tidak diverifikasi mesin
+## 5. Foto wajah tidak diverifikasi mesin
 
 Sistem menyimpan dan menampilkan foto wajah, tapi **tidak membandingkan**
 wajah itu dengan wajah pemilik akun. Yang menilai adalah manusia yang
@@ -135,7 +180,7 @@ keterangannya.
 
 ---
 
-## 5. Foto dan lampiran perlu diarsipkan sebelum dibuang
+## 6. Foto dan lampiran perlu diarsipkan sebelum dibuang
 
 Masa simpannya **24 bulan**, dan ini keputusan yang sudah diambil, bukan
 saran. Angkanya menutup satu tahun anggaran penuh ditambah masa
@@ -194,7 +239,7 @@ Pemantauan sisa disk perlu didaftarkan bersama pemantauan `/health`.
 
 ---
 
-## 6. Batas jumlah pengguna
+## 7. Batas jumlah pengguna
 
 Sistem ini dirancang untuk skala **puluhan sampai ratusan pegawai** dalam
 satu dinas. Yang paling menentukan bukan jumlah pegawainya, tapi
@@ -208,12 +253,12 @@ antrean terpisah.
 
 ---
 
-## 7. Kewajiban perawatan setelah serah terima
+## 8. Kewajiban perawatan setelah serah terima
 
 Ini bagian yang paling sering terlupakan saat menghitung biaya, dan
 paling mahal akibatnya bila terlewat.
 
-### 6.1 Aplikasi Android — kewajiban tahunan
+### 8.1 Aplikasi Android — kewajiban tahunan
 
 Google Play menaikkan syarat `targetSdkVersion` **setiap tahun**. Aplikasi
 yang tidak mengikutinya akan **berhenti bisa diperbarui**, dan pada
@@ -224,19 +269,19 @@ Setidaknya sekali setahun aplikasi HP perlu dibangun ulang dengan Expo SDK
 yang lebih baru dan diuji ulang. Biayanya kecil bila dikerjakan rutin, dan
 besar bila ditunda tiga tahun lalu semuanya harus dilompati sekaligus.
 
-### 6.2 Sertifikat HTTPS
+### 8.2 Sertifikat HTTPS
 
 Diperbarui otomatis oleh Let's Encrypt, tapi pembaruan otomatis itu sendiri
 bisa gagal diam-diam. Perlu masuk daftar periksa berkala.
 
-### 6.3 Pembaruan keamanan pustaka
+### 8.3 Pembaruan keamanan pustaka
 
 Dependabot sudah dipasang dan mengajukan pembaruan setiap minggu. Yang
 tidak otomatis adalah **memeriksa dan menggabungkannya**. Pengajuan yang
 menumpuk enam bulan berubah menjadi pekerjaan besar yang tidak ada yang
 mau memulainya.
 
-### 6.4 Cadangan
+### 8.4 Cadangan
 
 Cadangan yang tidak pernah diuji pulih bukan cadangan — ia baru diketahui
 gagal pada hari ia dibutuhkan. Pemulihan sudah diuji satu kali; pengujian
@@ -244,7 +289,7 @@ itu perlu diulang berkala, dan hasilnya dicatat.
 
 ---
 
-## 8. Yang sengaja tidak dibuat
+## 9. Yang sengaja tidak dibuat
 
 Bukan karena tidak sempat, tapi karena masing-masing punya alasan.
 
@@ -262,7 +307,7 @@ bukan penemuan bahwa hal itu terlupakan.
 
 ---
 
-## 9. Keadaan versi saat ini
+## 10. Keadaan versi saat ini
 
 Versi **1.0.0-beta.1**. Beta, dan disebut beta dengan sengaja: seluruh
 alurnya sudah berjalan ujung ke ujung dan sudah bisa diperagakan, tapi
@@ -276,14 +321,14 @@ perbaikan mendesak.
 
 ---
 
-## 10. Ringkasan yang perlu diputuskan dinas
+## 11. Ringkasan yang perlu diputuskan dinas
 
 1. Apakah JRA dinas menuntut masa simpan lebih panjang dari 24 bulan
-   untuk dokumen pendukung pembayaran (bagian 5).
+   untuk dokumen pendukung pembayaran (bagian 6).
 2. Siapa yang bertanggung jawab menanggapi peringatan pemantauan, dan
    lewat jalur apa (bagian 1).
 3. Apakah perawatan tahunan aplikasi Android masuk dalam kontrak lanjutan
-   (bagian 7.1).
+   (bagian 8.1).
 4. Berapa RTO/RPO yang bisa diterima, dan apakah penyalinan cadangan ke
    luar VPS serta pencadangan folder foto masuk kontrak lanjutan
    (bagian 2).

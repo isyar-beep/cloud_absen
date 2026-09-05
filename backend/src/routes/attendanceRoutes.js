@@ -14,10 +14,11 @@ const {
 const { adminEditAbsensi, getRiwayatEdit } = require('../controllers/correctionController');
 const { authenticate, authorize } = require('../middleware/auth');
 const upload = require('../middleware/upload');
+const periksaBerkas = require('../middleware/periksaBerkas');
 
 // Endpoint untuk pengguna biasa (staff)
-router.post('/check-in', authenticate, upload.single('photo'), checkIn);
-router.post('/check-out', authenticate, upload.single('photo'), checkOut);
+router.post('/check-in', authenticate, upload.single('photo'), periksaBerkas, checkIn);
+router.post('/check-out', authenticate, upload.single('photo'), periksaBerkas, checkOut);
 router.get('/today', authenticate, getTodayStatus);
 router.get('/history', authenticate, getMyHistory);
 router.get('/history/summary', authenticate, getMyHistorySummary);
