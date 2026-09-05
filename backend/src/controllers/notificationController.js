@@ -6,6 +6,7 @@ const { jendelaSemuaPegawai } = require('../utils/shiftWindow');
 const { hitungRate } = require('../utils/attendanceRate');
 const { cekHariKerja } = require('../utils/workday');
 const { catatan, dariGalat } = require('../utils/catatan');
+const { tokenPengguna, jumlahPerangkat } = require('../utils/perangkat');
 
 const NAMA_BULAN = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -39,7 +40,7 @@ async function sendLowAttendanceWarning(req, res, next) {
     // dikirimi surat peringatan, dan angka di email berbeda dari angka yang
     // dilihat pegawai di aplikasinya.
     const result = await query(
-      `SELECT u.id, u.name, u.email, u.push_token,
+      `SELECT u.id, u.name, u.email,
               COUNT(a.*) FILTER (WHERE a.status = 'hadir')     AS hadir,
               COUNT(a.*) FILTER (WHERE a.status = 'terlambat') AS terlambat,
               COUNT(a.*) FILTER (WHERE a.status = 'alpha')     AS alpha
@@ -82,17 +83,17 @@ async function sendLowAttendanceWarning(req, res, next) {
         gagal.push({ id: row.id, name: row.name, email: row.email });
       }
 
-      // Push notification (best-effort, terpisah dari status pengiriman email)
-      if (row.push_token) {
+      // Push notification (best-effort, terpisah dari status pengiriman email).
+      // Ke SELURUH perangkat pegawai, bukan cuma yang terakhir login.
+      const tokenPegawai = await tokenPengguna([row.id]);
+      if (tokenPegawai.length > 0) {
         try {
-          await sendPushNotifications([
-            {
-              to: row.push_token,
-              title: 'Peringatan Kehadiran',
-              body: `Tingkat kehadiran Anda periode ${periode} tercatat ${rate}%, di bawah batas minimum ${threshold}%.`,
-              data: { type: 'low_attendance', periode },
-            },
-          ]);
+          await sendPushNotifications(tokenPegawai.map((t) => ({
+            to: t.token,
+            title: 'Peringatan Kehadiran',
+            body: `Tingkat kehadiran Anda periode ${periode} tercatat ${rate}%, di bawah batas minimum ${threshold}%.`,
+            data: { type: 'low_attendance', periode },
+          })));
         } catch (pushErr) {
           catatan.ingat('Gagal kirim push pemberitahuan', {
           pengguna: row.id, ...dariGalat(pushErr, { tumpukan: false }),
@@ -142,6 +143,11 @@ async function getBelumCheckin(req, res, next) {
 // Hari libur dan akhir pekan juga dilewati -- absennya memang ditutup,
 // jadi tidak ada yang perlu diingatkan.
 async function daftarBelumCheckin(idTerpilih = null) {
+  // Berapa perangkat yang bisa dijangkau untuk tiap pegawai. Diambil
+  // sekali di depan, bukan sekali per pegawai di dalam perulangan --
+  // daftar ini dipanggil tiap kali layar admin disegarkan.
+  const petaToken = await jumlahPerangkat();
+
   const daftar = await jendelaSemuaPegawai(query);
   if (daftar.length === 0) return [];
 
@@ -177,8 +183,10 @@ async function daftarBelumCheckin(idTerpilih = null) {
       name: d.pegawai.name,
       avatar_url: d.pegawai.avatar_url,
       project_name: d.pegawai.project_name,
-      push_token: d.pegawai.push_token,
-      bisa_dikirimi: !!d.pegawai.push_token,
+      // Tokennya sendiri tidak ikut keluar ke layar admin: itu alamat
+      // perangkat pribadi pegawai, dan admin tidak perlu melihatnya untuk
+      // tahu siapa yang bisa dikirimi.
+      bisa_dikirimi: (petaToken.get(d.pegawai.id) || 0) > 0,
       shift_name: d.jendela.shift.nama,
       shift_start: d.jendela.shift.mulai,
       tanggal_shift: d.jendela.tanggal_shift_masuk,
@@ -232,19 +240,25 @@ async function sendCheckinReminder(req, res, next) {
       });
     }
 
-    const punyaToken = belumAbsen.filter((r) => r.push_token);
+    const punyaToken = belumAbsen.filter((r) => r.bisa_dikirimi);
     const tanpaToken = belumAbsen.length - punyaToken.length;
 
     let sent = 0;
     let errorKirim = null;
     if (punyaToken.length > 0) {
+      // Satu pesan per PERANGKAT, bukan per pegawai: pegawai yang punya
+      // HP dan tablet diingatkan di keduanya. Nama pemiliknya diambil
+      // lewat peta supaya sapaannya tetap benar walau satu orang punya
+      // beberapa baris token.
+      const namaPegawai = new Map(punyaToken.map((r) => [r.id, r.name]));
+      const tokenSemua = await tokenPengguna(punyaToken.map((r) => r.id));
       const hasil = await sendPushNotifications(
-        punyaToken.map((row) => ({
-          to: row.push_token,
+        tokenSemua.map((t) => ({
+          to: t.token,
           title: 'Pengingat Absensi',
           body: pesanKustom
             ? String(pesanKustom).trim()
-            : `Halo ${row.name}, jangan lupa check-in hari ini.`,
+            : `Halo ${namaPegawai.get(t.user_id) || ''}, jangan lupa check-in hari ini.`,
           data: { type: 'checkin_reminder' },
         }))
       );

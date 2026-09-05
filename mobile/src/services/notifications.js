@@ -1,3 +1,9 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { rincianPerangkat } from './perangkat';
+
+// Token push perangkat ini, disimpan supaya bisa dilepas tepat sasaran saat keluar.
+const KUNCI_TOKEN = 'push_token_perangkat';
+
 import { Platform } from 'react-native';
 import * as Device from 'expo-device';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
@@ -89,7 +95,13 @@ export async function registerForPushNotifications() {
 
     const { data: expoPushToken } = await Notifications.getExpoPushTokenAsync({ projectId });
 
-    await api.put('/auth/push-token', { push_token: expoPushToken });
+    await api.put('/auth/push-token', { push_token: expoPushToken, ...rincianPerangkat() });
+
+    // Disimpan supaya saat keluar nanti kita tahu PERANGKAT MANA yang
+    // harus dilepas. unregisterPushToken sengaja tidak menyentuh
+    // expo-notifications (supaya tetap aman di Expo Go), jadi ia tidak
+    // bisa menanyakan tokennya sendiri.
+    try { await AsyncStorage.setItem(KUNCI_TOKEN, expoPushToken); } catch { /* diabaikan */ }
   } catch (err) {
     console.log('Gagal mendaftarkan push token:', err.message);
   }
@@ -100,7 +112,14 @@ export async function registerForPushNotifications() {
 // mengosongkan token di server, jadi aman dipanggil di Expo Go.
 export async function unregisterPushToken() {
   try {
-    await api.put('/auth/push-token', { push_token: null });
+    // token_lama menentukan baris mana yang dilepas. Tanpa itu server
+    // tidak tahu perangkat mana yang dimaksud, dan keluar dari satu
+    // perangkat akan mematikan pemberitahuan di seluruh perangkat lain
+    // milik pegawai yang sama.
+    let tokenLama = null;
+    try { tokenLama = await AsyncStorage.getItem(KUNCI_TOKEN); } catch { /* diabaikan */ }
+    await api.put('/auth/push-token', { push_token: null, token_lama: tokenLama });
+    try { await AsyncStorage.removeItem(KUNCI_TOKEN); } catch { /* diabaikan */ }
   } catch (err) {
     console.log('Gagal menghapus push token:', err.message);
   }

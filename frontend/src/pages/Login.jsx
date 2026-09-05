@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
+import { sidikPerangkat, namaPerangkat } from '../utils/perangkat';
 import { useAuthStore } from '../store/authStore';
 import ThemeToggle from '../components/ThemeToggle';
 import { BERANDA_PERAN } from '../components/ProtectedRoute';
@@ -20,7 +21,15 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const res = await api.post('/auth/login', { email, password });
+      // Penanda perangkat ikut dikirim supaya server bisa mengenali
+      // "akun ini sudah pernah dipakai dari sini" dan memberi tahu
+      // pemiliknya kalau muncul yang baru.
+      const res = await api.post('/auth/login', {
+        email,
+        password,
+        sidik_perangkat: sidikPerangkat(),
+        nama_perangkat: namaPerangkat(),
+      });
       login(res.data.user, res.data.token);
 
       // Konsultan mendarat di halaman pemantauan, bukan halaman pegawai --

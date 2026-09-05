@@ -6,6 +6,8 @@ const { periksaKataSandi } = require('../utils/kataSandi');
 const gembok = require('../utils/gemboklogin');
 const { catatan, dariGalat } = require('../utils/catatan');
 const { lupakanPengguna } = require('../middleware/auth');
+const { daftarkanToken, lepaskanToken, catatPerangkat } = require('../utils/perangkat');
+const { kirimNotifikasi } = require('../utils/notifikasi');
 
 // POST /api/auth/login
 async function login(req, res, next) {
@@ -68,6 +70,45 @@ async function login(req, res, next) {
       );
     } catch (e) {
       catatan.ingat('Gagal mencatat jejak login', {
+        pengguna: user.id, ...dariGalat(e, { tumpukan: false }),
+      });
+    }
+
+    // Perangkat baru diberitahukan ke pemilik akun.
+    //
+    // Ini ganti dari keterangan pasif yang harus dicari sendiri di layar:
+    // kejadian datang menghampiri, lalu diam. Dikirim ke SELURUH perangkat
+    // terdaftar -- itu sebabnya tabel token harus ada lebih dulu; dengan
+    // satu token per pengguna, peringatan ini justru akan sampai ke
+    // perangkat yang baru saja login, yaitu perangkat orang yang sedang
+    // diperingatkan keberadaannya.
+    //
+    // Sengaja SESUDAH login dinyatakan berhasil dan tidak menghalanginya:
+    // pegawai yang sandinya benar tidak pantas gagal masuk karena
+    // pencatatan perangkat bermasalah.
+    try {
+      const { sidik_perangkat, nama_perangkat } = req.body;
+      const p = await catatPerangkat({
+        userId: user.id,
+        sidik: sidik_perangkat,
+        nama: nama_perangkat,
+      });
+
+      // pertamaKali tidak diberitahukan: login pertama sebuah akun selalu
+      // dari perangkat yang belum dikenal, dan memberi tahu saat itu hanya
+      // melatih orang mengabaikan peringatan berikutnya.
+      if (p.baru && !p.pertamaKali) {
+        await kirimNotifikasi({
+          userIds: [user.id],
+          jenis: 'perangkat_baru',
+          judul: 'Login dari perangkat baru',
+          pesan: `Akun Anda dipakai login dari ${p.nama || 'perangkat yang belum dikenal'}. `
+            + 'Kalau ini bukan Anda, segera ganti password dan keluarkan perangkat lain.',
+          tautan: '/dashboard',
+        });
+      }
+    } catch (e) {
+      catatan.ingat('Gagal mencatat perangkat login', {
         pengguna: user.id, ...dariGalat(e, { tumpukan: false }),
       });
     }
@@ -233,18 +274,34 @@ async function keluarSemua(req, res, next) {
 
 // PUT /api/auth/push-token -- simpan/update Expo push token milik user yang login.
 // Dipanggil dari mobile app setelah izin notifikasi diberikan.
+//
+// Sekarang menulis ke tabel push_tokens, satu baris per PERANGKAT.
+// Dulu satu kolom pada baris pengguna, sehingga perangkat yang login
+// terakhir menimpa token sebelumnya -- pegawai yang punya dua perangkat
+// hanya menerima pemberitahuan di salah satunya, dan siapa pun yang login
+// memakai akunnya akan mengalihkan seluruh pemberitahuannya ke sana.
 async function registerPushToken(req, res, next) {
   try {
-    const { push_token } = req.body;
+    const { push_token, merek, model, os } = req.body;
 
-    if (push_token !== null && (!push_token || typeof push_token !== 'string')) {
+    // null berarti "lepaskan perangkat ini", dipakai saat pegawai keluar.
+    // Yang dilepas hanya perangkat yang mengirimkannya, bukan seluruhnya --
+    // keluar dari tablet tidak boleh mematikan pemberitahuan di HP.
+    if (push_token === null) {
+      const { token_lama } = req.body;
+      if (token_lama) await lepaskanToken({ userId: req.user.id, token: token_lama });
+      return res.json({ message: 'Perangkat ini dilepas dari pemberitahuan.' });
+    }
+
+    if (!push_token || typeof push_token !== 'string') {
       return res.status(400).json({ message: 'push_token wajib diisi (atau null untuk menghapus).' });
     }
 
-    await query('UPDATE users SET push_token = $1, updated_at = NOW() WHERE id = $2', [
-      push_token,
-      req.user.id,
-    ]);
+    await daftarkanToken({
+      userId: req.user.id,
+      token: push_token,
+      merek, model, os,
+    });
 
     res.json({ message: 'Push token tersimpan.' });
   } catch (err) {

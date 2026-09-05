@@ -68,11 +68,30 @@ pengajuan tetap bisa dikirim tanpanya.
 Perlu disadari: surat keterangan sakit memuat keterangan kesehatan.
 Yang mengunggah menentukan sendiri apakah akan melampirkannya.
 
-### 2.4 Token pemberitahuan
+### 2.4 Perangkat dan token pemberitahuan
 
 Bila pengguna mengizinkan notifikasi di aplikasi HP, sebuah token
-perangkat disimpan agar pemberitahuan bisa dikirim. Token ini tidak
-memuat identitas dan bisa dihapus dengan mematikan izin notifikasi.
+perangkat disimpan agar pemberitahuan bisa dikirim, **satu baris per
+perangkat**. Token ini tidak memuat identitas dan bisa dihapus dengan
+mematikan izin notifikasi atau keluar dari perangkat itu. Bersamanya
+disimpan **merek dan model** perangkat — dipakai untuk menyusun kalimat
+yang bisa Anda kenali ("Samsung Galaxy S21"), bukan deretan huruf token.
+
+Selain itu disimpan **penanda perangkat**: satu nilai acak yang dibuat
+sekali oleh aplikasi atau peramban Anda, lalu dikirim setiap login.
+Gunanya satu-satunya adalah menjawab *"apakah akun ini pernah dipakai
+dari sini sebelumnya"*, sehingga sistem bisa memberi tahu Anda ketika
+akun Anda dipakai login dari perangkat yang belum dikenal.
+
+Yang perlu diketahui tentang penanda ini:
+
+- **Bukan nomor seri perangkat Anda.** Nilainya acak, dibuat di perangkat
+  Anda sendiri, dan tidak berhubungan dengan identitas apa pun.
+- **Tidak bisa dipakai melacak Anda.** Ia hanya bermakna di dalam sistem
+  ini, dan hilang begitu data aplikasi atau riwayat peramban dibersihkan.
+- **Bukan alat pembatasan.** Absen tidak pernah ditolak karena
+  perangkatnya berbeda — Anda tetap bisa masuk dari HP mana pun dan dari
+  peramban di komputer.
 
 ### 2.5 Catatan teknis
 
@@ -107,6 +126,8 @@ dengan sendirinya.
 
 | Data | Lama simpan |
 |---|---|
+| Token perangkat | sampai keluar dari perangkat itu, atau aplikasinya dihapus |
+| Penanda perangkat yang dikenal | selama akun masih ada |
 | Pemberitahuan yang sudah dibaca | 90 hari, lalu dihapus otomatis |
 | Pemberitahuan apa pun | 180 hari, lalu dihapus otomatis |
 | **Foto absensi dan lampiran pengajuan** | **24 bulan**, lalu berkasnya dihapus |
@@ -148,6 +169,8 @@ server.
   melalui aplikasi, dan keputusannya tercatat beserta siapa yang
   memutuskan.
 - **Mematikan pemberitahuan** lewat pengaturan HP.
+- **Mengeluarkan perangkat lain** dari akunnya sendiri, kapan saja, tanpa
+  perlu meminta admin.
 
 Permintaan penghapusan data diajukan kepada dinas sebagai pengelola data,
 karena data absensi terkait dengan kewajiban pembayaran dan pemeriksaan.
@@ -165,6 +188,9 @@ karena data absensi terkait dengan kewajiban pembayaran dan pemeriksaan.
 - Percobaan login dibatasi per akun dan per alamat IP.
 - Foto hanya bisa dibuka lewat token berumur pendek yang diperiksa
   kepemilikannya.
+- Login dari perangkat yang belum dikenal **diberitahukan kepada pemilik
+  akun**, sehingga pemakaian tanpa izin bisa disadari tanpa menunggu ada
+  yang melapor.
 
 Batas dari pengamanan ini — dan apa yang belum ada — ditulis terus terang
 di [BATAS-SISTEM.md](BATAS-SISTEM.md).

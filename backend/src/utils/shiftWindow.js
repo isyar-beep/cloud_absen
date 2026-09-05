@@ -222,7 +222,7 @@ async function shiftPegawai(query, userId) {
 // shift ke dalam SQL.
 async function jendelaSemuaPegawai(query, sekarang = new Date()) {
   const hasil = await query(
-    `SELECT u.id, u.name, u.avatar_url, u.push_token, u.project_id,
+    `SELECT u.id, u.name, u.avatar_url, u.project_id,
             pj.name AS project_name,
             s.name AS shift_nama, s.start_time, s.end_time, s.work_days,
             s.checkin_open_minutes, s.checkin_close_minutes,

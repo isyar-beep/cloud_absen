@@ -10,6 +10,7 @@ import api, { API_URL } from '../services/api';
 import { pesanGalat } from '../services/galat';
 import { useAuthStore } from '../store/authStore';
 import { registerForPushNotifications } from '../services/notifications';
+import { sidikPerangkat, namaPerangkat } from '../services/perangkat';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
@@ -27,7 +28,15 @@ export default function LoginScreen({ navigation }) {
     }
     setLoading(true);
     try {
-      const res = await api.post('/auth/login', { email: email.trim(), password });
+      // Penanda perangkat ikut dikirim supaya server bisa mengenali
+      // "akun ini sudah pernah dipakai dari sini" dan memberi tahu
+      // pemiliknya kalau muncul yang baru.
+      const res = await api.post('/auth/login', {
+        email: email.trim(),
+        password,
+        sidik_perangkat: await sidikPerangkat(),
+        nama_perangkat: namaPerangkat(),
+      });
       await login(res.data.user, res.data.token);
       registerForPushNotifications(); // best-effort, tidak menunda navigasi
       navigation.replace('Dashboard');

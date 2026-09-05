@@ -1,6 +1,7 @@
 const { query } = require('../config/db');
 const { catatan, dariGalat } = require('./catatan');
 const { sendPushNotifications } = require('./pushNotification');
+const { tokenPengguna } = require('./perangkat');
 
 // ============================================================
 // Membuat pemberitahuan.
@@ -34,14 +35,13 @@ async function kirimNotifikasi({ userIds, jenis, judul, pesan, tautan, push = tr
 
   if (push) {
     try {
-      const token = await query(
-        `SELECT push_token FROM users
-         WHERE id = ANY($1::int[]) AND push_token IS NOT NULL`,
-        [tujuan]
-      );
-      if (token.rows.length > 0) {
-        await sendPushNotifications(token.rows.map((r) => ({
-          to: r.push_token,
+      // Dikirim ke SELURUH perangkat penerima, bukan cuma yang terakhir
+      // login. Dulu tokennya satu kolom per pengguna, sehingga pegawai
+      // yang punya dua perangkat hanya menerima di salah satunya.
+      const token = await tokenPengguna(tujuan);
+      if (token.length > 0) {
+        await sendPushNotifications(token.map((r) => ({
+          to: r.token,
           title: judul,
           body: pesan || '',
           data: { jenis, tautan },
