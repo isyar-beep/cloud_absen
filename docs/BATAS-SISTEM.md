@@ -142,6 +142,41 @@ Ini **bukan pemindai virus** dan tidak berpura-pura begitu. Yang
 dicegahnya satu hal saja, dan itu memang yang bisa dicegah: berkas jenis
 lain menyamar sebagai PDF atau gambar.
 
+**4. Pegawai hanya boleh punya satu sesi aktif.** Login baru mematikan
+sesi lama. Yang ditutup: sandi pegawai diketahui rekannya, lalu dipakai
+diam-diam dari HP lain — tanpa pembatasan ini kedua sesi hidup
+berdampingan selama tujuh hari dan pemilik akun tidak pernah merasakan
+apa pun.
+
+Perangkat yang dikeluarkan diberi tahu **alasannya**, dan itu bagian
+terpentingnya. Kalimat "akun Anda dipakai login di perangkat lain" adalah
+satu-satunya hal yang memberi tahu pegawai bahwa sandinya dipegang orang
+lain. Kalau yang muncul cuma "sesi Anda berakhir", orangnya mengira
+aplikasinya rusak, login kembali, dan yang tadi masuk tetap bebas masuk
+lagi besok.
+
+**Hanya berlaku untuk pegawai.** Admin dan konsultan tetap bisa bekerja
+di beberapa layar sekaligus — merekalah yang justru paling sering
+membuka aplikasi di komputer kantor dan HP bersamaan, dan mengeluarkan
+mereka setiap berpindah hanya melahirkan gangguan tanpa menutup ancaman
+yang setara.
+
+Yang **tidak** ditutup oleh fitur ini, dan perlu diketahui apa adanya:
+
+- **Ini tidak menghentikan orang yang tahu sandinya.** Yang berubah
+  hanya: kedua orang tidak bisa memakai akun itu bersamaan, dan pemilik
+  aslinya jadi tahu. Yang benar-benar menutupnya tetap penggantian sandi.
+- **Ada celah selebar satu detik.** Yang ditolak hanya token yang lebih
+  tua dari garis pemutusan, jadi dua login pada detik yang sama
+  menyisakan keduanya hidup. Syarat itu disengaja — tanpanya, token yang
+  baru diberikan bisa menendang dirinya sendiri, dan pegawai yang baru
+  login langsung ditolak. Untuk keadaan yang hendak ditutup (rekan yang
+  login dari rumah beberapa jam kemudian) celah ini tidak berarti apa-apa.
+- **Ada gangguan yang nyata bagi pegawai.** Pegawai yang absen lewat
+  peramban PC lalu membuka aplikasi HP akan dikeluarkan dari PC-nya, dan
+  sebaliknya. Ini konsekuensi yang diterima secara sadar saat memilih
+  pembatasan ini, bukan cacat.
+
 ---
 
 ## 4. Absensi tidak bisa dilakukan saat sinyal hilang

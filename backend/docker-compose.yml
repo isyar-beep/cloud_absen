@@ -39,6 +39,7 @@ services:
       - ./database/migrations/013_keamanan_akun.sql:/docker-entrypoint-initdb.d/95-keamanan-akun.sql
       - ./database/migrations/014_perangkat.sql:/docker-entrypoint-initdb.d/96-perangkat.sql
       - ./database/migrations/015_perangkat_absensi.sql:/docker-entrypoint-initdb.d/97-perangkat-absensi.sql
+      - ./database/migrations/016_alasan_sesi.sql:/docker-entrypoint-initdb.d/98-alasan-sesi.sql
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-cloud_absen}']
       interval: 5s

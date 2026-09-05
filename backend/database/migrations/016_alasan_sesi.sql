@@ -1,0 +1,45 @@
+-- ============================================
+-- Migration 016: Alasan sesi diakhiri
+--
+-- Menyertai #33 (pegawai hanya satu sesi aktif). Tanpa ini, pegawai yang
+-- akunnya dipakai orang lain hanya melihat "Sesi Anda sudah diakhiri" --
+-- kalimat yang tidak memberi tahu apa pun.
+--
+-- Padahal justru DI SITULAH seluruh nilai keamanannya. Pegawai yang
+-- membaca "akun Anda dipakai login di perangkat lain" tahu ada yang
+-- memegang sandinya, dan bisa segera menggantinya. Pegawai yang membaca
+-- "sesi Anda diakhiri" cuma mengira aplikasinya rusak, lalu login
+-- kembali tanpa curiga apa-apa -- dan orang yang tadi masuk tetap bebas
+-- masuk lagi besok.
+--
+-- Kolomnya menyimpan SEBAB pemutusan terakhir, bukan riwayat. Yang
+-- dibutuhkan hanya kalimat yang tepat untuk ditampilkan sekali, saat
+-- token lama ditolak.
+--
+-- Nilai yang dipakai (lihat middleware/auth.js):
+--   login_lain    -- ada login baru di perangkat lain (#33)
+--   ganti_sandi   -- pemiliknya mengganti sandi sendiri
+--   keluar_semua  -- pemiliknya menekan "keluarkan perangkat lain"
+--   reset_admin   -- admin mereset sandinya
+--   NULL          -- belum pernah diputus, atau diputus sebelum ada kolom ini
+--
+-- Jalankan pada database yang SUDAH ada.
+--
+--   Database via Docker (cara yang dipakai README opsi A):
+--     docker exec -i cloud_absen_db psql -U postgres -d cloud_absen \
+--       < database/migrations/016_alasan_sesi.sql
+--
+--   PowerShell tidak mengenal pengalihan "<", jadi di Windows:
+--     Get-Content database/migrations/016_alasan_sesi.sql | `
+--       docker exec -i cloud_absen_db psql -U postgres -d cloud_absen
+--
+--   PostgreSQL terpasang langsung (README opsi B):
+--     psql -U postgres -d cloud_absen -f database/migrations/016_alasan_sesi.sql
+-- ============================================
+
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS sesi_alasan VARCHAR(24);
+
+-- Untuk memeriksa hasilnya:
+--
+--   SELECT sesi_alasan, COUNT(*) FROM users GROUP BY sesi_alasan;

@@ -14,6 +14,7 @@ import { useAuthStore } from './src/store/authStore';
 import UbahPasswordModal from './src/components/UbahPasswordModal';
 import { useWarna, useThemeStore } from './src/theme';
 import { registerForPushNotifications } from './src/services/notifications';
+import { rujukanNavigasi } from './src/services/navigasi';
 
 const Stack = createNativeStackNavigator();
 
@@ -54,7 +55,7 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <NavigationContainer theme={temaNavigasi}>
+      <NavigationContainer ref={rujukanNavigasi} theme={temaNavigasi}>
         {/* Ikon bilah status dibalik mengikuti tema: gelap di atas latar
             terang, terang di atas latar gelap. Sebelumnya dipaku "dark",
             sehingga jam dan ikon sinyal nyaris tak terlihat di mode gelap. */}

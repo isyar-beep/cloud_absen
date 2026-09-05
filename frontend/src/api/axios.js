@@ -40,6 +40,33 @@ api.interceptors.response.use(
 
     const dariLogin = error.config?.url?.includes('/auth/login');
     if (error.response?.status === 401 && !dariLogin) {
+      // Alasan sesi berakhir dititipkan supaya SELAMAT melewati pemuatan
+      // ulang halaman di bawah.
+      //
+      // Tanpa ini pesannya hilang begitu saja: window.location.href
+      // memuat ulang seluruh aplikasi, dan seluruh keadaan React ikut
+      // terbuang bersamanya. Yang terlihat pegawai cuma halaman login
+      // yang muncul sendiri tanpa keterangan -- terbaca sebagai aplikasi
+      // yang rusak, bukan sebagai peringatan.
+      //
+      // Padahal untuk sesi yang diputus karena ada login di perangkat
+      // lain, kalimat inilah satu-satunya hal yang memberi tahu bahwa
+      // sandinya dipegang orang lain.
+      //
+      // sessionStorage, bukan localStorage: pesan ini hanya berlaku untuk
+      // kepulangan ke layar login kali ini, dan tidak pantas muncul lagi
+      // berhari-hari kemudian saat peramban dibuka ulang.
+      try {
+        const alasan = error.response.data?.sesi_alasan;
+        if (alasan && error.response.data?.message) {
+          sessionStorage.setItem('pesan_sesi', error.response.data.message);
+        }
+      } catch {
+        // Peramban yang melarang sessionStorage. Pemulangan ke halaman
+        // login di bawah tetap harus berjalan -- itu yang wajib, pesannya
+        // tambahan.
+      }
+
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       if (window.location.pathname !== '/login') {

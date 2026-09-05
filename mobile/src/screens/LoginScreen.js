@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, Alert,
   KeyboardAvoidingView, ScrollView, Platform,
@@ -17,6 +17,15 @@ export default function LoginScreen({ navigation }) {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const login = useAuthStore((state) => state.login);
+
+  // Alasan sesi sebelumnya berakhir, dititipkan penyadap 401 saat
+  // memulangkan pegawai ke sini (lihat services/api.js).
+  //
+  // Dibaca sekali lalu dihapus supaya tidak muncul lagi setiap kali layar
+  // ini dibuka.
+  const pesanSesi = useAuthStore((state) => state.pesanSesi);
+  const hapusPesanSesi = useAuthStore((state) => state.hapusPesanSesi);
+  useEffect(() => () => hapusPesanSesi(), []);
   const w = useWarna();
   const insets = useSafeAreaInsets();
   const styles = useMemo(() => buatGaya(w), [w]);
@@ -77,6 +86,16 @@ export default function LoginScreen({ navigation }) {
         </View>
         <Text style={styles.title}>Absensi Konsultan</Text>
         <Text style={styles.subtitle}>Masuk ke akun Anda untuk melanjutkan</Text>
+
+        {/* Kuning, bukan merah. Tidak ada yang salah dengan isian di
+            bawah -- sandinya tidak keliru, dan warna merah yang sama
+            dengan "password salah" membuat orang mengulang-ulang
+            mengetik, bukan membaca kalimatnya. */}
+        {!!pesanSesi && (
+          <View style={styles.pesanSesi}>
+            <Text style={styles.pesanSesiTeks}>{pesanSesi}</Text>
+          </View>
+        )}
 
         <Text style={styles.label}>Email</Text>
         <TextInput
@@ -148,6 +167,14 @@ const buatGaya = (w) => StyleSheet.create({
     color: w.teks, textTransform: 'uppercase',
   },
   subtitle: { fontSize: 13, color: w.teksRedup, textAlign: 'center', marginTop: 4, marginBottom: 28 },
+
+  pesanSesi: {
+    borderWidth: 1, borderColor: w.gelap ? '#78350f' : '#fcd34d',
+    backgroundColor: w.gelap ? 'rgba(245,158,11,0.15)' : '#fffbeb',
+    borderRadius: LENGKUNG.kotak, paddingHorizontal: 14, paddingVertical: 12,
+    marginBottom: 20, marginTop: -12,
+  },
+  pesanSesiTeks: { fontSize: 13, lineHeight: 19, color: w.gelap ? '#fcd34d' : '#92400e' },
 
   label: { fontSize: 12, fontWeight: '600', color: w.teksRedup, marginBottom: 6 },
   input: {

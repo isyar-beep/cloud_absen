@@ -62,7 +62,7 @@ async function keadaanPengguna(userId) {
 
   const hasil = await query(
     `SELECT id, email, name, role, is_active,
-            harus_ganti_sandi, sesi_sejak_epoch
+            harus_ganti_sandi, sesi_sejak_epoch, sesi_alasan
      FROM users WHERE id = $1`,
     [id]
   );
@@ -86,6 +86,30 @@ const JALUR_BEBAS = ['/api/auth/me', '/api/auth/change-password'];
 function jalurBebas(req) {
   const jalur = (req.originalUrl || '').split('?')[0].replace(/\/+$/, '');
   return JALUR_BEBAS.includes(jalur);
+}
+
+// Kalimat yang dilihat orangnya saat sesinya ditolak.
+//
+// Ini bukan sekadar penghalusan bahasa. Untuk pemutusan karena ada login
+// di perangkat lain, kalimat inilah SATU-SATUNYA hal yang memberi tahu
+// pegawai bahwa sandinya dipegang orang lain. "Sesi Anda sudah diakhiri"
+// hanya terbaca sebagai aplikasi yang rusak: orangnya login kembali,
+// tidak curiga apa pun, dan yang tadi masuk tetap bebas masuk lagi.
+//
+// Alasan yang tidak dikenali -- termasuk NULL dari pemutusan yang
+// terjadi sebelum kolomnya ada -- jatuh ke kalimat umum. Sengaja tidak
+// menebak: kalimat yang keliru tentang keamanan lebih buruk daripada
+// kalimat yang tidak berkata apa-apa.
+const PESAN_SESI = {
+  login_lain: 'Akun Anda dipakai login di perangkat lain, dan perangkat ini dikeluarkan. '
+    + 'Kalau itu bukan Anda, segera login dan ganti password Anda.',
+  ganti_sandi: 'Password akun ini sudah diganti. Silakan login dengan password baru.',
+  keluar_semua: 'Perangkat ini dikeluarkan dari akun. Silakan login kembali.',
+  reset_admin: 'Password Anda direset admin. Silakan login dengan password baru dari admin.',
+};
+
+function pesanSesiBerakhir(alasan) {
+  return PESAN_SESI[alasan] || 'Sesi Anda sudah diakhiri. Silakan login kembali.';
 }
 
 async function authenticate(req, res, next) {
@@ -135,7 +159,8 @@ async function authenticate(req, res, next) {
     if (akun.sesi_sejak_epoch != null && payload.iat) {
       if (payload.iat < Number(akun.sesi_sejak_epoch)) {
         return res.status(401).json({
-          message: 'Sesi Anda sudah diakhiri. Silakan login kembali.',
+          message: pesanSesiBerakhir(akun.sesi_alasan),
+          sesi_alasan: akun.sesi_alasan || null,
         });
       }
     }

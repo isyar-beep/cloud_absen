@@ -12,6 +12,26 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Alasan sesi sebelumnya berakhir, dititipkan oleh penyadap 401 sebelum
+  // halaman dimuat ulang (lihat api/axios.js).
+  //
+  // Dibaca SEKALI lalu dihapus. Kalau dibiarkan, kalimat "akun Anda
+  // dipakai di perangkat lain" akan muncul lagi setiap kali orangnya
+  // membuka halaman login berhari-hari kemudian, dan peringatan yang
+  // muncul tanpa sebab justru melatih orang mengabaikannya.
+  //
+  // Diambil di useState, bukan di useEffect: useEffect berjalan dua kali
+  // pada StrictMode, dan yang kedua sudah menemukannya kosong.
+  const [pesanSesi] = useState(() => {
+    try {
+      const p = sessionStorage.getItem('pesan_sesi');
+      if (p) sessionStorage.removeItem('pesan_sesi');
+      return p || '';
+    } catch {
+      return '';
+    }
+  });
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
 
@@ -73,6 +93,17 @@ export default function Login() {
           onSubmit={handleSubmit}
           className="kartu-kaca p-7 space-y-4"
         >
+          {/* Kuning, bukan merah. Ini bukan kesalahan yang baru saja
+              dilakukan orangnya -- sandinya tidak salah, tidak ada yang
+              perlu diperbaiki pada isian di bawah. Warna merah yang sama
+              dengan "password salah" membuat orang mengulang-ulang
+              mengetik sandinya, bukan membaca kalimatnya. */}
+          {pesanSesi && !error && (
+            <div className="flex items-start gap-2 text-sm text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/15 border border-amber-200 dark:border-amber-500/30 rounded-xl px-3.5 py-2.5">
+              {pesanSesi}
+            </div>
+          )}
+
           {error && (
             <div className="flex items-start gap-2 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/15 border border-red-100 dark:border-red-500/30 rounded-xl px-3.5 py-2.5">
               {error}

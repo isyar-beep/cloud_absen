@@ -55,4 +55,45 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
+// ============================================================
+// Sesi yang ditolak server.
+//
+// Sebelumnya tidak ada penanganan apa pun di sini, dan akibatnya baru
+// terasa berat setelah sesi bisa diputus dari jauh -- sandi diganti,
+// perangkat lain dikeluarkan, atau ada login baru di perangkat lain.
+// Yang terjadi pada HP: token di penyimpanan tetap ada, aplikasi tetap
+// mengira dirinya login, dan setiap layar gagal memuat satu per satu.
+// Pegawai melihat aplikasi yang rusak tanpa sebab, dan tidak terpikir
+// bahwa yang perlu dilakukan hanyalah login kembali.
+//
+// Sekarang tokennya dibuang, alasannya dibawa ke layar login, dan
+// orangnya dipulangkan ke sana.
+// ============================================================
+api.interceptors.response.use(
+  (res) => res,
+  async (error) => {
+    // 401 dari login itu sendiri berarti email atau sandinya salah --
+    // bukan sesi yang berakhir. Layar login yang menampilkan pesannya;
+    // memulangkan orang ke layar yang sedang ia buka hanya akan
+    // menghapus isian yang baru saja diketiknya.
+    const dariLogin = String(error.config?.url || '').includes('/auth/login');
+
+    if (error.response?.status === 401 && !dariLogin) {
+      // Dimuat di sini, bukan di puncak berkas: keduanya berujung memuat
+      // api.js kembali, dan lingkaran impor pada Metro tidak berhenti
+      // dengan galat yang jelas -- yang muncul cuma modul kosong saat
+      // dipakai.
+      const { useAuthStore } = require('../store/authStore');
+      const { pulangKeLogin } = require('./navigasi');
+
+      const sudahKeluar = useAuthStore.getState().token === null;
+      if (!sudahKeluar) {
+        await useAuthStore.getState().logoutKarena(error.response.data?.message || '');
+        pulangKeLogin();
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default api;

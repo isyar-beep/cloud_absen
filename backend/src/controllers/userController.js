@@ -236,6 +236,7 @@ async function resetPassword(req, res, next) {
        SET password_hash = $1,
            harus_ganti_sandi = TRUE,
            sesi_sejak_epoch = FLOOR(EXTRACT(EPOCH FROM NOW()))::bigint,
+           sesi_alasan = 'reset_admin',
            updated_at = NOW()
        WHERE id = $2`,
       [passwordHash, req.params.id]

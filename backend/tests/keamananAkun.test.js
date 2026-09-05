@@ -63,7 +63,13 @@ test('keamanan akun', async (t) => {
 
   const bersihkanTanda = async (id) => {
     await p.query(
-      `UPDATE users SET harus_ganti_sandi = FALSE, sesi_sejak_epoch = NULL WHERE id = $1`,
+      // sesi_alasan ikut dibersihkan. Tanpa itu alasan dari subuji
+      // sebelumnya terbawa ke subuji berikutnya, dan yang gagal justru
+      // uji yang tidak ada hubungannya -- kebocoran keadaan yang
+      // gejalanya selalu menunjuk ke tempat yang salah.
+      `UPDATE users
+       SET harus_ganti_sandi = FALSE, sesi_sejak_epoch = NULL, sesi_alasan = NULL
+       WHERE id = $1`,
       [id]
     );
     lupakanSemua();
@@ -166,8 +172,13 @@ test('keamanan akun', async (t) => {
     await authenticate(sebelum.req, sebelum.res, sebelum.next);
     assert.equal(sebelum.lanjutKah(), true, 'sebelum diputus, token ini sah');
 
+    // sesi_alasan sengaja dikosongkan: yang diuji di sini pemutusan itu
+    // sendiri, bukan kalimat untuk sebab tertentu. Kalimat per sebab
+    // diuji di sesiTunggal.test.js.
     await p.query(
-      `UPDATE users SET sesi_sejak_epoch = FLOOR(EXTRACT(EPOCH FROM NOW()))::bigint WHERE id = $1`,
+      `UPDATE users
+       SET sesi_sejak_epoch = FLOOR(EXTRACT(EPOCH FROM NOW()))::bigint, sesi_alasan = NULL
+       WHERE id = $1`,
       [d.pegawaiA]
     );
     lupakanSemua();
@@ -176,7 +187,9 @@ test('keamanan akun', async (t) => {
     await authenticate(sesudah.req, sesudah.res, sesudah.next);
     assert.equal(sesudah.lanjutKah(), false, 'token lama harus ditolak');
     assert.equal(sesudah.res.kode, 401);
-    assert.match(sesudah.res.badan.message, /sesi/i);
+    // Yang penting bukan kata tertentu, melainkan bahwa orangnya
+    // diberi tahu apa yang harus dilakukan.
+    assert.match(sesudah.res.badan.message, /login kembali/i);
 
     await bersihkanTanda(d.pegawaiA);
   });

@@ -1,6 +1,6 @@
 const bcrypt = require('bcryptjs');
 const { query } = require('../config/db');
-const { generateToken } = require('../utils/jwt');
+const { generateToken, waktuTerbit } = require('../utils/jwt');
 const { uploadFotoProfil, hapusFotoLama } = require('../utils/uploadPhoto');
 const { periksaKataSandi, samaDenganDataDiri } = require('../utils/kataSandi');
 const gembok = require('../utils/gemboklogin');
@@ -89,6 +89,57 @@ async function login(req, res, next) {
     }
 
     const token = generateToken(user);
+
+    // ------------------------------------------------------------
+    // Pegawai hanya boleh punya SATU sesi aktif.
+    //
+    // Login baru mematikan sesi lama. Sasarannya keadaan yang paling
+    // mungkin terjadi di sini: sandi pegawai diketahui rekannya, lalu
+    // dipakai diam-diam dari HP lain. Tanpa ini, kedua sesi hidup
+    // berdampingan selama tujuh hari dan pemilik akun tidak pernah
+    // merasakan apa pun.
+    //
+    // HANYA PEGAWAI. Admin dan konsultan bekerja berpindah-pindah antara
+    // komputer kantor dan HP, dan mengeluarkan mereka setiap berpindah
+    // hanya melahirkan gangguan tanpa menutup ancaman yang setara --
+    // akun merekalah yang justru paling sering dipakai di dua layar
+    // sekaligus.
+    //
+    // Garisnya diambil dari iat token INI, bukan dari NOW(). Lihat
+    // waktuTerbit() -- memakai NOW() membuka celah satu detik yang
+    // membuat token baru ditolak oleh garis yang dibuat untuknya sendiri.
+    //
+    // Satu hal yang perlu jujur dicatat: token yang terbit pada DETIK
+    // YANG SAMA ikut selamat, karena yang ditolak hanya yang lebih tua.
+    // Jadi dua login dalam satu detik yang sama menyisakan dua sesi
+    // hidup. Itu disengaja -- syarat "lebih tua" inilah yang mencegah
+    // token baru menendang dirinya sendiri -- dan celah selebar satu
+    // detik tidak mengubah apa pun bagi rekan kerja yang login dari
+    // rumah beberapa jam kemudian, yaitu keadaan yang hendak ditutup.
+    // ------------------------------------------------------------
+    if (user.role === 'staff') {
+      try {
+        await query(
+          'UPDATE users SET sesi_sejak_epoch = $1, sesi_alasan = $2 WHERE id = $3',
+          [waktuTerbit(token), 'login_lain', user.id]
+        );
+        // Keadaan akun disimpan sebentar di middleware. Tanpa pembatalan
+        // tegas, sesi lama masih diterima sampai ingatan itu kedaluwarsa
+        // -- dan pemutusan yang datang terlambat setengah menit bukan
+        // pemutusan.
+        lupakanPengguna(user.id);
+      } catch (e) {
+        // Login tidak digagalkan. Yang hilang kalau ini gagal cuma
+        // pemutusan sesi lama -- perangkat lama itu tadinya memang sudah
+        // masuk secara sah, jadi keadaannya kembali seperti sebelum #33
+        // ada, bukan menjadi lebih buruk. Menolak login justru menahan
+        // pegawai yang sandinya benar, sementara absensinya menentukan
+        // bayarannya.
+        catatan.ingat('Gagal memutus sesi lama saat login pegawai', {
+          pengguna: user.id, ...dariGalat(e, { tumpukan: false }),
+        });
+      }
+    }
 
     // Login SEBELUMNYA, bukan yang barusan -- inilah yang berguna bagi
     // pemiliknya. Diambil dari baris yang sudah dibaca di atas, sebelum
@@ -258,6 +309,7 @@ async function changePassword(req, res, next) {
        SET password_hash = $1,
            harus_ganti_sandi = FALSE,
            sesi_sejak_epoch = FLOOR(EXTRACT(EPOCH FROM NOW()))::bigint,
+           sesi_alasan = 'ganti_sandi',
            updated_at = NOW()
        WHERE id = $2`,
       [newHash, req.user.id]
@@ -295,7 +347,10 @@ async function changePassword(req, res, next) {
 async function keluarSemua(req, res, next) {
   try {
     await query(
-      `UPDATE users SET sesi_sejak_epoch = FLOOR(EXTRACT(EPOCH FROM NOW()))::bigint WHERE id = $1`,
+      `UPDATE users
+       SET sesi_sejak_epoch = FLOOR(EXTRACT(EPOCH FROM NOW()))::bigint,
+           sesi_alasan = 'keluar_semua'
+       WHERE id = $1`,
       [req.user.id]
     );
     lupakanPengguna(req.user.id);
