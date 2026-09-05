@@ -2,7 +2,8 @@ const express = require('express');
 const rateLimit = require('express-rate-limit');
 const router = express.Router();
 const {
-  login, getProfile, changePassword, registerPushToken, uploadAvatar, deleteAvatar,
+  login, getProfile, changePassword, keluarSemua,
+  registerPushToken, uploadAvatar, deleteAvatar,
 } = require('../controllers/authController');
 const { authenticate } = require('../middleware/auth');
 const upload = require('../middleware/upload');
@@ -29,6 +30,8 @@ const loginLimiter = rateLimit({
 router.post('/login', loginLimiter, login);
 router.get('/me', authenticate, getProfile);
 router.post('/change-password', authenticate, changePassword);
+// Memutus sesi di perangkat lain. Dipakai pemilik akun sendiri, tanpa admin.
+router.post('/keluar-semua', authenticate, keluarSemua);
 router.put('/push-token', authenticate, registerPushToken);
 router.put('/avatar', authenticate, upload.single('photo'), uploadAvatar);
 router.delete('/avatar', authenticate, deleteAvatar);

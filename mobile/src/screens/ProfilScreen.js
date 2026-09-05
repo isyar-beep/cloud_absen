@@ -31,11 +31,42 @@ const MAKS_FOTO = 5 * 1024 * 1024;
 // dashboard kembali menjadi murni layar kerja: absen, statistik, riwayat.
 // ============================================================
 export default function ProfilScreen({ navigation }) {
-  const { user, logout, perbaruiUser } = useAuthStore();
+  const { user, logout, perbaruiUser, gantiToken } = useAuthStore();
   const [profil, setProfil] = useState(null);
   const [mengunggah, setMengunggah] = useState(false);
   const [ubahPassword, setUbahPassword] = useState(false);
   const [pesan, setPesan] = useState('');
+  const [memutusSesi, setMemutusSesi] = useState(false);
+
+  // Memutus sesi di perangkat LAIN. HP ini tetap masuk memakai token
+  // pengganti dari server -- tombol keamanan yang mengeluarkan
+  // penekannya sendiri membuat orang ragu menekannya, dan tombol yang
+  // orang ragu menekannya sama saja dengan tidak ada.
+  async function keluarkanPerangkatLain() {
+    Alert.alert(
+      'Keluarkan perangkat lain?',
+      'Semua perangkat selain HP ini akan diminta login ulang.',
+      [
+        { text: 'Batal', style: 'cancel' },
+        {
+          text: 'Keluarkan',
+          style: 'destructive',
+          onPress: async () => {
+            setMemutusSesi(true);
+            try {
+              const res = await api.post('/auth/keluar-semua');
+              await gantiToken(res.data.token);
+              setPesan(res.data.message);
+            } catch (err) {
+              Alert.alert('Gagal', pesanGalat(err, 'Gagal memutus sesi perangkat lain.'));
+            } finally {
+              setMemutusSesi(false);
+            }
+          },
+        },
+      ]
+    );
+  }
   const w = useWarna();
   const tokenFoto = useTokenFoto();
   const styles = useMemo(() => buatGaya(w), [w]);
@@ -203,6 +234,30 @@ export default function ProfilScreen({ navigation }) {
           <View style={styles.menuTeks}>
             <Text style={styles.menuJudul}>Ubah Password</Text>
             <Text style={styles.menuKeterangan}>Minimal 8 karakter</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={w.teksSamar} />
+        </TouchableOpacity>
+
+        {/* Jejak login: satu-satunya hal yang bisa diperiksa sendiri oleh
+            pemiliknya untuk menyadari akunnya dipakai orang lain, tanpa
+            menunggu ada yang melapor. */}
+        <TouchableOpacity
+          style={styles.menuBaris}
+          onPress={keluarkanPerangkatLain}
+          disabled={memutusSesi}
+        >
+          <View style={styles.menuIkon}>
+            <Ionicons name="phone-portrait-outline" size={18} color={w.utama} />
+          </View>
+          <View style={styles.menuTeks}>
+            <Text style={styles.menuJudul}>
+              {memutusSesi ? 'Memutus sesi...' : 'Keluarkan Perangkat Lain'}
+            </Text>
+            <Text style={styles.menuKeterangan}>
+              {profil?.login_terakhir_pada
+                ? `Login sebelumnya: ${new Date(profil.login_terakhir_pada).toLocaleString('id-ID')}`
+                : 'Akhiri sesi di perangkat selain ini'}
+            </Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={w.teksSamar} />
         </TouchableOpacity>

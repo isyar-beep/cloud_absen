@@ -6,6 +6,7 @@ import {
 import api from '../services/api';
 import { pesanGalat } from '../services/galat';
 import { useWarna } from '../theme';
+import { useAuthStore } from '../store/authStore';
 
 // Ubah password sendiri, kembaran frontend/src/components/UbahPasswordModal.jsx.
 //
@@ -13,7 +14,12 @@ import { useWarna } from '../theme';
 // pernah punya tombol di layar mana pun. Tanpa ini, satu-satunya cara
 // pegawai mengganti password adalah meminta admin me-reset-nya -- dan itu
 // berarti passwordnya sempat diketahui orang lain.
-export default function UbahPasswordModal({ onTutup, onSelesai }) {
+// `wajib` dipakai saat sandinya ditetapkan admin dan belum pernah diganti
+// pemiliknya. Dalam keadaan itu modal ini tidak bisa ditutup: di
+// belakangnya tidak ada satu pun layar yang akan dilayani server sampai
+// sandinya diganti.
+export default function UbahPasswordModal({ onTutup, onSelesai, wajib = false }) {
+  const gantiToken = useAuthStore((s) => s.gantiToken);
   const [lama, setLama] = useState('');
   const [baru, setBaru] = useState('');
   const [ulang, setUlang] = useState('');
@@ -54,6 +60,10 @@ export default function UbahPasswordModal({ onTutup, onSelesai }) {
         oldPassword: lama,
         newPassword: baru,
       });
+      // Mengganti sandi memutus seluruh sesi lain, termasuk token yang
+      // dipegang HP ini. Server mengirim penggantinya supaya perangkat
+      // ini tidak ikut terlempar ke layar login.
+      await gantiToken(res.data.token);
       onSelesai(res.data.message);
     } catch (err) {
       setError(pesanGalat(err, 'Gagal mengubah password.'));
@@ -63,7 +73,7 @@ export default function UbahPasswordModal({ onTutup, onSelesai }) {
   }
 
   return (
-    <Modal visible transparent animationType="slide" onRequestClose={onTutup}>
+    <Modal visible transparent animationType="slide" onRequestClose={wajib ? undefined : onTutup}>
       {/* Panel ini menempel di tepi bawah layar, jadi papan ketik menutupinya
           seluruhnya tanpa KeyboardAvoidingView -- pegawai mengetik tanpa bisa
           melihat kolom yang sedang diisinya. */}

@@ -27,6 +27,28 @@ export const useAuthStore = create((set) => ({
     localStorage.removeItem('token');
     set({ user: null, token: null });
   },
+
+  // Dipakai setelah mengganti sandi atau memutus sesi perangkat lain.
+  //
+  // Keduanya membuat token LAMA tidak berlaku lagi -- termasuk token yang
+  // sedang dipegang tab ini. Tanpa menyimpan token pengganti, orang yang
+  // baru saja mengamankan akunnya justru langsung terlempar ke halaman
+  // login, dan tindakan yang benar terasa seperti kegagalan.
+  gantiToken: (token) => {
+    if (!token) return;
+    localStorage.setItem('token', token);
+    set({ token });
+  },
+
+  // Menandai sandi sementara sudah diganti, tanpa memuat ulang halaman.
+  sandiSudahDiganti: () => {
+    set((s) => {
+      if (!s.user) return s;
+      const user = { ...s.user, harus_ganti_sandi: false };
+      localStorage.setItem('user', JSON.stringify(user));
+      return { user };
+    });
+  },
 }));
 
 // ============================================================

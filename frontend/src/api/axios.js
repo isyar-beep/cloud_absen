@@ -19,6 +19,25 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Server menolak karena sandi sementara belum diganti.
+    //
+    // Jaring pengaman untuk sesi yang sudah terbuka SEBELUM keadaan itu
+    // muncul -- misalnya tab yang dibiarkan terbuka sejak sebelum
+    // pembaruan ini dipasang. Tanpa ini, layarnya hanya menampilkan
+    // penolakan di mana-mana tanpa memberi tahu apa yang harus dilakukan.
+    if (error.response?.status === 403 && error.response.data?.harus_ganti_sandi) {
+      try {
+        const user = JSON.parse(localStorage.getItem('user') || 'null');
+        if (user && !user.harus_ganti_sandi) {
+          localStorage.setItem('user', JSON.stringify({ ...user, harus_ganti_sandi: true }));
+          window.location.reload();
+        }
+      } catch {
+        // Isi localStorage rusak. Dibiarkan -- 401 berikutnya yang akan
+        // memulangkannya ke halaman login.
+      }
+    }
+
     const dariLogin = error.config?.url?.includes('/auth/login');
     if (error.response?.status === 401 && !dariLogin) {
       localStorage.removeItem('token');

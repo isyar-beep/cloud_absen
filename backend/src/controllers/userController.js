@@ -84,8 +84,12 @@ async function createUser(req, res, next) {
     const passwordHash = await bcrypt.hash(password, 10);
 
     const result = await query(
-      `INSERT INTO users (name, email, password_hash, role, department_id, shift_id, project_id)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+      // harus_ganti_sandi TRUE: sandi ini diketik admin dan disampaikan
+      // ke pegawainya lewat telepon atau pesan. Selama belum diganti,
+      // yang tahu sandinya bukan cuma pemiliknya.
+      `INSERT INTO users (name, email, password_hash, role, department_id, shift_id, project_id,
+                          harus_ganti_sandi)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, TRUE)
        RETURNING id, name, email, role, department_id, shift_id, project_id`,
       [name, email, passwordHash, role || 'staff', department_id || null, shift_id || null,
        // Penugasan proyek hanya bermakna untuk pegawai. Admin dan konsultan
@@ -216,10 +220,31 @@ async function resetPassword(req, res, next) {
     }
 
     const passwordHash = await bcrypt.hash(newPassword, 10);
-    await query('UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2', [
-      passwordHash,
-      req.params.id,
-    ]);
+    await query(
+      // Dua hal sekaligus, dan keduanya menutup lubang yang berbeda:
+      //
+      // harus_ganti_sandi  -- sandi ini dibacakan admin lewat telepon atau
+      //   dikirim lewat pesan. Siapa pun yang ikut mendengar atau membaca
+      //   memegang akses permanen selama sandinya tidak pernah diganti.
+      //   Sekarang pemiliknya wajib menggantinya di login berikutnya.
+      //
+      // sesi_sejak_epoch   -- alasan admin mereset sandi seringkali justru
+      //   karena akunnya diduga dipakai orang lain. Mereset sandi tanpa
+      //   memutus sesi membiarkan orang itu tetap masuk memakai token
+      //   lamanya, tanpa perlu tahu sandi barunya sama sekali.
+      `UPDATE users
+       SET password_hash = $1,
+           harus_ganti_sandi = TRUE,
+           sesi_sejak_epoch = FLOOR(EXTRACT(EPOCH FROM NOW()))::bigint,
+           updated_at = NOW()
+       WHERE id = $2`,
+      [passwordHash, req.params.id]
+    );
+
+    // Tanpa ini, keadaan lama masih dipakai middleware sampai ingatannya
+    // kedaluwarsa -- dan selama itu sesi yang mestinya sudah putus masih
+    // diterima.
+    lupakanPengguna(req.params.id);
 
     // Reset oleh admin membuka gembok akunnya. Alasan orang menghubungi
     // admin biasanya justru karena terkunci; kalau gemboknya dibiarkan,

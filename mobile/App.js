@@ -11,13 +11,14 @@ import HistoryScreen from './src/screens/HistoryScreen';
 import ProfilScreen from './src/screens/ProfilScreen';
 import NotifikasiScreen from './src/screens/NotifikasiScreen';
 import { useAuthStore } from './src/store/authStore';
+import UbahPasswordModal from './src/components/UbahPasswordModal';
 import { useWarna, useThemeStore } from './src/theme';
 import { registerForPushNotifications } from './src/services/notifications';
 
 const Stack = createNativeStackNavigator();
 
 export default function App() {
-  const { token, restoreSession } = useAuthStore();
+  const { token, user, restoreSession, perbaruiUser } = useAuthStore();
   const muatTema = useThemeStore((s) => s.muat);
   const w = useWarna();
   const [ready, setReady] = useState(false);
@@ -79,6 +80,22 @@ export default function App() {
           <Stack.Screen name="Profil" component={ProfilScreen} options={{ headerShown: true, title: 'Profil & Pengaturan' }} />
           <Stack.Screen name="Notifikasi" component={NotifikasiScreen} options={{ headerShown: true, title: 'Pemberitahuan' }} />
         </Stack.Navigator>
+
+        {/* Sandi sementara yang ditetapkan admin wajib diganti sebelum
+            apa pun bisa dipakai.
+
+            Ditaruh di akar, bukan di satu layar, karena setiap layar di
+            belakangnya akan ditolak server selama tandanya masih menyala
+            -- sama seperti alasan pemeriksaannya ditaruh di middleware
+            authenticate, bukan di tiap rute. Layar yang ditambahkan
+            kemudian ikut terjaga tanpa perlu ada yang mengingatnya. */}
+        {token && user?.harus_ganti_sandi && (
+          <UbahPasswordModal
+            wajib
+            onSelesai={() => perbaruiUser({ harus_ganti_sandi: false })}
+            onTutup={() => {}}
+          />
+        )}
       </NavigationContainer>
     </SafeAreaProvider>
   );

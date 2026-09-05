@@ -4,6 +4,8 @@ const { generateToken } = require('../utils/jwt');
 const { uploadFotoProfil, hapusFotoLama } = require('../utils/uploadPhoto');
 const { periksaKataSandi } = require('../utils/kataSandi');
 const gembok = require('../utils/gemboklogin');
+const { catatan, dariGalat } = require('../utils/catatan');
+const { lupakanPengguna } = require('../middleware/auth');
 
 // POST /api/auth/login
 async function login(req, res, next) {
@@ -25,7 +27,10 @@ async function login(req, res, next) {
     }
 
     const result = await query(
-      'SELECT id, name, email, password_hash, role, is_active, avatar_url FROM users WHERE email = $1',
+      `SELECT id, name, email, password_hash, role, is_active, avatar_url,
+              harus_ganti_sandi,
+              login_terakhir_pada, login_terakhir_ip
+       FROM users WHERE email = $1`,
       [email]
     );
 
@@ -45,14 +50,41 @@ async function login(req, res, next) {
     gembok.catatBerhasil(email);
     const token = generateToken(user);
 
+    // Login SEBELUMNYA, bukan yang barusan -- inilah yang berguna bagi
+    // pemiliknya. Diambil dari baris yang sudah dibaca di atas, sebelum
+    // ditimpa oleh pencatatan di bawah ini.
+    const loginSebelumnya = {
+      pada: user.login_terakhir_pada,
+      ip: user.login_terakhir_ip,
+    };
+
+    // Kegagalan mencatat jejak tidak boleh menggagalkan login. Pegawai
+    // yang sudah benar sandinya tidak pantas ditolak masuk hanya karena
+    // satu kolom catatan gagal ditulis.
+    try {
+      await query(
+        'UPDATE users SET login_terakhir_pada = NOW(), login_terakhir_ip = $1 WHERE id = $2',
+        [String(req.ip || '').slice(0, 45), user.id]
+      );
+    } catch (e) {
+      catatan.ingat('Gagal mencatat jejak login', {
+        pengguna: user.id, ...dariGalat(e, { tumpukan: false }),
+      });
+    }
+
     res.json({
       message: 'Login berhasil',
       token,
+      login_sebelumnya: loginSebelumnya,
       user: {
         id: user.id,
         name: user.name,
         email: user.email,
         role: user.role,
+        // Dibaca layar login untuk langsung membuka layar ganti sandi,
+        // bukan melemparkan pengguna ke dasbor yang seluruh tombolnya
+        // akan menolaknya.
+        harus_ganti_sandi: user.harus_ganti_sandi,
         // Ikut dikirim supaya aplikasi bisa menampilkan foto profil sejak
         // layar pertama, tanpa memanggil /auth/me lebih dulu.
         avatar_url: user.avatar_url,
@@ -68,6 +100,7 @@ async function getProfile(req, res, next) {
   try {
     const result = await query(
       `SELECT u.id, u.name, u.email, u.role, u.avatar_url,
+              u.harus_ganti_sandi, u.login_terakhir_pada, u.login_terakhir_ip,
               s.name AS shift_name, s.start_time AS shift_start, s.end_time AS shift_end,
               p.name AS project_name, p.location AS project_location
        FROM users u
@@ -121,12 +154,78 @@ async function changePassword(req, res, next) {
     }
 
     const newHash = await bcrypt.hash(newPassword, 10);
-    await query('UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2', [
-      newHash,
-      req.user.id,
-    ]);
 
-    res.json({ message: 'Password berhasil diubah.' });
+    // Mengganti sandi memutus seluruh sesi lain. Ini inti perbaikannya:
+    // orang mengganti sandi justru karena curiga ada yang tahu, dan
+    // penggantian yang membiarkan token lama tetap hidup adalah jaminan
+    // palsu -- pemiliknya merasa aman sementara yang memegang token lama
+    // tetap masuk tanpa perlu tahu sandi barunya.
+    //
+    // FLOOR, bukan sekadar ::bigint. Pemeranan ke bigint di PostgreSQL
+    // MEMBULATKAN: pukul 10:00:00.7 menjadi 10:00:01. Token yang terbit
+    // pada detik 00 lalu dibandingkan dengan garis waktu detik 01 akan
+    // tampak lebih tua daripada pemutusan yang baru saja terjadi -- dan
+    // orang yang baru mengganti sandinya langsung ditendang oleh
+    // tokennya sendiri. Terjaring pengujian, bukan dugaan.
+    await query(
+      `UPDATE users
+       SET password_hash = $1,
+           harus_ganti_sandi = FALSE,
+           sesi_sejak_epoch = FLOOR(EXTRACT(EPOCH FROM NOW()))::bigint,
+           updated_at = NOW()
+       WHERE id = $2`,
+      [newHash, req.user.id]
+    );
+
+    // Keadaan akun disimpan sebentar di middleware; tanpa pembatalan
+    // tegas, sandi lama masih diterima sampai ingatan itu kedaluwarsa.
+    lupakanPengguna(req.user.id);
+
+    // Perangkat yang dipakai mengganti sandi TIDAK ikut dikeluarkan.
+    // Menendang orang yang baru saja mengamankan akunnya terasa seperti
+    // hukuman atas tindakan yang benar -- dan di HP, layar yang tiba-tiba
+    // kembali ke halaman login mudah disalahartikan sebagai kegagalan.
+    const token = generateToken({ id: req.user.id, email: req.user.email, role: req.user.role });
+
+    res.json({
+      message: 'Password berhasil diubah. Perangkat lain sudah dikeluarkan.',
+      token,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// POST /api/auth/keluar-semua -- akhiri sesi di seluruh perangkat lain.
+//
+// Yang bisa dilakukan pemilik akun sendiri, tanpa menunggu admin. Kalau
+// seseorang curiga akunnya dipakai orang lain -- HP tertinggal di
+// warung, sesi lupa ditutup di komputer bersama -- ia butuh cara memutus
+// akses SEKARANG, bukan menelepon admin lalu menunggu.
+//
+// Perangkat yang menekan tombol ini tetap masuk. Menendang semua
+// perangkat termasuk yang sedang dipakai membuat orang ragu menekannya,
+// dan tombol keamanan yang orang ragu menekannya sama saja tidak ada.
+async function keluarSemua(req, res, next) {
+  try {
+    await query(
+      `UPDATE users SET sesi_sejak_epoch = FLOOR(EXTRACT(EPOCH FROM NOW()))::bigint WHERE id = $1`,
+      [req.user.id]
+    );
+    lupakanPengguna(req.user.id);
+
+    const token = generateToken({
+      id: req.user.id, email: req.user.email, role: req.user.role, name: req.user.name,
+    });
+
+    catatan.info('Pengguna mengakhiri sesi di seluruh perangkat', {
+      kode: req.kode, pengguna: req.user.id,
+    });
+
+    res.json({
+      message: 'Perangkat lain sudah dikeluarkan. Perangkat ini tetap masuk.',
+      token,
+    });
   } catch (err) {
     next(err);
   }
@@ -194,4 +293,7 @@ async function deleteAvatar(req, res, next) {
   }
 }
 
-module.exports = { login, getProfile, changePassword, registerPushToken, uploadAvatar, deleteAvatar };
+module.exports = {
+  login, getProfile, changePassword, keluarSemua,
+  registerPushToken, uploadAvatar, deleteAvatar,
+};

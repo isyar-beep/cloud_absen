@@ -61,12 +61,31 @@ async function keadaanPengguna(userId) {
   if (tersimpan && tersimpan.kedaluwarsa > Date.now()) return tersimpan.data;
 
   const hasil = await query(
-    'SELECT id, email, name, role, is_active FROM users WHERE id = $1',
+    `SELECT id, email, name, role, is_active,
+            harus_ganti_sandi, sesi_sejak_epoch
+     FROM users WHERE id = $1`,
     [id]
   );
   const data = hasil.rows[0] || null;
   ingatan.set(id, { data, kedaluwarsa: Date.now() + SELANG_INGAT });
   return data;
+}
+
+// Jalur yang tetap terbuka bagi akun yang wajib mengganti sandi.
+//
+// Sengaja sesempit mungkin, dan sengaja berupa daftar yang diizinkan --
+// bukan daftar yang dilarang. Daftar larangan selalu ketinggalan satu
+// rute, dan rute yang ketinggalan itu justru menggagalkan seluruh
+// gunanya pemaksaan ini.
+//
+// Keduanya memang dibutuhkan: /auth/me supaya layarnya bisa tahu siapa
+// yang login dan menampilkan namanya, /auth/change-password sebagai
+// satu-satunya jalan keluar dari keadaan ini.
+const JALUR_BEBAS = ['/api/auth/me', '/api/auth/change-password'];
+
+function jalurBebas(req) {
+  const jalur = (req.originalUrl || '').split('?')[0].replace(/\/+$/, '');
+  return JALUR_BEBAS.includes(jalur);
 }
 
 async function authenticate(req, res, next) {
@@ -101,6 +120,26 @@ async function authenticate(req, res, next) {
       return res.status(401).json({ message: 'Akun Anda sudah dinonaktifkan. Hubungi admin.' });
     }
 
+    // Token yang terbit sebelum garis waktu ditolak. Ini yang memutus
+    // sesi di perangkat LAIN saat sandi diganti -- tanpa ini, mengganti
+    // sandi adalah jaminan palsu: pemiliknya merasa sudah aman sementara
+    // yang memegang token lama tetap masuk tanpa perlu tahu sandi barunya.
+    //
+    // Keduanya detik epoch, jadi perbandingannya tidak melewati satu pun
+    // penerjemahan zona waktu (lihat migrasi 013). Yang ditolak hanya yang
+    // LEBIH TUA: token yang terbit pada detik yang sama dengan pemutusan
+    // -- yaitu token baru milik orang yang baru saja mengganti sandinya --
+    // ikut selamat.
+    //
+    // Nilai BIGINT dibaca pg sebagai teks, jadi Number() bukan hiasan.
+    if (akun.sesi_sejak_epoch != null && payload.iat) {
+      if (payload.iat < Number(akun.sesi_sejak_epoch)) {
+        return res.status(401).json({
+          message: 'Sesi Anda sudah diakhiri. Silakan login kembali.',
+        });
+      }
+    }
+
     // Peran diambil dari basis data, bukan dari token. Inilah yang
     // membuat kenaikan maupun penurunan peran berlaku tanpa login ulang.
     req.user = {
@@ -108,7 +147,28 @@ async function authenticate(req, res, next) {
       email: akun.email,
       name: akun.name,
       role: akun.role,
+      harus_ganti_sandi: akun.harus_ganti_sandi,
     };
+
+    // Sandi yang ditetapkan admin harus diganti pemiliknya sebelum akun
+    // ini bisa dipakai untuk apa pun.
+    //
+    // Diperiksa DI SINI, bukan di tiap rute. Seluruh rute terjaga
+    // melewati authenticate, jadi menaruhnya di sini berarti tidak ada
+    // satu pun rute yang bisa terlupa -- termasuk rute yang ditambahkan
+    // orang lain setahun dari sekarang, yang tidak akan pernah membaca
+    // catatan ini.
+    if (akun.harus_ganti_sandi && !jalurBebas(req)) {
+      return res.status(403).json({
+        message: 'Sandi sementara Anda harus diganti sebelum melanjutkan.',
+        // Dibaca aplikasi web dan HP untuk membuka layar ganti sandi
+        // sendiri. Tanpa penanda ini keduanya cuma melihat 403 biasa dan
+        // menampilkannya sebagai "tidak punya akses" -- pesan yang salah,
+        // dan pengguna tidak akan tahu harus berbuat apa.
+        harus_ganti_sandi: true,
+      });
+    }
+
     return next();
   } catch (err) {
     // Basis data tidak terjangkau. Sengaja MENOLAK, bukan melanjutkan

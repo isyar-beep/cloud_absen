@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../api/axios';
+import { useAuthStore } from '../store/authStore';
 
 // Ubah password sendiri.
 //
@@ -7,16 +8,22 @@ import api from '../api/axios';
 // pernah punya tombol di layar mana pun -- satu-satunya cara pegawai
 // mengganti password adalah meminta admin me-reset-nya, dan itu berarti
 // passwordnya sempat diketahui orang lain.
-export default function UbahPasswordModal({ onTutup, onSelesai }) {
+// `wajib` dipakai saat sandinya ditetapkan admin dan belum pernah diganti
+// pemiliknya. Bedanya bukan cuma tampilan: dalam keadaan itu modal ini
+// TIDAK bisa ditutup, karena di belakangnya tidak ada satu pun halaman
+// yang akan dilayani server sampai sandinya diganti.
+export default function UbahPasswordModal({ onTutup, onSelesai, wajib = false }) {
+  const gantiToken = useAuthStore((s) => s.gantiToken);
   const [form, setForm] = useState({ lama: '', baru: '', ulang: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (wajib) return undefined;
     const esc = (e) => e.key === 'Escape' && onTutup();
     window.addEventListener('keydown', esc);
     return () => window.removeEventListener('keydown', esc);
-  }, [onTutup]);
+  }, [onTutup, wajib]);
 
   async function kirim(e) {
     e.preventDefault();
@@ -50,6 +57,10 @@ export default function UbahPasswordModal({ onTutup, onSelesai }) {
         oldPassword: form.lama,
         newPassword: form.baru,
       });
+      // Mengganti sandi memutus seluruh sesi lain, termasuk token yang
+      // sedang dipegang tab ini. Server mengirim penggantinya supaya
+      // perangkat ini tidak ikut terlempar keluar.
+      gantiToken(res.data.token);
       onSelesai(res.data.message);
     } catch (err) {
       setError(err.response?.data?.message || 'Gagal mengubah password.');
@@ -65,16 +76,20 @@ export default function UbahPasswordModal({ onTutup, onSelesai }) {
   return (
     <div
       className="fixed inset-0 z-50 bg-slate-950/55 dark:bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4"
-      onClick={onTutup}
+      onClick={wajib ? undefined : onTutup}
     >
       <div
         className="kaca-pekat border border-line rounded-2xl shadow-glass w-full max-w-sm"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-5 py-4 border-b border-line">
-          <p className="text-sm font-bold text-strong">Ubah Password</p>
+          <p className="text-sm font-bold text-strong">
+            {wajib ? 'Ganti Password Sementara' : 'Ubah Password'}
+          </p>
           <p className="text-xs text-muted mt-0.5">
-            Minimal 8 karakter, bukan nama Anda, dan bukan sandi yang umum dipakai
+            {wajib
+              ? 'Password Anda ditetapkan admin, jadi bukan hanya Anda yang mengetahuinya. Ganti sekarang sebelum melanjutkan.'
+              : 'Minimal 8 karakter, bukan nama Anda, dan bukan sandi yang umum dipakai'}
           </p>
         </div>
 
@@ -127,13 +142,15 @@ export default function UbahPasswordModal({ onTutup, onSelesai }) {
             >
               {loading ? 'Menyimpan...' : 'Simpan Password'}
             </button>
-            <button
-              type="button"
-              onClick={onTutup}
-              className="text-sm text-muted px-3 hover:text-body transition"
-            >
-              Batal
-            </button>
+            {!wajib && (
+              <button
+                type="button"
+                onClick={onTutup}
+                className="text-sm text-muted px-3 hover:text-body transition"
+              >
+                Batal
+              </button>
+            )}
           </div>
         </form>
       </div>

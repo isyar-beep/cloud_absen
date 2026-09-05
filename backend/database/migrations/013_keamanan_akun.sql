@@ -1,0 +1,92 @@
+-- ============================================
+-- Migration 013: Keamanan akun pegawai
+--
+-- Tiga celah yang ditutup di sini, ketiganya menyangkut akun orang lain
+-- yang dipegang admin -- bukan akun admin sendiri.
+--
+-- 1. SANDI SEMENTARA YANG TIDAK PERNAH DIGANTI.
+--    Pegawai lupa sandi, menelepon admin, admin menetapkan sandi baru
+--    lalu membacakannya lewat telepon atau WhatsApp. Sampai sekarang
+--    sandi itu bisa dipakai selamanya. Siapa pun yang ikut mendengar --
+--    rekan sekantor, orang yang membaca pesan di HP yang tidak terkunci,
+--    atau riwayat percakapan yang tidak pernah dihapus -- memegang akses
+--    permanen, dan tidak ada satu pun gejala yang menunjukkannya.
+--
+--    harus_ganti_sandi memaksa sandi itu diganti pada login berikutnya.
+--    Setelah diganti, yang tahu sandinya tinggal pemiliknya.
+--
+-- 2. TOKEN LAMA TETAP HIDUP SETELAH SANDI DIGANTI.
+--    Mengganti sandi selama ini TIDAK memutus sesi di perangkat lain.
+--    Justru alasan orang mengganti sandi biasanya karena curiga ada yang
+--    tahu -- dan di situlah penggantian sandi yang tidak memutus sesi
+--    menjadi jaminan palsu: pemiliknya merasa sudah aman, sementara
+--    yang memegang token lama tetap masuk tanpa perlu tahu sandi barunya
+--    sampai tokennya kedaluwarsa tujuh hari kemudian.
+--
+--    sesi_sejak_epoch menjadi garis waktu: token yang terbit SEBELUM
+--    garis itu ditolak. Satu kolom memutus seluruh perangkat sekaligus,
+--    tanpa perlu tabel sesi dan tanpa mengubah bentuk tokennya.
+--
+-- 3. TIDAK ADA CARA MELIHAT ATAU MEMUTUS SESI SENDIRI.
+--    login_terakhir_pada dan login_terakhir_ip memberi pemiliknya satu
+--    hal yang bisa diperiksa sendiri: "terakhir saya masuk kapan, dari
+--    mana". Kalau angkanya tidak dikenali, itu tanda pertama yang bisa
+--    dilihat tanpa menunggu ada yang melapor.
+--
+-- CATATAN PEMASANGAN: baris yang sudah ada TIDAK dipaksa ganti sandi
+-- (harus_ganti_sandi default FALSE) dan sesi yang sedang berjalan TIDAK
+-- diputus (sesi_sejak_epoch dibiarkan NULL = tanpa garis waktu).
+-- Migrasi keamanan yang mengunci semua orang pada saat dipasang akan
+-- membuat orang menghindari pembaruan keamanan berikutnya.
+--
+-- Jalankan pada database yang SUDAH ada.
+--
+--   Database via Docker (cara yang dipakai README opsi A):
+--     docker exec -i cloud_absen_db psql -U postgres -d cloud_absen \
+--       < database/migrations/013_keamanan_akun.sql
+--
+--   PowerShell tidak mengenal pengalihan "<", jadi di Windows:
+--     Get-Content database/migrations/013_keamanan_akun.sql | `
+--       docker exec -i cloud_absen_db psql -U postgres -d cloud_absen
+--
+--   PostgreSQL terpasang langsung (README opsi B):
+--     psql -U postgres -d cloud_absen -f database/migrations/013_keamanan_akun.sql
+-- ============================================
+
+ALTER TABLE users
+  -- Sandi yang ditetapkan admin wajib diganti pemiliknya saat login
+  -- berikutnya. FALSE untuk baris lama: pemasangan migrasi bukan alasan
+  -- memaksa seluruh pegawai mengganti sandinya serentak.
+  ADD COLUMN IF NOT EXISTS harus_ganti_sandi BOOLEAN NOT NULL DEFAULT FALSE,
+
+  -- Token yang terbit sebelum detik ini ditolak. NULL berarti tidak ada
+  -- pembatasan -- keadaan awal setiap akun, dan keadaan seluruh akun yang
+  -- sudah ada saat migrasi ini dipasang.
+  --
+  -- DETIK EPOCH, bukan TIMESTAMP, dan itu disengaja. JWT mencatat waktu
+  -- terbitnya (iat) dalam detik epoch, jadi menyimpannya dalam satuan
+  -- yang sama membuat perbandingannya tidak melewati satu pun penerjemahan
+  -- zona waktu. Sistem ini sudah pernah tergigit soal zona waktu -- itu
+  -- sebabnya pembacaan kolom tanggal di config/db.js sengaja diubah --
+  -- dan penjagaan keamanan bukan tempat untuk mengulanginya.
+  --
+  -- Membacanya sebagai waktu biasa:
+  --   SELECT to_timestamp(sesi_sejak_epoch) FROM users WHERE id = ...;
+  ADD COLUMN IF NOT EXISTS sesi_sejak_epoch BIGINT,
+
+  -- Untuk pemiliknya, bukan untuk pengawasan. Satu-satunya cara pegawai
+  -- bisa menyadari ada yang memakai akunnya tanpa menunggu ada yang
+  -- melapor.
+  ADD COLUMN IF NOT EXISTS login_terakhir_pada TIMESTAMP,
+  -- 45 karakter: cukup untuk IPv6 penuh, yang panjangnya bisa 39 karakter
+  -- dan bisa lebih bila membawa penanda antarmuka.
+  ADD COLUMN IF NOT EXISTS login_terakhir_ip VARCHAR(45);
+
+-- Untuk memeriksa hasilnya:
+--
+--   SELECT column_name, data_type, column_default
+--   FROM information_schema.columns
+--   WHERE table_name = 'users'
+--     AND column_name IN ('harus_ganti_sandi', 'sesi_sejak_epoch',
+--                         'login_terakhir_pada', 'login_terakhir_ip')
+--   ORDER BY column_name;

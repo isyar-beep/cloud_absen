@@ -21,6 +21,19 @@ export const useAuthStore = create((set) => ({
     set({ user: baru });
   },
 
+  // Dipakai setelah mengganti sandi atau memutus sesi perangkat lain.
+  //
+  // Keduanya membuat token lama tidak berlaku lagi -- termasuk yang
+  // sedang dipegang HP ini. Tanpa menyimpan token pengganti, pegawai yang
+  // baru saja mengamankan akunnya justru terlempar ke layar login, dan di
+  // HP layar yang tiba-tiba kembali ke login mudah disalahartikan sebagai
+  // kegagalan.
+  gantiToken: async (token) => {
+    if (!token) return;
+    await AsyncStorage.setItem('token', token);
+    set({ token });
+  },
+
   restoreSession: async () => {
     const userStr = await AsyncStorage.getItem('user');
     const token = await AsyncStorage.getItem('token');
