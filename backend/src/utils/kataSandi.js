@@ -65,6 +65,50 @@ function sederhanakan(s) {
 }
 
 /**
+ * Kata sandi yang PERSIS sama dengan email atau nama pemiliknya.
+ *
+ * Dipisah dari periksaKataSandi karena dipakai di dua saat yang berbeda,
+ * dengan akibat yang berbeda pula:
+ *
+ *   - saat sandi DITETAPKAN, ini salah satu alasan penolakan;
+ *   - saat pemiliknya LOGIN, ini yang menandai akun lama supaya wajib
+ *     diganti (lihat authController).
+ *
+ * Sengaja TANPA ambang panjang. Ambang ">= 4" pada pemeriksaan
+ * "mengandung" ada untuk menghindari tuduhan palsu -- potongan tiga huruf
+ * terlalu mudah muncul kebetulan di dalam sandi yang sebetulnya kuat.
+ * Tapi ambang itu punya akibat yang tidak disengaja: pemilik nama pendek
+ * justru kehilangan perlindungannya.
+ *
+ * Dan nama pendek di sini bukan hal langka -- Adi, Eko, Ari, Ayu, Ida,
+ * Tri. Bagian email mereka sebelum "@" cuma tiga huruf, sehingga sandi
+ * yang PERSIS alamat emailnya sendiri, "adi@dinas.go.id", pernah lolos.
+ * Padahal itu justru tebakan pertama siapa pun yang membuka halaman
+ * Kelola Pengguna, tempat emailnya terpampang.
+ *
+ * Kesamaan persis tidak pernah kebetulan, jadi di sini tidak ada risiko
+ * tuduhan palsu dan tidak perlu ambang apa pun.
+ *
+ * @returns {string|null} pesan penolakan, atau null bila tidak sama.
+ */
+function samaDenganDataDiri(sandi, pemilik = {}) {
+  const s = sederhanakan(sandi);
+  if (!s) return null;
+
+  const email = sederhanakan(pemilik.email);
+  const emailLokal = sederhanakan(String(pemilik.email || '').split('@')[0]);
+  const nama = sederhanakan(pemilik.nama);
+
+  if ((email && s === email) || (emailLokal && s === emailLokal)) {
+    return 'Password tidak boleh sama dengan alamat email pemilik akun.';
+  }
+  if (nama && s === nama) {
+    return 'Password tidak boleh sama dengan nama pemilik akun.';
+  }
+  return null;
+}
+
+/**
  * Memeriksa kata sandi baru.
  *
  * @param {string} sandi
@@ -118,6 +162,10 @@ function periksaKataSandi(sandi, pemilik = {}) {
   const nama = sederhanakan(pemilik.nama);
   const emailLokal = sederhanakan(String(pemilik.email || '').split('@')[0]);
 
+  // PERSIS SAMA -- diperiksa lebih dulu dan TANPA ambang panjang.
+  const samaPersis = samaDenganDataDiri(sandi, pemilik);
+  if (samaPersis) return samaPersis;
+
   // Nama dan email tertulis di layar Kelola Pengguna. Kalau sandinya
   // memuat salah satunya, orang yang bisa melihat daftar itu sudah
   // memegang separuh tebakannya.
@@ -135,4 +183,4 @@ function periksaKataSandi(sandi, pemilik = {}) {
   return null;
 }
 
-module.exports = { periksaKataSandi, PANJANG_MINIMAL };
+module.exports = { periksaKataSandi, samaDenganDataDiri, PANJANG_MINIMAL };

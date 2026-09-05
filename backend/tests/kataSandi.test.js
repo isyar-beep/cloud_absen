@@ -105,6 +105,40 @@ test('pemeriksaan kata sandi', async (t) => {
     lolos('mariposa77', { nama: 'Ari' });
   });
 
+  // --- Sandi yang PERSIS alamat emailnya sendiri ---
+  //
+  // Ini keadaan yang benar-benar terjadi: orang yang diminta mengisi dua
+  // kotak bersebelahan mengisi keduanya dengan hal yang sama. Dan yang
+  // dihasilkannya adalah akun yang sandinya sudah tertulis di layar
+  // Kelola Pengguna, terbaca siapa pun yang membuka halaman itu.
+  //
+  // Ambang ">= 4" pernah membuat pemilik nama pendek justru kehilangan
+  // perlindungan ini. Uji di bawah menjaga agar ambang itu tidak lagi
+  // ikut mematikan pemeriksaan kesamaan persis.
+
+  await t.test('sandi sama persis dengan email ditolak walau nama pemiliknya pendek', () => {
+    ditolak('adi@dinas.go.id', { nama: 'Adi', email: 'adi@dinas.go.id' });
+    ditolak('eko@pu.go.id', { nama: 'Eko', email: 'eko@pu.go.id' });
+    ditolak('tri@dinas.go.id', { nama: 'Tri', email: 'tri@dinas.go.id' });
+  });
+
+  await t.test('sandi sama persis dengan email ditolak untuk nama panjang juga', () => {
+    ditolak('budi@dinas.go.id', { nama: 'Budi Santoso', email: 'budi@dinas.go.id' });
+  });
+
+  await t.test('kesamaan email tidak bisa disiasati huruf besar atau tanda baca', () => {
+    ditolak('Adi@Dinas.Go.Id', { nama: 'Adi', email: 'adi@dinas.go.id' });
+    ditolak('a.d.i@dinas.go.id', { nama: 'Adi', email: 'adi@dinas.go.id' });
+  });
+
+  await t.test('nama pendek tetap tidak menuduh sandi yang wajar', () => {
+    // Sisi kedua, dan ini yang menjaga perbaikan di atas tidak berubah
+    // jadi masalah baru: yang ditolak hanya kesamaan PERSIS. Nama pendek
+    // yang kebetulan muncul di dalam sandi tetap harus lolos.
+    lolos('tridarma2026aman', { nama: 'Tri', email: 'tri@pu.go.id' });
+    lolos('Jalan7Kemerdekaan', { nama: 'Adi', email: 'adi@dinas.go.id' });
+  });
+
   await t.test('nama orang lain tidak menghalangi', () => {
     lolos('budisantoso1', { nama: 'Andi Wijaya' });
   });

@@ -2,7 +2,7 @@ const bcrypt = require('bcryptjs');
 const { query } = require('../config/db');
 const { generateToken } = require('../utils/jwt');
 const { uploadFotoProfil, hapusFotoLama } = require('../utils/uploadPhoto');
-const { periksaKataSandi } = require('../utils/kataSandi');
+const { periksaKataSandi, samaDenganDataDiri } = require('../utils/kataSandi');
 const gembok = require('../utils/gemboklogin');
 const { catatan, dariGalat } = require('../utils/catatan');
 const { lupakanPengguna } = require('../middleware/auth');
@@ -50,6 +50,44 @@ async function login(req, res, next) {
     }
 
     gembok.catatBerhasil(email);
+
+    // Akun yang sandinya SAMA PERSIS dengan emailnya sendiri.
+    //
+    // Pemeriksaan saat sandi ditetapkan hanya menjaga akun BARU. Akun yang
+    // terlanjur begitu -- dibuat sebelum pemeriksaan itu ada, atau diisi
+    // asal-asalan saat pendataan -- tidak tersentuh sama sekali, karena
+    // sandi tersimpan sebagai hash yang tidak bisa dibaca balik.
+    //
+    // Login adalah SATU-SATUNYA saat sistem memegang sandi aslinya. Kalau
+    // tidak diperiksa di sini, akun itu akan terus begitu selamanya tanpa
+    // ada yang tahu.
+    //
+    // Dan akun seperti ini bukan sekadar lemah: sandinya sudah tertulis di
+    // layar Kelola Pengguna, terbaca siapa pun yang membuka halaman itu.
+    // Tidak perlu ditebak sama sekali.
+    //
+    // Yang dilakukan: MENANDAI, bukan menolak. Menolak login berarti
+    // pemiliknya terkunci di luar tanpa jalan masuk untuk memperbaikinya,
+    // sementara absensinya menentukan bayarannya. Dengan harus_ganti_sandi
+    // ia tetap masuk, lalu diwajibkan mengganti sebelum bisa melakukan
+    // apa pun -- jalur yang sudah ada sejak reset oleh admin.
+    let harusGanti = user.harus_ganti_sandi;
+    if (!harusGanti && samaDenganDataDiri(password, { nama: user.name, email: user.email })) {
+      try {
+        await query('UPDATE users SET harus_ganti_sandi = TRUE WHERE id = $1', [user.id]);
+        harusGanti = true;
+        catatan.ingat('Sandi sama dengan data diri, akun ditandai wajib ganti', {
+          pengguna: user.id,
+        });
+      } catch (e) {
+        // Sama seperti pencatatan jejak di bawah: kegagalan menulis tidak
+        // boleh menggagalkan login orang yang sandinya sudah benar.
+        catatan.ingat('Gagal menandai wajib ganti sandi', {
+          pengguna: user.id, ...dariGalat(e, { tumpukan: false }),
+        });
+      }
+    }
+
     const token = generateToken(user);
 
     // Login SEBELUMNYA, bukan yang barusan -- inilah yang berguna bagi
@@ -125,7 +163,14 @@ async function login(req, res, next) {
         // Dibaca layar login untuk langsung membuka layar ganti sandi,
         // bukan melemparkan pengguna ke dasbor yang seluruh tombolnya
         // akan menolaknya.
-        harus_ganti_sandi: user.harus_ganti_sandi,
+        //
+        // harusGanti, BUKAN user.harus_ganti_sandi. Baris user dibaca
+        // sebelum penandaan di atas, jadi memakainya di sini akan
+        // mengirim "false" pada login yang justru baru saja menandai
+        // akunnya -- layar membawa orangnya ke dasbor, lalu setiap
+        // permintaan di sana ditolak 403 tanpa ada yang menjelaskan
+        // kenapa. Terkunci di layar yang kelihatan normal.
+        harus_ganti_sandi: harusGanti,
         // Ikut dikirim supaya aplikasi bisa menampilkan foto profil sejak
         // layar pertama, tanpa memanggil /auth/me lebih dulu.
         avatar_url: user.avatar_url,
