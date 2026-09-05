@@ -249,12 +249,30 @@ async function reviewLeave(req, res, next) {
       // generate_series membuat satu baris attendance per tanggal izin.
       // WHERE di DO UPDATE mencegah izin menimpa hari yang sudah punya absensi
       // asli (sudah check-in) -- kalau tumpang tindih, absensi asli yang menang.
+      //
+      // project_id WAJIB ikut ditulis, dan dulu tidak. Konsultan menyaring
+      // riwayat lewat a.project_id (lihat utils/lingkupProyek.js), dan NULL
+      // tidak pernah cocok dengan syarat apa pun -- jadi setiap hari izin
+      // yang disetujui lenyap dari seluruh layar konsultan: riwayat, galeri,
+      // laporan. Yang dilihatnya bukan "Izin" melainkan tidak ada catatan
+      // sama sekali, yang justru terbaca seperti pegawainya menghilang tanpa
+      // kabar. Cacat yang paling buruk bentuknya: diam, dan menyesatkan ke
+      // arah yang merugikan orang yang sudah benar mengurus izinnya.
+      //
+      // Diambil dari penugasan pegawai saat pengajuan disetujui, sama seperti
+      // yang dilakukan markAlpha untuk baris alpha.
       await client.query(
-        `INSERT INTO attendance (user_id, date, status, reason)
-         SELECT $1, d::date, 'izin', $2
+        `INSERT INTO attendance (user_id, date, status, reason, project_id)
+         SELECT $1, d::date, 'izin', $2, u.project_id
          FROM generate_series($3::date, $4::date, '1 day') AS d
+         CROSS JOIN users u
+         WHERE u.id = $1
          ON CONFLICT (user_id, date)
-         DO UPDATE SET status = 'izin', reason = EXCLUDED.reason
+         DO UPDATE SET status = 'izin', reason = EXCLUDED.reason,
+                       -- Baris yang sudah punya proyek tidak ditimpa: proyek
+                       -- yang TERCAP saat kehadiran terjadi lebih benar
+                       -- daripada penugasan hari ini.
+                       project_id = COALESCE(attendance.project_id, EXCLUDED.project_id)
          WHERE attendance.check_in_time IS NULL`,
         // Jenisnya ikut ditulis di keterangan absensi supaya laporan bulanan
         // bisa membedakan sakit dari cuti tanpa perlu menggabung tabel lain.

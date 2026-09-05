@@ -109,9 +109,16 @@ export default function AdminUsers() {
             <h1 className="text-[1.75rem] leading-tight font-extrabold text-strong tracking-[-0.02em]">Kelola Pengguna</h1>
             <p className="text-sm text-body mt-0.5">{users.length} akun terdaftar</p>
           </div>
-          <Tombol ikon={PlusIcon} onClick={() => setShowForm(!showForm)}>
-            Tambah Pengguna
-          </Tombol>
+          {/* Hanya dinas yang menyusun daftar personel. Server memang sudah
+              menolak konsultan lewat authorize('admin'), tapi membiarkan
+              tombolnya tetap tampil berarti mengundang orang mengisi seluruh
+              form lalu ditolak di akhir -- penolakan yang benar, disampaikan
+              pada saat yang paling tidak berguna. */}
+          {user?.role === 'admin' && (
+            <Tombol ikon={PlusIcon} onClick={() => setShowForm(!showForm)}>
+              Tambah Pengguna
+            </Tombol>
+          )}
         </div>
 
         {loadError && (
