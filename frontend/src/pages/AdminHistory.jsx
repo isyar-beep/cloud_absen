@@ -9,6 +9,7 @@ import Koordinat from '../components/Koordinat';
 import Pilihan, { KELAS_PILIHAN } from '../components/Pilihan';
 import Tombol from '../components/Tombol';
 import KeadaanKosong from '../components/KeadaanKosong';
+import PanelKecurigaan from '../components/PanelKecurigaan';
 import { KerangkaTabel } from '../components/Kerangka';
 import { ClockIcon } from '../components/Icons';
 import { formatTanggal, formatJam } from '../utils/tanggal';
@@ -110,6 +111,12 @@ export default function AdminHistory() {
           <h1 className="text-[1.75rem] leading-tight font-extrabold text-strong tracking-[-0.02em]">Riwayat Absensi Pegawai</h1>
           <p className="text-sm text-body mt-0.5">Semua catatan absensi dengan filter</p>
         </div>
+
+        {/* Absensi yang perlu ditinjau. Tidak tampil kalau tidak ada
+            temuan -- panel kosong yang selalu ada mengajari mata untuk
+            melewatinya, dan pada hari ia benar-benar berisi ia sudah
+            tidak terbaca lagi. */}
+        <PanelKecurigaan dari={filter.start_date} sampai={filter.end_date} />
 
         {/* Filter */}
         <div className="kartu-kaca p-4 mb-5 grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(11rem,1fr))]">

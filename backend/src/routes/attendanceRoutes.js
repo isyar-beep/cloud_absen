@@ -9,6 +9,7 @@ const {
   getTodayAll,
   getUserHistory,
   getAllHistory,
+  getKecurigaan,
   markAlpha,
 } = require('../controllers/attendanceController');
 const { adminEditAbsensi, getRiwayatEdit } = require('../controllers/correctionController');
@@ -26,6 +27,8 @@ router.get('/history/summary', authenticate, getMyHistorySummary);
 // Endpoint khusus admin
 router.get('/today-all', authenticate, authorize('admin', 'konsultan'), getTodayAll);
 router.get('/all', authenticate, authorize('admin', 'konsultan'), getAllHistory);
+// Absensi yang perlu ditinjau manusia. Tidak memblokir apa pun.
+router.get('/kecurigaan', authenticate, authorize('admin', 'konsultan'), getKecurigaan);
 router.get('/user/:userId', authenticate, authorize('admin', 'konsultan'), getUserHistory);
 router.put('/:id/edit', authenticate, authorize('admin'), adminEditAbsensi);
 router.get('/:id/edits', authenticate, authorize('admin'), getRiwayatEdit);

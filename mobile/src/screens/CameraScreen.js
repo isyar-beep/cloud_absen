@@ -5,6 +5,7 @@ import { useWarna } from '../theme';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Location from 'expo-location';
 import api from '../services/api';
+import { sidikPerangkat } from '../services/perangkat';
 import { pesanGalat } from '../services/galat';
 
 const JUDUL = { 'check-in': 'Absen Masuk', 'check-out': 'Absen Pulang' };
@@ -88,6 +89,12 @@ export default function CameraScreen({ route, navigation }) {
         formData.append('latitude', String(lokasi.latitude));
         formData.append('longitude', String(lokasi.longitude));
       }
+
+      // Penanda perangkat yang menekan tombol absen. TIDAK dipakai
+      // menolak absen -- gunanya supaya konsultan diberi tahu kalau satu
+      // perangkat dipakai dua pegawai pada hari yang sama.
+      const sidik = await sidikPerangkat();
+      if (sidik) formData.append('sidik_perangkat', sidik);
 
       const endpoint = mode === 'check-in' ? '/attendance/check-in' : '/attendance/check-out';
       const res = await api.post(endpoint, formData, {

@@ -44,6 +44,7 @@ mana pun, dengan satu pengecualian yang disebut di bagian 5.
 | **Koordinat lokasi (GPS)** | bersamaan dengan foto | mencatat dari mana absen dilakukan |
 | Waktu masuk dan pulang | otomatis | menghitung kehadiran dan keterlambatan |
 | Proyek | otomatis, dari penugasan saat itu | laporan per proyek |
+| **Penanda perangkat** | bersamaan dengan absen | mengetahui bila satu perangkat dipakai absen oleh lebih dari satu pegawai |
 
 **Foto wajah dan koordinat adalah data pribadi.** Keduanya diambil hanya
 pada saat pengguna menekan tombol absen — aplikasi **tidak** melacak lokasi
@@ -90,8 +91,14 @@ Yang perlu diketahui tentang penanda ini:
 - **Tidak bisa dipakai melacak Anda.** Ia hanya bermakna di dalam sistem
   ini, dan hilang begitu data aplikasi atau riwayat peramban dibersihkan.
 - **Bukan alat pembatasan.** Absen tidak pernah ditolak karena
-  perangkatnya berbeda — Anda tetap bisa masuk dari HP mana pun dan dari
-  peramban di komputer.
+  perangkatnya berbeda — Anda tetap bisa masuk dan absen dari HP mana pun
+  dan dari peramban di komputer.
+
+Penanda yang sama juga disimpan pada **baris absensi**, dan gunanya satu:
+bila satu perangkat dipakai absen oleh **dua pegawai berbeda pada hari
+yang sama**, konsultan penanggung jawab diberi tahu untuk memeriksa
+fotonya. Tidak ada absen yang ditolak karenanya, dan tidak ada keputusan
+yang diambil sistem — yang menilai tetap manusia yang melihat fotonya.
 
 ### 2.5 Catatan teknis
 

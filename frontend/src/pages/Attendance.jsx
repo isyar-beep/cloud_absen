@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
+import { sidikPerangkat } from '../utils/perangkat';
 import { ArrowLeftIcon, CameraIcon, ClockIcon } from '../components/Icons';
 import { formatJam, formatTanggalHari, formatTanggalSingkat } from '../utils/tanggal';
 
@@ -148,6 +149,12 @@ export default function Attendance() {
           );
         });
       }
+
+      // Penanda perangkat yang menekan tombol absen. TIDAK dipakai
+      // menolak absen -- gunanya supaya konsultan diberi tahu kalau satu
+      // perangkat dipakai dua pegawai pada hari yang sama.
+      const sidik = sidikPerangkat();
+      if (sidik) formData.append('sidik_perangkat', sidik);
 
       const endpoint = mode === 'check-in' ? '/attendance/check-in' : '/attendance/check-out';
       const res = await api.post(endpoint, formData, {

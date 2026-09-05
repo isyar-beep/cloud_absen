@@ -1,0 +1,89 @@
+-- ============================================
+-- Migration 015: Perangkat yang dipakai absen
+--
+-- Menutup satu-satunya jalur yang tersisa terbuka: TITIP ABSEN.
+--
+-- Rekan yang tahu sandi Budi bisa login di HP-nya sendiri dan absen atas
+-- nama Budi. Foto wajah tidak diperiksa mesin, jadi satu-satunya penjaga
+-- adalah manusia yang kebetulan melihat fotonya -- dan tidak ada yang
+-- pernah diminta melihatnya.
+--
+-- KENAPA MENCATAT, BUKAN MENGUNCI.
+--
+-- Ikatan perangkat (satu pegawai satu HP) sudah dipertimbangkan dan
+-- ditolak, dan alasannya perlu tetap terbaca supaya tidak diusulkan
+-- ulang setahun lagi:
+--
+--   - HP rusak, hilang, atau ganti baru = pegawai tidak bisa absen. Dan
+--     absensinya menentukan bayarannya. Biaya itu melebihi masalah yang
+--     ditutupnya.
+--   - Penanda perangkat Android tidak stabil: berubah saat aplikasi
+--     dipasang ulang. Pegawai yang sah akan ditolak seperti penyusup,
+--     dan penolakan palsu yang berulang menghancurkan kepercayaan pada
+--     sistemnya.
+--   - Pegawai tetap boleh absen lewat peramban PC (keputusan dinas), dan
+--     ikatan perangkat di peramban lemah -- cukup buka peramban untuk
+--     menyiasatinya.
+--
+-- YANG DIPAKAI SEBAGAI GANTINYA.
+--
+-- Karena di lapangan tidak ada HP yang dipakai bergantian (dikonfirmasi
+-- dinas), satu fakta menjadi bukti yang hampir tak terbantahkan:
+--
+--   SATU PERANGKAT DIPAKAI ABSEN OLEH DUA PEGAWAI BERBEDA PADA HARI YANG
+--   SAMA.
+--
+-- Dalam keadaan normal itu mustahil. Dan sinyal ini tetap bekerja walau
+-- penanda perangkatnya tidak stabil -- yang dibandingkan dua absensi
+-- berjarak dekat, bukan riwayat panjang. Aplikasi dipasang ulang pun
+-- tidak menghapus fakta bahwa hari itu satu perangkat dipakai dua orang.
+--
+-- Tidak ada yang diblokir. Yang terjadi: konsultan diberi tahu, lalu ia
+-- MELIHAT FOTONYA. Di situlah kamera yang terkunci ke pengambilan
+-- langsung dan menghadap depan berbuah -- pelaku harus memotret wajahnya
+-- sendiri, atau memotret foto orang lain dari layar. Keduanya kelihatan
+-- jelas oleh manusia yang benar-benar melihat.
+--
+-- Fotonya sudah ada sejak dulu. Yang kurang adalah ada yang DIMINTA
+-- melihatnya.
+--
+-- Jalankan pada database yang SUDAH ada.
+--
+--   Database via Docker (cara yang dipakai README opsi A):
+--     docker exec -i cloud_absen_db psql -U postgres -d cloud_absen \
+--       < database/migrations/015_perangkat_absensi.sql
+--
+--   PowerShell tidak mengenal pengalihan "<", jadi di Windows:
+--     Get-Content database/migrations/015_perangkat_absensi.sql | `
+--       docker exec -i cloud_absen_db psql -U postgres -d cloud_absen
+--
+--   PostgreSQL terpasang langsung (README opsi B):
+--     psql -U postgres -d cloud_absen -f database/migrations/015_perangkat_absensi.sql
+-- ============================================
+
+-- Penanda perangkat yang dipakai saat absen. Bentuknya sama dengan
+-- perangkat.sidik: nilai acak yang dibuat klien sekali lalu disimpan.
+--
+-- Disimpan pada baris absensinya sendiri, bukan disimpulkan dari sesi
+-- login: pegawai bisa login pagi di satu perangkat lalu absen dari
+-- perangkat lain, dan yang perlu dijawab adalah "absen ini ditekan dari
+-- mana", bukan "login terakhirnya dari mana".
+--
+-- NULL untuk seluruh absensi lama, dan untuk aplikasi versi lama yang
+-- belum mengirimkannya. Baris tanpa penanda tidak pernah ikut ditandai --
+-- lihat catatan di utils/kecurigaan.js.
+ALTER TABLE attendance
+  ADD COLUMN IF NOT EXISTS sidik_perangkat VARCHAR(64);
+
+-- Kueri yang dilayani: "pada tanggal ini, adakah penanda perangkat yang
+-- muncul untuk lebih dari satu pegawai". Tanggal didahulukan karena
+-- selalu disaring lebih dulu.
+CREATE INDEX IF NOT EXISTS idx_attendance_sidik
+  ON attendance(date, sidik_perangkat)
+  WHERE sidik_perangkat IS NOT NULL;
+
+-- Untuk memeriksa hasilnya:
+--
+--   SELECT COUNT(*) FILTER (WHERE sidik_perangkat IS NOT NULL) AS berpenanda,
+--          COUNT(*) AS total
+--   FROM attendance;

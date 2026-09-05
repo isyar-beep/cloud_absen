@@ -178,6 +178,24 @@ Yang dilakukan sebagai gantinya: waktu dan koordinat ditanam ke dalam
 gambar, sehingga foto yang diteruskan ke luar aplikasi tetap membawa
 keterangannya.
 
+**Yang ditambahkan kemudian: titip absen kini bisa TERLIHAT.** Karena di
+lapangan tidak ada HP yang dipakai bergantian, satu fakta menjadi bukti
+yang hampir tak terbantahkan — *satu perangkat dipakai absen oleh dua
+pegawai berbeda pada hari yang sama*. Bila itu terjadi, konsultan
+penanggung jawab diberi tahu untuk memeriksa fotonya.
+
+Ini **mendeteksi, bukan mencegah**, dan bedanya perlu disebut terus
+terang. Orang yang nekat tetap bisa melakukannya sekali; yang berubah, ia
+tidak bisa melakukannya berulang tanpa ketahuan. Dan nilainya **nol**
+bila konsultan tidak benar-benar meninjau yang ditandai — sama seperti
+pemantauan yang peringatannya tidak pernah dibaca.
+
+Ikatan perangkat (satu pegawai satu HP) sudah dipertimbangkan dan
+**ditolak**: pegawai yang HP-nya rusak tidak akan bisa absen, sementara
+absensinya menentukan bayarannya. Penanda perangkat Android juga tidak
+stabil — berubah saat aplikasi dipasang ulang — sehingga pegawai yang sah
+akan ditolak seperti penyusup.
+
 ---
 
 ## 6. Foto dan lampiran perlu diarsipkan sebelum dibuang

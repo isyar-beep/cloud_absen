@@ -8,6 +8,7 @@ const { wfaBerlaku } = require('./wfaController');
 const { hitungRate } = require('../utils/attendanceRate');
 const { KOLOM_SHIFT_SQL, tandaiKelengkapan } = require('../utils/kelengkapan');
 const { batasiPerAbsensi, proyekKonsultan, bolehAksesPegawai } = require('../utils/lingkupProyek');
+const { perangkatDipakaiBersama, absenBerdempet } = require('../utils/kecurigaan');
 
 // POST /api/attendance/check-in -- pengguna absen masuk dengan foto
 async function checkIn(req, res, next) {
@@ -89,21 +90,34 @@ async function checkIn(req, res, next) {
     // Baris "alpha" bisa sudah dibuat penanda otomatis tengah malam padahal
     // pegawai shift malam baru absen setelahnya. Baris seperti itu ditimpa,
     // bukan ditolak -- alpha hanya penanda sementara selama belum ada absen.
+    // Penanda perangkat yang menekan tombol absen.
+    //
+    // Disimpan pada baris absensinya, bukan disimpulkan dari sesi login:
+    // pegawai bisa login pagi di satu perangkat lalu absen dari perangkat
+    // lain, dan yang perlu dijawab adalah "absen ini ditekan dari mana".
+    //
+    // TIDAK dipakai menolak absen. Gunanya satu: kalau satu perangkat
+    // dipakai dua pegawai pada hari yang sama, konsultan diberi tahu
+    // supaya melihat fotonya. Lihat utils/kecurigaan.js.
+    const sidik = req.body.sidik_perangkat
+      ? String(req.body.sidik_perangkat).slice(0, 64)
+      : null;
+
     const result = lama
       ? await query(
           `UPDATE attendance
            SET check_in_time = $1, status = $2, photo_in_url = $3,
                latitude = $4, longitude = $5, reason = NULL, work_mode = $6,
-               project_id = $7
-           WHERE id = $8
+               project_id = $7, sidik_perangkat = COALESCE($8, sidik_perangkat)
+           WHERE id = $9
            RETURNING id, date, check_in_time, status, photo_in_url, work_mode, project_id`,
-          [waktuMasuk, status, photoUrl, latitude || null, longitude || null, modeKerja, proyekId, lama.id]
+          [waktuMasuk, status, photoUrl, latitude || null, longitude || null, modeKerja, proyekId, sidik, lama.id]
         )
       : await query(
-          `INSERT INTO attendance (user_id, date, check_in_time, status, photo_in_url, latitude, longitude, work_mode, project_id)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+          `INSERT INTO attendance (user_id, date, check_in_time, status, photo_in_url, latitude, longitude, work_mode, project_id, sidik_perangkat)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
            RETURNING id, date, check_in_time, status, photo_in_url, work_mode, project_id`,
-          [userId, tanggal, waktuMasuk, status, photoUrl, latitude || null, longitude || null, modeKerja, proyekId]
+          [userId, tanggal, waktuMasuk, status, photoUrl, latitude || null, longitude || null, modeKerja, proyekId, sidik]
         );
 
     res.status(201).json({ message: 'Absen masuk berhasil.', attendance: result.rows[0] });
@@ -557,7 +571,42 @@ async function markAlpha(req, res, next) {
   }
 }
 
+// GET /api/attendance/kecurigaan -- absensi yang perlu ditinjau manusia.
+//
+// TIDAK ADA yang diblokir sistem. Yang dihasilkan cuma daftar "tolong
+// lihat fotonya", dan keputusannya sepenuhnya di tangan konsultan.
+//
+// Dipisah menjadi kuat dan lemah, dan pemisahan itu penting: mencampur
+// keduanya membuat penanda yang lemah -- dua orang berdiri berdekatan di
+// satu proyek, yang memang wajar -- ikut terbaca sebagai tuduhan. Setelah
+// beberapa kali salah tuduh, seluruh daftarnya berhenti dipercaya.
+async function getKecurigaan(req, res, next) {
+  try {
+    const { dari, sampai, limit } = req.query;
+
+    const [kuat, lemah] = await Promise.all([
+      perangkatDipakaiBersama(req.user, { dari, sampai, limit }),
+      absenBerdempet(req.user, { dari, sampai, limit }),
+    ]);
+
+    res.json({
+      kuat,
+      lemah,
+      keterangan: {
+        kuat: 'Satu perangkat dipakai absen oleh lebih dari satu pegawai pada hari yang sama. '
+          + 'Di lapangan tidak ada HP yang dipakai bergantian, jadi ini hampir pasti perlu ditanyakan.',
+        lemah: 'Dua pegawai absen dari titik yang praktis sama dalam hitungan detik. '
+          + 'Di satu lokasi proyek hal ini wajar terjadi -- gunanya sebagai penunjuk tambahan, '
+          + 'bukan tuduhan yang berdiri sendiri.',
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
+  getKecurigaan,
   checkIn,
   checkOut,
   getTodayStatus,
