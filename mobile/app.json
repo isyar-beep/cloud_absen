@@ -5,14 +5,12 @@
     "version": "1.0.0-beta.1",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "android": {
       "package": "com.cloudabsen.app",
       "permissions": [
         "CAMERA",
         "ACCESS_FINE_LOCATION"
-      ],
-      "edgeToEdgeEnabled": true
+      ]
     },
     "plugins": [
       [
@@ -29,7 +27,9 @@
         }
       ],
       "expo-document-picker",
-      "expo-notifications"
+      "expo-notifications",
+      "expo-status-bar",
+      "expo-font"
     ]
   }
 }
