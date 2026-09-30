@@ -106,7 +106,7 @@ export default function AdminGallery() {
 
   useEffect(() => {
     api.get('/users')
-      .then((res) => setUsers(res.data.filter((u) => u.role === 'staff')))
+      .then((res) => setUsers(res.data))
       .catch(() => {});
     api.get('/projects').then((res) => setProjects(res.data)).catch(() => {});
   }, []);
@@ -169,7 +169,7 @@ export default function AdminGallery() {
     const daftar = [];
     if (filter.user_id) {
       daftar.push({
-        teks: users.find((u) => String(u.id) === String(filter.user_id))?.name || 'Pegawai',
+        teks: users.find((u) => String(u.id) === String(filter.user_id))?.name || 'Pengguna',
         bersih: () => setFilter((f) => ({ ...f, user_id: '' })),
       });
     }
@@ -270,14 +270,14 @@ export default function AdminGallery() {
               />
             </div>
             <div>
-              <label className={labelClass}>Pegawai</label>
+              <label className={labelClass}>Pengguna</label>
               <Pilihan
                 value={filter.user_id}
                 onChange={(e) => setFilter({ ...filter, user_id: e.target.value })}
-                ariaLabel="Pegawai"
+                ariaLabel="Pengguna"
                 className={`${KELAS_PILIHAN} w-full ${filter.user_id ? inputAktif : ''}`}
                 options={[
-                  { value: '', label: 'Semua pegawai' },
+                  { value: '', label: 'Semua pengguna' },
                   ...users.map((u) => ({ value: u.id, label: u.name })),
                 ]}
               />

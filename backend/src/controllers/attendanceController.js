@@ -442,7 +442,12 @@ async function getUserHistory(req, res, next) {
 async function getAllHistory(req, res, next) {
   try {
     const { limit = 50, offset = 0, department_id, user_id, project_id, sort, with_photo } = req.query;
-    const conditions = ["u.role = 'staff'"];
+    // Riwayat administrasi tetap berisi pegawai. Galeri milik admin berbeda:
+    // admin dan konsultan juga melakukan absensi berfoto, jadi bukti milik
+    // mereka harus bisa ditemukan di tempat yang sama. Konsultan tetap hanya
+    // melihat pegawai dalam lingkup proyeknya lewat batasiPerAbsensi di bawah.
+    const galeriSemuaPeran = with_photo === 'true' && req.user.role === 'admin';
+    const conditions = galeriSemuaPeran ? ['TRUE'] : ["u.role = 'staff'"];
     const params = [];
     buildHistoryFilter(req.query, conditions, params);
 
