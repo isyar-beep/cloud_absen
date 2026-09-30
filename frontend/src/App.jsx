@@ -19,6 +19,7 @@ import AdminProjects from './pages/AdminProjects';
 import AdminNotifications from './pages/AdminNotifications';
 import Panduan from './pages/Panduan';
 import ProtectedRoute from './components/ProtectedRoute';
+import PersonalLayout from './components/PersonalLayout';
 
 export default function App() {
   const mulaiTema = useThemeStore((s) => s.mulai);
@@ -39,7 +40,7 @@ export default function App() {
           path="/dashboard"
           element={
             <ProtectedRoute>
-              <Dashboard />
+              <PersonalLayout><Dashboard /></PersonalLayout>
             </ProtectedRoute>
           }
         />
@@ -47,7 +48,7 @@ export default function App() {
           path="/attendance"
           element={
             <ProtectedRoute>
-              <Attendance />
+              <PersonalLayout><Attendance /></PersonalLayout>
             </ProtectedRoute>
           }
         />
@@ -56,7 +57,7 @@ export default function App() {
           path="/leaves"
           element={
             <ProtectedRoute>
-              <Leaves />
+              <PersonalLayout><Leaves /></PersonalLayout>
             </ProtectedRoute>
           }
         />
@@ -64,7 +65,7 @@ export default function App() {
           path="/history"
           element={
             <ProtectedRoute>
-              <History />
+              <PersonalLayout><History /></PersonalLayout>
             </ProtectedRoute>
           }
         />

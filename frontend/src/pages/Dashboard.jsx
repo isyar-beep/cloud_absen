@@ -86,18 +86,20 @@ export default function Dashboard() {
         { label: 'Rata-rata Kerja', value: `${stats.avg_work_hours} jam`, icon: CalendarIcon, chip: 'bg-violet-50 dark:bg-violet-500/15 text-violet-600 dark:text-violet-400' },
       ]
     : [];
+  const pengelola = user?.role === 'admin' || user?.role === 'konsultan';
 
   return (
     <div className="min-h-screen">
       {/* Hero header dengan gradien */}
-      <div className="kepala-pegawai pb-20">
-        <div className="max-w-2xl mx-auto px-4 pt-6">
+      <div className={pengelola ? '' : 'kepala-pegawai pb-20'}>
+        <div className={pengelola ? 'px-5 lg:px-8 pt-7 pb-6' : 'max-w-2xl mx-auto px-4 pt-6'}>
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-sm text-primary-100">{tanggalHariIni}</p>
-              <p className="text-xl font-bold text-white mt-0.5">Halo, {user?.name} 👋</p>
+              {pengelola && <h1 className="text-[1.75rem] leading-tight font-extrabold text-strong tracking-[-0.02em]">Dashboard Saya</h1>}
+              <p className={pengelola ? 'text-sm text-body mt-0.5' : 'text-sm text-primary-100'}>{tanggalHariIni}</p>
+              <p className={pengelola ? 'text-xl font-bold text-strong mt-4' : 'text-xl font-bold text-white mt-0.5'}>Halo, {user?.name} 👋</p>
               {profile?.shift_name && (
-                <p className="text-xs text-primary-100/90 mt-1">
+                <p className={pengelola ? 'text-xs text-muted mt-1' : 'text-xs text-primary-100/90 mt-1'}>
                   {profile.shift_name} · {profile.shift_start}–{profile.shift_end}
                 </p>
               )}
@@ -105,20 +107,21 @@ export default function Dashboard() {
                   perlu dipilih saat absen — namanya cukup ditampilkan supaya
                   pegawai tahu kehadirannya tercatat untuk pekerjaan yang mana. */}
               {profile?.project_name && (
-                <p className="text-xs text-primary-100/75 mt-0.5">
+                <p className={pengelola ? 'text-xs text-muted mt-0.5' : 'text-xs text-primary-100/75 mt-0.5'}>
                   {profile.project_name}
                   {profile.project_location ? ` · ${profile.project_location}` : ''}
                 </p>
               )}
               <div className="mt-4">
                 <AvatarUploader
+                  netral={pengelola}
                   name={user?.name}
                   src={profile?.avatar_url}
                   onChange={(url) => setProfile((p) => ({ ...p, avatar_url: url }))}
                 />
               </div>
             </div>
-            <div className="flex items-center gap-2 mt-1 shrink-0">
+            {!pengelola && <div className="flex items-center gap-2 mt-1 shrink-0">
               {/* Gaya sendiri, bukan komponen ThemeToggle: di atas hero biru,
                   token permukaan terang/gelap sama-sama tidak terbaca. */}
               <button
@@ -136,41 +139,51 @@ export default function Dashboard() {
               >
                 <LogoutIcon className="w-5 h-5" />
               </button>
-            </div>
+            </div>}
           </div>
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 -mt-14 pb-10">
+      <div className={pengelola ? 'wadah-petak px-5 lg:px-8 pb-10' : 'relative z-[1] max-w-2xl mx-auto px-4 -mt-14 pb-10'}>
         {/* Aksi utama */}
-        <div className="grid grid-cols-2 gap-3 mb-5">
+        <div className="mb-5">
           <button
             onClick={() => navigate('/attendance')}
-            className="col-span-2 flex items-center justify-center gap-2.5 bg-surface/75 backdrop-blur-xl text-primary-700 dark:text-primary-300 py-4 rounded-2xl font-semibold shadow-soft border border-primary-100 dark:border-primary-500/30 transition hover:shadow-glow hover:border-primary-300 active:scale-[0.99]"
+            className="w-full flex items-center justify-center gap-2.5 bg-surface/75 backdrop-blur-xl text-primary-700 dark:text-primary-300 py-4 rounded-2xl font-semibold shadow-soft border border-primary-100 dark:border-primary-500/30 transition hover:shadow-glow hover:border-primary-300 active:scale-[0.99]"
           >
             <span className="w-9 h-9 rounded-xl bg-primary-600 text-white flex items-center justify-center">
               <CameraIcon className="w-5 h-5" />
             </span>
             Absen Sekarang
           </button>
-          <button
-            onClick={() => navigate('/leaves')}
-            className="bg-surface/80 backdrop-blur-xl border border-line text-body py-3 rounded-2xl text-sm font-medium shadow-soft transition hover:bg-surface/90 hover:border-line-strong"
-          >
-            Ajukan Izin
-          </button>
-          <button
-            onClick={() => navigate('/history')}
-            className="bg-surface/80 backdrop-blur-xl border border-line text-body py-3 rounded-2xl text-sm font-medium shadow-soft transition hover:bg-surface/90 hover:border-line-strong"
-          >
-            Riwayat Lengkap
-          </button>
-          <button
-            onClick={() => setUbahPassword(true)}
-            className="bg-surface/80 backdrop-blur-xl border border-line text-body py-3 rounded-2xl text-sm font-medium shadow-soft transition hover:bg-surface/90 hover:border-line-strong"
-          >
-            Ubah Password
-          </button>
+          <div className="flex items-center justify-between gap-3 mt-4 mb-2">
+            <p className="text-sm font-bold text-strong">Akses Cepat</p>
+            <button
+              onClick={() => navigate('/panduan')}
+              className="text-xs text-primary-600 dark:text-primary-400 font-semibold hover:text-primary-700 dark:hover:text-primary-300 transition"
+            >
+              Petunjuk →
+            </button>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={() => navigate('/leaves')}
+              className="bg-surface/80 backdrop-blur-xl border border-line text-body py-3 rounded-2xl text-sm font-medium shadow-soft transition hover:bg-surface/90 hover:border-line-strong"
+            >
+              Ajukan Izin
+            </button>
+            <button
+              onClick={() => navigate('/history')}
+              className="bg-surface/80 backdrop-blur-xl border border-line text-body py-3 rounded-2xl text-sm font-medium shadow-soft transition hover:bg-surface/90 hover:border-line-strong"
+            >
+              Riwayat Lengkap
+            </button>
+            <button
+              onClick={() => setUbahPassword(true)}
+              className="bg-surface/80 backdrop-blur-xl border border-line text-body py-3 rounded-2xl text-sm font-medium shadow-soft transition hover:bg-surface/90 hover:border-line-strong"
+            >
+              Ubah Password
+            </button>
           {/* Petunjuk sengaja ditaruh di layar utama, bukan disembunyikan
               di dalam menu. Orang yang bingung tidak akan mencarinya di
               tempat yang perlu dicari lebih dulu. */}
@@ -182,19 +195,14 @@ export default function Dashboard() {
 
               Kabar "ada login dari perangkat baru" tidak lagi menunggu
               dicari di sini -- ia datang sebagai pemberitahuan. */}
-          <button
-            onClick={keluarkanPerangkatLain}
-            disabled={memutusSesi}
-            className="bg-surface/80 backdrop-blur-xl border border-line text-body py-3 rounded-2xl text-sm font-medium shadow-soft transition hover:bg-surface/90 hover:border-line-strong disabled:opacity-50"
-          >
-            {memutusSesi ? 'Memutus...' : 'Keluarkan Perangkat Lain'}
-          </button>
-          <button
-            onClick={() => navigate('/panduan')}
-            className="bg-surface/80 backdrop-blur-xl border border-line text-body py-3 rounded-2xl text-sm font-medium shadow-soft transition hover:bg-surface/90 hover:border-line-strong"
-          >
-            Petunjuk
-          </button>
+            <button
+              onClick={keluarkanPerangkatLain}
+              disabled={memutusSesi}
+              className="bg-surface/80 backdrop-blur-xl border border-line text-body py-3 rounded-2xl text-sm font-medium shadow-soft transition hover:bg-surface/90 hover:border-line-strong disabled:opacity-50"
+            >
+              {memutusSesi ? 'Memutus...' : 'Keluarkan Perangkat Lain'}
+            </button>
+          </div>
         </div>
 
         {pesan && (

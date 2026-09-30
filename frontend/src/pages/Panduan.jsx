@@ -1,7 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminSidebar from '../components/AdminSidebar';
-import { ArrowLeftIcon } from '../components/Icons';
+import {
+  ArrowLeftIcon, BellIcon, BookIcon, BriefcaseIcon, CalendarIcon,
+  CameraIcon, CheckBadgeIcon, CheckIcon, ClipboardIcon, ClockIcon,
+  DocumentIcon, UsersIcon,
+} from '../components/Icons';
 import { useAuthStore } from '../store/authStore';
 import { namaPeran } from '../utils/peran';
 
@@ -24,20 +28,33 @@ import { namaPeran } from '../utils/peran';
 // tombol "Simpan" menyimpan hanya menambah panjang tanpa menambah tahu.
 // ============================================================
 
-function Bagian({ judul, anak }) {
+function Bagian({ judul, keterangan, icon: Ikon = BookIcon, anak }) {
   return (
-    <section className="kartu-kaca p-5 mb-4">
-      <h2 className="text-[17px] font-bold text-strong tracking-[-0.01em] mb-3">{judul}</h2>
-      <div className="space-y-3 text-sm text-body leading-relaxed">{anak}</div>
+    <section className="kartu-kaca p-5 sm:p-6 mb-4">
+      <div className="flex items-start gap-3.5 mb-5">
+        <span className="w-10 h-10 rounded-xl bg-primary-50 dark:bg-primary-500/15 text-primary-600 dark:text-primary-300 flex items-center justify-center shrink-0">
+          <Ikon className="w-5 h-5" />
+        </span>
+        <div className="min-w-0 pt-0.5">
+          <h2 className="text-[18px] leading-tight font-bold text-strong tracking-[-0.015em]">{judul}</h2>
+          {keterangan && <p className="text-[13px] text-muted mt-1 leading-relaxed">{keterangan}</p>}
+        </div>
+      </div>
+      <div className="space-y-4 text-sm text-body leading-[1.7]">{anak}</div>
     </section>
   );
 }
 
 function Tanya({ t, children }) {
   return (
-    <div>
-      <p className="font-semibold text-strong">{t}</p>
-      <div className="text-body mt-1">{children}</div>
+    <div className="flex items-start gap-3">
+      <span className="w-6 h-6 rounded-lg bg-surface-2 text-primary-600 dark:text-primary-300 flex items-center justify-center shrink-0 mt-0.5">
+        <CheckIcon className="w-3.5 h-3.5" />
+      </span>
+      <div className="min-w-0">
+        <p className="font-semibold text-strong leading-[1.55]">{t}</p>
+        <div className="text-body mt-1 leading-[1.7]">{children}</div>
+      </div>
     </div>
   );
 }
@@ -46,6 +63,8 @@ const UMUM = (
   <>
     <Bagian
       judul="Aturan yang tidak terlihat di layar"
+      keterangan="Cara sistem menentukan waktu, status, dan lokasi absensi."
+      icon={ClockIcon}
       anak={
         <>
           <Tanya t="Tanggal absensi mengikuti tanggal SHIFT, bukan tanggal saat tombol ditekan.">
@@ -81,6 +100,8 @@ const UMUM = (
         adalah layar yang ada di depannya. */}
     <Bagian
       judul="Data Anda"
+      keterangan="Apa yang direkam, siapa yang dapat melihat, dan bagaimana data dilindungi."
+      icon={CheckBadgeIcon}
       anak={
         <>
           <Tanya t="Foto dan lokasi diambil hanya saat Anda menekan tombol absen.">
@@ -118,6 +139,8 @@ const ISI = {
     <>
       <Bagian
         judul="Yang menjadi tanggung jawab dinas"
+        keterangan="Pengelolaan personel, proyek, kalender kerja, dan ketertiban data."
+        icon={UsersIcon}
         anak={
           <>
             <Tanya t="Daftar personel dipegang dinas, bukan konsultan.">
@@ -154,6 +177,8 @@ const ISI = {
     <>
       <Bagian
         judul="Yang menjadi tanggung jawab konsultan"
+        keterangan="Pemantauan proyek, keputusan pengajuan, dan koreksi absensi."
+        icon={BriefcaseIcon}
         anak={
           <>
             <Tanya t="Anda hanya melihat pegawai di proyek Anda.">
@@ -185,6 +210,8 @@ const ISI = {
     <>
       <Bagian
         judul="Cara memakai"
+        keterangan="Langkah utama untuk absensi, izin, dan koreksi kehadiran."
+        icon={CameraIcon}
         anak={
           <>
             <Tanya t="Absen masuk dan pulang memakai foto.">
@@ -211,6 +238,71 @@ const ISI = {
   ),
 };
 
+const RINGKASAN = {
+  admin: {
+    judul: 'Peran Dinas',
+    deskripsi: 'Menjaga struktur organisasi dan aturan kerja tetap benar.',
+    poin: [
+      { icon: UsersIcon, label: 'Kelola personel' },
+      { icon: BriefcaseIcon, label: 'Susun proyek' },
+      { icon: ClipboardIcon, label: 'Atur shift kerja' },
+      { icon: CalendarIcon, label: 'Tentukan hari libur' },
+    ],
+  },
+  konsultan: {
+    judul: 'Peran Konsultan',
+    deskripsi: 'Memantau pekerjaan dan mengambil keputusan untuk proyeknya.',
+    poin: [
+      { icon: BriefcaseIcon, label: 'Pantau proyek' },
+      { icon: DocumentIcon, label: 'Putuskan pengajuan' },
+      { icon: BellIcon, label: 'Tindak pemberitahuan' },
+      { icon: ClockIcon, label: 'Periksa koreksi' },
+    ],
+  },
+  staff: {
+    judul: 'Peran Pegawai',
+    deskripsi: 'Mencatat kehadiran dan mengelola pengajuan pribadi.',
+    poin: [
+      { icon: CameraIcon, label: 'Absen berfoto' },
+      { icon: DocumentIcon, label: 'Ajukan izin' },
+      { icon: ClockIcon, label: 'Periksa riwayat' },
+      { icon: CheckBadgeIcon, label: 'Lengkapi koreksi' },
+    ],
+  },
+};
+
+function KontenPanduan({ peran, versi }) {
+  const info = RINGKASAN[peran] || RINGKASAN.staff;
+
+  return (
+    <div className="grid xl:grid-cols-[minmax(0,1fr)_19rem] gap-5 items-start">
+      <main className="min-w-0">{ISI[peran] || ISI.staff}</main>
+
+      <aside className="space-y-4 xl:sticky xl:top-6">
+        <section className="kartu-kaca p-5">
+          <div className="w-10 h-10 rounded-xl bg-primary-50 dark:bg-primary-500/15 text-primary-600 dark:text-primary-300 flex items-center justify-center mb-4">
+            <BookIcon className="w-5 h-5" />
+          </div>
+          <h2 className="text-[17px] font-bold text-strong tracking-[-0.01em]">{info.judul}</h2>
+          <p className="text-[13px] text-muted leading-relaxed mt-1.5 mb-4">{info.deskripsi}</p>
+          <div className="space-y-2.5">
+            {info.poin.map((item) => (
+              <div key={item.label} className="flex items-center gap-2.5 text-sm font-medium text-body">
+                <item.icon className="w-[17px] h-[17px] text-primary-600 dark:text-primary-300 shrink-0" />
+                <span>{item.label}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <p className="text-xs text-faint px-1">
+          Absensi Konsultan versi {versi} — PERCIPKAR
+        </p>
+      </aside>
+    </div>
+  );
+}
+
 export default function Panduan() {
   const { user } = useAuthStore();
   const [peran, setPeran] = useState(user?.role || 'staff');
@@ -226,7 +318,7 @@ export default function Panduan() {
   if (pegawai) {
     return (
       <div className="min-h-screen px-4 py-6">
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <button
             onClick={() => navigate(-1)}
             className="flex items-center gap-1.5 text-sm text-muted hover:text-strong transition mb-5"
@@ -234,14 +326,10 @@ export default function Panduan() {
             <ArrowLeftIcon className="w-4 h-4" /> Kembali
           </button>
 
-          <h1 className="text-xl font-bold text-strong tracking-tight mb-1">Petunjuk Penggunaan</h1>
-          <p className="text-sm text-muted mb-6">Aturan yang tidak terlihat langsung di layar</p>
+          <h1 className="text-2xl sm:text-[1.75rem] leading-tight font-extrabold text-strong tracking-[-0.02em] mb-1">Petunjuk Penggunaan</h1>
+          <p className="text-sm text-muted mb-6">Panduan penggunaan sistem berdasarkan peran dan tanggung jawab</p>
 
-          {ISI.staff}
-
-          <p className="text-xs text-faint mt-6">
-            Absensi Konsultan versi {versi} — PERCIPKAR
-          </p>
+          <KontenPanduan peran="staff" versi={versi} />
         </div>
       </div>
     );
@@ -257,7 +345,7 @@ export default function Panduan() {
             Petunjuk Penggunaan
           </h1>
           <p className="text-sm text-body mt-0.5">
-            Aturan yang tidak terlihat langsung di layar
+            Panduan penggunaan sistem berdasarkan peran dan tanggung jawab
           </p>
         </div>
 
@@ -281,13 +369,7 @@ export default function Panduan() {
           </div>
         )}
 
-        <div className="max-w-3xl">
-          {ISI[peran] || ISI.staff}
-
-          <p className="text-xs text-faint mt-6">
-            Absensi Konsultan versi {versi} — PERCIPKAR
-          </p>
-        </div>
+        <KontenPanduan peran={peran} versi={versi} />
       </div>
     </div>
   );

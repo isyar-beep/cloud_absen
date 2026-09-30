@@ -4,8 +4,8 @@ import { useAuthStore } from '../store/authStore';
 import Avatar from './Avatar';
 import ThemeToggle from './ThemeToggle';
 import {
-  HomeIcon, BriefcaseIcon, ChartIcon, ClockIcon, PhotoIcon, DocumentIcon,
-  UsersIcon, ClipboardIcon, CalendarIcon, LogoutIcon, MenuIcon, CloseIcon,
+  HomeIcon, BriefcaseIcon, ChartIcon, ClockIcon, PhotoIcon, DocumentIcon, CameraIcon,
+  UsersIcon, ClipboardIcon, CalendarIcon, LogoutIcon, MenuIcon,
   PanelIcon, BellIcon, BookIcon,
 } from './Icons';
 import { namaPeran } from '../utils/peran';
@@ -21,9 +21,16 @@ import { useNotifStore, SELANG_SEGARKAN } from '../store/notifStore';
 // maupun daftar personel -- itu bagian dari kontrak, bukan operasional.
 const KELOMPOK = [
   {
+    judul: 'Pribadi',
+    item: [
+      { to: '/dashboard', label: 'Dashboard Saya', icon: HomeIcon, tepat: true },
+      { to: '/attendance', label: 'Absen Sekarang', icon: CameraIcon, tepat: true },
+    ],
+  },
+  {
     judul: 'Pemantauan',
     item: [
-      { to: '/admin', label: 'Dashboard', icon: HomeIcon, tepat: true },
+      { to: '/admin', label: 'Dashboard Pengelola', icon: HomeIcon, tepat: true },
       { to: '/admin/projects', label: 'Proyek', icon: BriefcaseIcon },
       { to: '/admin/stats', label: 'Statistik', icon: ChartIcon },
     ],
@@ -54,7 +61,7 @@ const KELOMPOK = [
 // Ditanam saat build dari package.json -- lihat vite.config.js.
 const VERSI = typeof __VERSI_APLIKASI__ !== 'undefined' ? __VERSI_APLIKASI__ : '';
 
-function Isi({ user, aktifKah, onPindah, onKeluar, lipat = false, onLipat }) {
+function Isi({ user, aktifKah, onPindah, onKeluar, lipat = false, onLipat, tampilkanKepala = true }) {
   const belum = useNotifStore((s) => s.belum);
 
   return (
@@ -63,6 +70,7 @@ function Isi({ user, aktifKah, onPindah, onKeluar, lipat = false, onLipat }) {
           Tema dan lipat ditaruh di atas, sejajar logo: keduanya mengatur
           kerangka layar, bukan akun -- jadi tempatnya di kepala, bukan
           berdesakan di kartu pengguna paling bawah. */}
+      {tampilkanKepala && (
       <div className={`shrink-0 ${lipat ? 'px-2 pt-4 pb-3' : 'px-5 pt-5 pb-3'}`}>
         {/* Identitas dan kendali diberi baris masing-masing. Dijejalkan
             sebaris, dua tombol ikon menyisakan ruang terlalu sempit dan
@@ -98,6 +106,7 @@ function Isi({ user, aktifKah, onPindah, onKeluar, lipat = false, onLipat }) {
           )}
         </div>
       </div>
+      )}
 
       {/* Menu */}
       {/* Jaraknya dirapatkan saat terlipat. Dengan 9 menu dalam 3 kelompok,
@@ -278,7 +287,13 @@ export default function AdminSidebar() {
     />
   );
   const isiLaci = (
-    <Isi user={user} aktifKah={aktifKah} onPindah={() => setBuka(false)} onKeluar={handleLogout} />
+    <Isi
+      user={user}
+      aktifKah={aktifKah}
+      onPindah={() => setBuka(false)}
+      onKeluar={handleLogout}
+      tampilkanKepala={false}
+    />
   );
 
   return (
@@ -290,18 +305,20 @@ export default function AdminSidebar() {
           memakai lg:pl-[var(--lebar-sidebar)] tetap sejajar tanpa perlu
           diubah satu per satu. */}
       <aside
-        className="hidden lg:block fixed z-30 top-[var(--sela-sidebar)] bottom-[var(--sela-sidebar)] left-[var(--sela-sidebar)] kaca-samping rounded-[1.75rem] border border-white/60 dark:border-white/10 shadow-soft overflow-hidden transition-[width] duration-200"
+        className="hidden lg:block fixed z-30 top-[var(--sela-sidebar)] bottom-[var(--sela-sidebar)] left-[var(--sela-sidebar)] kaca-navigasi rounded-[1.75rem] border overflow-hidden transition-[width] duration-200"
         style={{ width: 'calc(var(--lebar-sidebar) - var(--sela-sidebar))' }}
       >
         {isiLebar}
       </aside>
 
       {/* Layar sempit: bilah atas + laci geser */}
-      <header className="lg:hidden sticky top-0 z-30 kaca-pekat border-b border-line/70">
+      <header className="lg:hidden sticky top-0 z-50 kaca-navigasi kaca-navigasi-overlay border-b">
         <div className="h-14 px-3 flex items-center gap-3">
           <button
-            onClick={() => setBuka(true)}
-            aria-label="Buka menu"
+            onClick={() => setBuka((v) => !v)}
+            aria-label={buka ? 'Tutup menu' : 'Buka menu'}
+            aria-expanded={buka}
+            aria-controls="navigasi-admin-mobile"
             className="w-10 h-10 rounded-xl flex items-center justify-center text-body hover:bg-surface-2 transition"
           >
             <MenuIcon className="w-5 h-5" />
@@ -309,25 +326,23 @@ export default function AdminSidebar() {
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 text-white text-xs font-bold flex items-center justify-center">
             AK
           </div>
-          <p className="text-[17px] font-bold text-strong tracking-[-0.01em] truncate">Absensi Konsultan</p>
+          <p className="text-[17px] font-bold text-strong tracking-[-0.01em] truncate flex-1">Absensi Konsultan</p>
+          <ThemeToggle ringkas />
         </div>
       </header>
 
       {buka && (
-        <div className="lg:hidden fixed inset-0 z-40">
+        <div className="lg:hidden fixed inset-x-0 top-14 bottom-0 z-40">
           <div
             className="absolute inset-0 bg-slate-900/45 backdrop-blur-[2px]"
             onClick={() => setBuka(false)}
             aria-hidden="true"
           />
-          <aside className="absolute inset-y-0 left-0 w-[17rem] kaca-pekat border-r border-line shadow-2xl">
-            <button
-              onClick={() => setBuka(false)}
-              aria-label="Tutup menu"
-              className="absolute top-3.5 right-3 w-9 h-9 rounded-lg flex items-center justify-center text-muted hover:bg-surface-2 transition z-10"
-            >
-              <CloseIcon className="w-5 h-5" />
-            </button>
+          <aside
+            id="navigasi-admin-mobile"
+            aria-label="Navigasi utama"
+            className="absolute inset-y-0 left-0 w-[17rem] max-w-[86vw] kaca-navigasi kaca-navigasi-overlay border-r"
+          >
             {isiLaci}
           </aside>
         </div>

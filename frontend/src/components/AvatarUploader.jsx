@@ -37,7 +37,7 @@ function perkecil(file) {
   });
 }
 
-export default function AvatarUploader({ name, src, onChange }) {
+export default function AvatarUploader({ name, src, onChange, netral = false }) {
   const inputRef = useRef(null);
   const [proses, setProses] = useState(false);
   const [error, setError] = useState('');
@@ -102,7 +102,7 @@ export default function AvatarUploader({ name, src, onChange }) {
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={proses}
-          className="text-xs font-semibold text-white/90 hover:text-white underline underline-offset-2 disabled:opacity-60"
+          className={`text-xs font-semibold underline underline-offset-2 disabled:opacity-60 ${netral ? 'text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300' : 'text-white/90 hover:text-white'}`}
         >
           {proses ? 'Memproses…' : src ? 'Ganti foto' : 'Unggah foto profil'}
         </button>
@@ -110,12 +110,12 @@ export default function AvatarUploader({ name, src, onChange }) {
           <button
             type="button"
             onClick={hapus}
-            className="text-xs text-white/60 hover:text-white/90 ml-3"
+            className={`text-xs ml-3 ${netral ? 'text-muted hover:text-strong' : 'text-white/60 hover:text-white/90'}`}
           >
             Hapus
           </button>
         )}
-        {error && <p className="text-[11px] text-red-100 mt-1">{error}</p>}
+        {error && <p className={`text-[11px] mt-1 ${netral ? 'text-red-600 dark:text-red-400' : 'text-red-100'}`}>{error}</p>}
       </div>
 
       <input
